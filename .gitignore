@@ -1,0 +1,11 @@
+# Packaged theme artifacts
+/dist/
+*.zip
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*~
+.idea/
+.vscode/
