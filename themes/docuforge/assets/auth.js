@@ -259,6 +259,24 @@ export function attach() {
 
   const form = document.getElementById("login-form");
   const err = document.getElementById("login-error");
+  const modal = document.getElementById("login-modal");
+  // JSP parity (login/index.jsp): every visit renders a fresh empty form. The SPA
+  // modal lives in the DOM for the whole tab session, so typed credentials would
+  // otherwise survive login/logout cycles — and the password would linger in the
+  // DOM. Reset whenever the modal closes, whatever hid it (login success, Cancel,
+  // close button, backdrop, Escape). Watching the `show` class works with both
+  // real Bootstrap and the compat.js shim, which dispatches no *.bs.modal events.
+  if (form && modal) {
+    new MutationObserver(() => {
+      if (!modal.classList.contains("show")) {
+        form.reset();
+        if (err) {
+          err.classList.add("d-none");
+          err.textContent = "";
+        }
+      }
+    }).observe(modal, { attributes: true, attributeFilter: ["class"] });
+  }
   if (form) {
     form.addEventListener("submit", async ev => {
       ev.preventDefault();
