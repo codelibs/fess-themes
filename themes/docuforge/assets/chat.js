@@ -809,6 +809,10 @@ function submitQuestion(question, uiRefs) {
         mdBuffer = "";
         deltaCleared = true;
         while (activeBubble.bubble.firstChild) activeBubble.bubble.removeChild(activeBubble.bubble.firstChild);
+        // #6672: once the answer begins streaming, clear the transient status line
+        // (fallback/retry/waiting/warning) so e.g. "...再検索します..." does not linger
+        // below the final answer.
+        activeBubble.setStatusLine("");
       }
       mdBuffer += content;
       activeBubble.setBuffer(mdBuffer);
@@ -826,6 +830,9 @@ function submitQuestion(question, uiRefs) {
       if (inputEl) inputEl.disabled = false;
       if (submitEl) submitEl.disabled = false;
       statusLozenge.setStatus("ready");
+      // #6672: backstop for completions with no content chunks (html_content-only):
+      // clear the transient status line so it does not persist after the answer.
+      activeBubble.setStatusLine("");
       if (data && data.session_id) sessionId = data.session_id;
       if (data && data.html_content) activeBubble.setHtmlContent(data.html_content);
       // #9 focus restore: return focus to the chat input on completion (JSP parity js/chat.js:546).
@@ -1037,6 +1044,21 @@ export function attachInline() {
     emptyState: null,
     progressMessageEl: inlineProgressMessageEl,
     getFilters: () => ({ fields: [], extraQ: [] })
+  };
+
+  // #6672 (parity with attachStandalone chat-progress-hide-done): the inline panel
+  // narrates phases into inlineProgressMessageEl, so hide+clear it once the stream
+  // completes (ready) or errors. Without this the last phase text (e.g. "回答生成中...")
+  // lingers in the sidebar after the answer is shown.
+  const origInlineSetStatus = setStatus;
+  refs.statusLozenge = {
+    setStatus: (key) => {
+      origInlineSetStatus(key);
+      if (key === "ready" || key === "error") {
+        inlineProgressMessageEl.classList.add("d-none");
+        inlineProgressMessageEl.textContent = "";
+      }
+    }
   };
 
   // IME composition guard for inline input (CJK and other composing keyboards)
