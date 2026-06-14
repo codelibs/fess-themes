@@ -13,6 +13,7 @@ theme can be reviewed, re-skinned, or used as a starting point for a new one.
 | Theme | Description |
 |---|---|
 | [`docuforge`](themes/docuforge/) | Documentation-style theme on the DocuForge design system — blue/purple/gray palette, persistent facet sidebar, docs-grade typography, **no Bootstrap**. Ships its [`DESIGN.md`](themes/docuforge/DESIGN.md) spec. |
+| [`nomadkit`](themes/nomadkit/) | Free-spirited theme on the NomadKit design system — warm sand / ocean / forest palette, persistent facet sidebar, accessible (AA) contrast, **no Bootstrap**. Ships its [`DESIGN.md`](themes/nomadkit/DESIGN.md) spec. |
 
 ## Repository layout
 
