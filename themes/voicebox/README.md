@@ -38,6 +38,7 @@ voicebox/
 ├── theme.yml             # manifest (kind: StaticTheme, name: voicebox)
 ├── index.html            # SPA shell — semantic HTML5, no Bootstrap
 ├── DESIGN.md             # VoiceBox design spec (reference; excluded from the ZIP)
+├── thumbnail.png         # shown in /admin/theme/ (≤512KB, ≤512x512)
 ├── assets/
 │   ├── compat.js         # Bootstrap-JS-API shim (Modal/Collapse/Dropdown/Offcanvas/Tooltip)
 │   ├── styles.css        # self-contained VoiceBox stylesheet (tokens + utilities + components)
@@ -62,10 +63,9 @@ voicebox/
 └── README.md
 ```
 
-> **Thumbnail (optional):** drop a `thumbnail.png` (≤512×512, ≤512 KB) next to
-> `theme.yml` and add a `thumbnail: thumbnail.png` line to it to show a preview in
-> the `/admin/theme/` picker. Capture it from a running instance of the theme so
-> it stays accurate.
+> **`thumbnail.png`:** the preview shown in the `/admin/theme/` picker
+> (≤512×512, ≤512 KB). The shipped image is a placeholder — capture an updated
+> screenshot from a running instance of this theme to replace it.
 
 ## Bootstrap compatibility shim (`assets/compat.js`)
 
