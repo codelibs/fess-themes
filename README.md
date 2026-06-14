@@ -13,6 +13,7 @@ theme can be reviewed, re-skinned, or used as a starting point for a new one.
 | Theme | Description |
 |---|---|
 | [`docuforge`](themes/docuforge/) | Documentation-style theme on the DocuForge design system — blue/purple/gray palette, persistent facet sidebar, docs-grade typography, **no Bootstrap**. Ships its [`DESIGN.md`](themes/docuforge/DESIGN.md) spec. |
+| [`voicebox`](themes/voicebox/) | Bold, magazine-style editorial theme on the VoiceBox design system — high-contrast black/white with a single red accent, flat (no shadows), sharp 0px corners, thick 2px borders, Archivo Black headlines, **no Bootstrap**. Ships its [`DESIGN.md`](themes/voicebox/DESIGN.md) spec. |
 
 ## Repository layout
 
