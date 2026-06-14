@@ -13,6 +13,7 @@ theme can be reviewed, re-skinned, or used as a starting point for a new one.
 | Theme | Description |
 |---|---|
 | [`docuforge`](themes/docuforge/) | Documentation-style theme on the DocuForge design system — blue/purple/gray palette, persistent facet sidebar, docs-grade typography, **no Bootstrap**. Ships its [`DESIGN.md`](themes/docuforge/DESIGN.md) spec. |
+| [`rawblock`](themes/rawblock/) | Brutalist anti-design theme on the RawBlock design system — raw black-on-white, thick borders (1/3/5px), sharp 0px corners, no shadows, full color-inversion hover/active states, **no Bootstrap**. Ships its [`DESIGN.md`](themes/rawblock/DESIGN.md) spec. |
 
 ## Repository layout
 
