@@ -37,6 +37,7 @@ error pages, i18n) with zero functional changes.
 rawblock/
 ├── theme.yml             # manifest (kind: StaticTheme, name: rawblock)
 ├── index.html            # SPA shell — semantic HTML5, no Bootstrap
+├── thumbnail.png         # shown in /admin/theme/ (≤512KB, ≤512x512)
 ├── assets/
 │   ├── compat.js         # Bootstrap-JS-API shim (Modal/Collapse/Dropdown/Offcanvas/Tooltip)
 │   ├── styles.css        # self-contained RawBlock stylesheet (tokens + utilities + components)
@@ -60,6 +61,10 @@ rawblock/
 ├── help/                 # <locale>.json help content (8 locales)
 └── README.md
 ```
+
+> **`thumbnail.png`:** the preview shown in the `/admin/theme/` picker
+> (≤512×512, ≤512 KB). The shipped image is a placeholder — capture an updated
+> screenshot from a running instance of this theme to replace it.
 
 ## Bootstrap compatibility shim (`assets/compat.js`)
 
