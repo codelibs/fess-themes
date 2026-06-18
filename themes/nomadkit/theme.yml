@@ -20,3 +20,4 @@ supportedLocales:
 entry: index.html
 spaFallback: true
 type: static
+thumbnail: thumbnail.png

@@ -38,6 +38,7 @@ error pages, i18n) with zero functional changes.
 nomadkit/
 ├── theme.yml             # manifest (kind: StaticTheme, name: nomadkit)
 ├── index.html            # SPA shell — semantic HTML5, no Bootstrap
+├── thumbnail.png         # shown in /admin/theme/ (≤512KB, ≤512x512)
 ├── assets/
 │   ├── compat.js         # Bootstrap-JS-API shim (Modal/Collapse/Dropdown/Offcanvas/Tooltip)
 │   ├── styles.css        # self-contained NomadKit stylesheet (tokens + utilities + components)
@@ -62,10 +63,9 @@ nomadkit/
 └── README.md
 ```
 
-> **`thumbnail.png`** (optional): a preview shown in the `/admin/theme/` picker
-> (≤512×512, ≤512 KB). NomadKit does not ship one yet; capture a screenshot
-> from a running instance and add a `thumbnail: thumbnail.png` line to
-> `theme.yml` to enable it.
+> **`thumbnail.png`:** the preview shown in the `/admin/theme/` picker
+> (≤512×512, ≤512 KB). The shipped image is a placeholder — capture an updated
+> screenshot from a running instance of this theme to replace it.
 
 ## Bootstrap compatibility shim (`assets/compat.js`)
 
