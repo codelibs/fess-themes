@@ -1119,9 +1119,7 @@ export function applyHomeOptions(params) {
 export function runFromUrl() {
   const params = new URLSearchParams(location.search);
   const q = params.get("q");
-  // Only run a search when a query is present in the URL.
-  if (!q) return;
-  state.q = q;
+  state.q = q || "";
   state.start = Number(params.get("start")) || 0;
   const numVal = Number(params.get("num"));
   if (numVal > 0) state.num = numVal;
@@ -1159,7 +1157,63 @@ export function runFromUrl() {
     }
   }
   state.exQ = params.getAll("ex_q").filter(v => v !== "");
+  // Run a search when a keyword OR any active filter is present in the URL (label /
+  // other fields, geo, or ex_q). The classic JSP theme issues the request for
+  // filter-only URLs such as /search?fields.label=fess, so mirror that here instead
+  // of bailing on an empty keyword. sort/num/lang are query modifiers, not a search
+  // on their own. Hydrating state above before this check also sets state.q to "" for
+  // a filter-only URL, so a previous keyword can't leak into the next search:
+  // runSearch() reads state.q, and the option-drawer Search button omits an empty q.
+  const hasFields = Object.keys(state.fields).length > 0;
+  const hasGeo = !!(state.geo.lat && state.geo.lon && state.geo.distance);
+  const hasExQ = state.exQ.length > 0;
+  if (!state.q && !hasFields && !hasGeo && !hasExQ) return;
   runSearch();
+}
+
+/**
+ * Reset all search state and the option-drawer DOM controls to their defaults.
+ * Called when the SPA lands on the home view (logo click / "/") so that keyword,
+ * label, language, count, sort and geo values from the previous search do not carry
+ * over into the next one — JSP parity: returning to the search top clears the form.
+ * Does NOT dispatch change events (unlike the drawer "Clear" button), so it never
+ * triggers a search on the home view.
+ */
+export function resetSearchState() {
+  state.q = "";
+  state.start = 0;
+  state.num = 10;
+  state.sort = "";
+  state.lang = [];
+  state.sdh = "";
+  state.facets = {};
+  state.fields = {};
+  state.facetQueries = [];
+  state.exQ = [];
+  state.geo = { lat: "", lon: "", distance: "" };
+  // Keep both keyword inputs (header #query / home #contentQuery) in sync and empty.
+  syncSearchInputs("");
+  // Drawer geo inputs + option selects (searchOptions.jsp).
+  ["geo-lat", "geo-lon", "geo-distance"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+  ["numSearchOption", "sortSearchOption", "langSearchOption", "labelSearchOption"].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    if (sel.multiple) {
+      Array.from(sel.options).forEach(o => { o.selected = false; });
+    } else {
+      sel.selectedIndex = 0;
+    }
+  });
+  // Keep state.num / state.sort in sync with the default option now selected: the
+  // count list is config-driven (num_options[0] may not be 10), so read it back from
+  // the drawer instead of assuming, leaving state and the visible control in agreement.
+  const numSel = document.getElementById("numSearchOption");
+  if (numSel && numSel.value) state.num = Number(numSel.value) || state.num;
+  const sortSel = document.getElementById("sortSearchOption");
+  state.sort = (sortSel && sortSel.value) || "";
 }
 
 function ensureOsddLink() {
