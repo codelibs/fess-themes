@@ -424,10 +424,11 @@ function registerRoutes() {
       setChatNavSearchMode(false);
       setSearchFormVisible(false);
       showView("home-view");
-      // JSP parity (index.jsp): the home query box starts empty — clear any value the
-      // SPA carried over from a previous search (syncSearchInputs keeps both inputs in sync).
-      const cq = document.getElementById("contentQuery");
-      if (cq) cq.value = "";
+      // JSP parity (index.jsp): returning to the search top clears the form. Reset the
+      // keyword box, the option drawer (label / language / count / sort / geo) and the
+      // in-memory search state so nothing carries over from the previous search (e.g. a
+      // leftover label/distance, or a stale keyword reused on the next option-only search).
+      search.resetSearchState();
       attachHomeView();
     }
   );
