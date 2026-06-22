@@ -1040,6 +1040,16 @@ export function runFromUrl() {
     }
   }
   state.exQ = params.getAll("ex_q").filter(v => v !== "");
+  // Re-sync the search-options drawer selects (sort / num / lang / label) to the
+  // freshly hydrated state. attach() renders them only once, so without this a
+  // navigation (link click, back/forward, facet submit) would leave the selects
+  // showing stale values. That matters now that the selects are applied on the
+  // Search button: a stale displayed value would otherwise be written back into the
+  // URL on the next submit, silently reverting the user's actual sort/num/lang.
+  // Guarded on config so the option lists exist before we re-render them.
+  if (api.getConfig()) {
+    renderSearchOptions();
+  }
   // Run a search when a keyword OR any active filter is present in the URL (label /
   // other fields, geo, or ex_q). The classic JSP theme issues the request for
   // filter-only URLs such as /search?fields.label=fess, so mirror that here instead
@@ -1146,6 +1156,24 @@ export function attach() {
       for (const key of [...params.keys()]) {
         if (key.startsWith("fields.") || key === "ex_q") params.delete(key);
       }
+      // JSP parity: apply the current sort / num / lang drawer selections rather
+      // than only carrying over the previous URL values, so a manual change to these
+      // selects takes effect when the header Search button is pressed (the selects no
+      // longer auto-run a search on change). Guarded on config so the selects are
+      // populated before we read them.
+      if (api.getConfig()) {
+        const sortSel = document.getElementById("sortSearchOption");
+        if (sortSel) { if (sortSel.value) params.set("sort", sortSel.value); else params.delete("sort"); }
+        const numSel = document.getElementById("numSearchOption");
+        // Unlike sort, the num select has no empty placeholder option, so its value is always
+        // present; there is no empty case to delete here.
+        if (numSel && numSel.value) params.set("num", numSel.value);
+        const langSel = document.getElementById("langSearchOption");
+        if (langSel) {
+          params.delete("lang");
+          Array.from(langSel.selectedOptions).map(o => o.value).filter(Boolean).forEach(v => params.append("lang", v));
+        }
+      }
       navigate("/search?" + params.toString());
       // JSP parity: disable the submit button for 3s after the search has been
       // triggered, to prevent rapid double-submits.
@@ -1154,13 +1182,17 @@ export function attach() {
   }
   // Search-options "Clear" button (searchOptions.jsp #searchOptionsClearButton):
   // reset the drawer option controls (num/sort/lang/label + geo) to their defaults.
+  // JSP parity: this is a purely visual reset — it does NOT re-run the search.
+  // The reset values are applied on the next Search-button press, matching searchOptions.jsp
+  // whose Clear button only resets the select indices and never submits the form. (The geo
+  // inputs are cleared visually here too; the geo filter is dropped only when the drawer's own
+  // Search button is pressed and reads the now-empty inputs. A header-form submit instead
+  // preserves the geo params already in the URL, matching the JSP theme whose header form
+  // carries geo forward via hidden inputs.)
   const optClearBtn = document.getElementById("searchOptionsClearButton");
   if (optClearBtn) {
     optClearBtn.addEventListener("click", () => {
-      // Geo filter (migrated into the drawer): clear inputs + state first so the
-      // select-change handlers below re-run the search with geo already cleared.
       ["geo-lat", "geo-lon", "geo-distance"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
-      state.geo = { lat: "", lon: "", distance: "" };
       ["numSearchOption", "sortSearchOption", "langSearchOption", "labelSearchOption"].forEach(id => {
         const sel = document.getElementById(id);
         if (!sel) return;
@@ -1169,7 +1201,6 @@ export function attach() {
         } else {
           sel.selectedIndex = 0;
         }
-        sel.dispatchEvent(new Event("change", { bubbles: true }));
       });
     });
   }
@@ -1283,31 +1314,13 @@ export function attach() {
   // Geo filter apply/clear is handled by the drawer's main Search / Clear buttons
   // (geo inputs were migrated into #searchOptions); no separate geo buttons.
 
-  // Sort select — options are populated by renderSortOptions() after config loads
-  const sortSelect = document.getElementById("sortSearchOption");
-  if (sortSelect) sortSelect.addEventListener("change", () => {
-    state.sort = sortSelect.value || "";
-    state.start = 0;
-    runSearch();
-  });
-
-  // Num select
-  const numSelect = document.getElementById("numSearchOption");
-  if (numSelect) numSelect.addEventListener("change", () => {
-    state.num = Number(numSelect.value) || 10;
-    state.start = 0;
-    runSearch();
-  });
-
-  // Lang multi-select: collect all selected option values; when "All" (value="")
-  // is selected or nothing is selected, reset to empty array.
-  const langSelect = document.getElementById("langSearchOption");
-  if (langSelect) langSelect.addEventListener("change", () => {
-    const selected = Array.from(langSelect.selectedOptions).map(o => o.value).filter(v => v !== "");
-    state.lang = selected;
-    state.start = 0;
-    runSearch();
-  });
+  // JSP parity: the sort / num / lang drawer selects do NOT auto-run a search on
+  // change. The default JSP search screen only applies these options when a Search button
+  // is pressed, so changing a select here is a no-op until the user submits — either via
+  // the header form (#search-form, which reads these selects in its submit handler above)
+  // or the drawer's own Search button (#searchOptions button[type="submit"], wired above).
+  // Re-introducing a `change -> runSearch()` handler here would resurrect the reported bug
+  // where results changed before the Search button was pressed.
 
   // Populate search option selects once config is available.
   // api.init() is awaited by app.js before attach() is called, so getConfig()
