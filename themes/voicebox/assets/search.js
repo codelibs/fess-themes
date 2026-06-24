@@ -798,7 +798,19 @@ export function attachSuggest(input, dropdown, opts = {}) {
     dropdown.classList.add("d-none");
     input.setAttribute("aria-expanded", "false");
   };
-  const choose = (text) => { input.value = text; clear(); input.focus(); };
+  const choose = (text) => {
+    input.value = text;
+    clear();
+    // submitOnSelect: opt-in flag — submit the form after filling the input, matching
+    // default-JSP suggestor.js and the results-page header suggest behavior.
+    // Advanced search does not pass this flag and keeps the fill-only path.
+    if (opts.submitOnSelect) {
+      const form = input.form || input.closest("form");
+      if (form) { form.dispatchEvent(new Event("submit")); }
+      return;
+    }
+    input.focus();
+  };
   const render = async (q) => {
     if (!q || q.length < 1) { clear(); return; }
     try {
