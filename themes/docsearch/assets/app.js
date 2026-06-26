@@ -427,6 +427,25 @@ function attachAdvanceLinkSync() {
   updateAdvanceLinks();
 }
 
+/** Toggle and populate the Ask-AI card in the results subheader (Task 10). */
+function updateAskAiCard() {
+  const card = document.getElementById("ds-askai-card"), btn = document.getElementById("ds-askai-btn");
+  if (!card || !btn) return;
+  const cfg = api.getConfig && api.getConfig();
+  const rag = !!(cfg && cfg.features && cfg.features.rag_chat_enabled);
+  const q = new URLSearchParams(location.search).get("q") || "";
+  if (rag && q) {
+    btn.textContent = t("ai.ask_about", { 0: q });
+    card.hidden = false;
+    btn.onclick = () => {
+      const cp = (document.getElementById("contextPath") || {}).value || "";
+      location.assign(`${cp}/chat?q=${encodeURIComponent(q)}`);
+    };
+  } else {
+    card.hidden = true;
+  }
+}
+
 function registerRoutes() {
   // Home route — "/" with no q= parameter shows the centered home view.
   router.register(
@@ -455,6 +474,8 @@ function registerRoutes() {
       search.attach();
       // A.8: re-run search from URL on every dispatch (handles popstate / back-forward).
       search.runFromUrl();
+      // Task 10: toggle Ask-AI card based on RAG feature flag and current query.
+      updateAskAiCard();
     }
   );
 
@@ -500,7 +521,8 @@ function registerRoutes() {
       setSearchFormVisible(false);
       setChatNavSearchMode(true);
       showView("chat-view");
-      chat.attachStandalone();
+      const q = new URLSearchParams(location.search).get("q") || "";
+      chat.attachStandalone(q, !!q);
     }
   );
 

@@ -1102,7 +1102,7 @@ export function attach() {
  * Mount or re-show the standalone chat UI in #chat-view.
  * Lazy-mounts on first call; subsequent calls re-show without rebuilding.
  */
-export function attachStandalone() {
+export function attachStandalone(initialQuery, autoSend) {
   // Register route-change abort listener once (shared with inline).
   if (!routeListenerAttached) {
     routeListenerAttached = true;
@@ -1400,4 +1400,11 @@ export function attachStandalone() {
       }
     }
   };
+
+  // Prefill textarea from URL ?q= and optionally auto-submit (Task 10).
+  if (initialQuery) {
+    textarea.value = initialQuery;
+    textarea.dispatchEvent(new Event("input")); // triggers auto-resize/counter listener
+    if (autoSend) doSubmit(initialQuery);
+  }
 }

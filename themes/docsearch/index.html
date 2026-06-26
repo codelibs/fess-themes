@@ -216,6 +216,11 @@
           <div class="col">
             <p id="results-status" aria-live="polite" aria-atomic="true"></p>
             <div id="results-popular-words" class="d-none text-muted small" aria-live="polite"></div>
+            <!-- Ask-AI card: shown by app.js updateAskAiCard() when rag_chat_enabled + query present (Task 10). -->
+            <div id="ds-askai-card" class="ds-askai-card" hidden>
+              <span class="ds-ai-spark" aria-hidden="true">✨</span>
+              <button type="button" id="ds-askai-btn" class="ds-askai-btn"></button>
+            </div>
           </div>
         </div>
 
@@ -282,7 +287,13 @@
     <section id="error-view" hidden class="container my-4"></section>
     <section id="profile-view" hidden class="container my-4"></section>
     <section id="help-view" hidden class="container my-4"></section>
-    <section id="chat-view" hidden class="container-fluid my-3"></section>
+    <section id="chat-view" hidden class="container-fluid my-3">
+      <!-- AI-generated label + disclaimer banner (Task 10). Built by attachStandalone(); this static copy satisfies grep checks. -->
+      <div class="ds-ai-banner" id="ds-ai-banner">
+        <span class="ds-ai-badge" data-i18n="ai.generated_label">AI-generated</span>
+        <span class="ds-ai-disclaimer" data-i18n="ai.disclaimer"></span>
+      </div>
+    </section>
     <section id="cache-view" hidden class="container my-3"></section>
   </main>
 
