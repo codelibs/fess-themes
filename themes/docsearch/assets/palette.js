@@ -5,7 +5,7 @@ import { t } from "./i18n.js";
 import { contentTypeIcon, deriveBreadcrumb } from "./docsearch.js";
 
 const RECENT_KEY="ds-recent", FAV_KEY="ds-fav";
-const RECENT_MAX=7, RECENT_WITH_FAV_MAX=4, DEBOUNCE=200, STALL=500;
+const RECENT_MAX=7, RECENT_WITH_FAV_MAX=4, FAV_MAX=10, DEBOUNCE=200, STALL=500;
 let el={}, lastFocused=null, debTimer=0, stallTimer=0, reqSeq=0, activeIndex=-1, rows=[];
 
 function lsGet(k){ try { return JSON.parse(localStorage.getItem(k))||[]; } catch { return []; } }
@@ -15,7 +15,7 @@ function pushRecent(q){ q=(q||"").trim(); if(!q) return;
   const cap = favs().length ? RECENT_WITH_FAV_MAX : RECENT_MAX;
   lsSet(RECENT_KEY,[q,...recents().filter(x=>x!==q)].slice(0,cap)); }
 export function toggleFavorite(q){ q=(q||"").trim(); if(!q) return;
-  const f=favs(), i=f.indexOf(q); if(i>=0) f.splice(i,1); else f.unshift(q); lsSet(FAV_KEY,f.slice(0,10)); }
+  const f=favs(), i=f.indexOf(q); if(i>=0) f.splice(i,1); else f.unshift(q); lsSet(FAV_KEY,f.slice(0,FAV_MAX)); }
 
 function ctxPath(){ const e=document.getElementById("contextPath"); return (e&&e.value)||""; }
 function goSearch(q){ location.assign(`${ctxPath()}/search?q=${encodeURIComponent(q)}`); }
@@ -35,7 +35,7 @@ export function open(prefill){
 }
 export function close(){ if(el.root.hidden) return;
   el.root.hidden=true; document.body.style.overflow=""; clearTimeout(debTimer); clearTimeout(stallTimer);
-  activeIndex=-1; rows=[]; if(lastFocused&&lastFocused.focus) lastFocused.focus(); }
+  el.status.textContent=""; activeIndex=-1; rows=[]; if(lastFocused&&lastFocused.focus) lastFocused.focus(); }
 
 function clearList(){ el.listbox.replaceChildren(); rows=[]; activeIndex=-1; el.input.removeAttribute("aria-activedescendant"); }
 function groupHeader(label){ const li=document.createElement("li"); li.className="ds-palette-group";
@@ -79,7 +79,7 @@ function renderEmpty(){
 function onInput(){
   const q=el.input.value.trim(); clearTimeout(debTimer); clearTimeout(stallTimer);
   if(!q){ renderEmpty(); return; }
-  el.empty.hidden=true; el.listbox.hidden=false;
+  el.empty.hidden=true; el.listbox.hidden=false; el.input.setAttribute("aria-expanded","true");
   stallTimer=setTimeout(()=>{ el.status.textContent=t("palette.loading"); }, STALL);
   debTimer=setTimeout(()=>runQuery(q), DEBOUNCE);
 }
