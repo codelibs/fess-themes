@@ -370,5 +370,6 @@
   "content_type.api": "API",
   "facet.selected_filters": "Selected filters",
   "facet.clear_all": "Clear all",
-  "facet.remove_filter": "Remove filter"
+  "facet.remove_filter": "Remove filter",
+  "home.tagline": "Search the documentation"
 }

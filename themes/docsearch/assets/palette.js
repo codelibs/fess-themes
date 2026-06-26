@@ -18,6 +18,8 @@ export function toggleFavorite(q){ q=(q||"").trim(); if(!q) return;
   const f=favs(), i=f.indexOf(q); if(i>=0) f.splice(i,1); else f.unshift(q); lsSet(FAV_KEY,f.slice(0,FAV_MAX)); }
 
 function ctxPath(){ const e=document.getElementById("contextPath"); return (e&&e.value)||""; }
+// Current query from the URL (?q=) — used to pre-fill the palette when refining on /search.
+function qFromUrl(){ try { return new URLSearchParams(location.search).get("q")||""; } catch { return ""; } }
 function goSearch(q){ location.assign(`${ctxPath()}/search?q=${encodeURIComponent(q)}`); }
 function goChat(q){ location.assign(`${ctxPath()}/chat?q=${encodeURIComponent(q)}`); }
 function ragEnabled(){ const c=api.getConfig&&api.getConfig(); return !!(c&&c.features&&c.features.rag_chat_enabled); }
@@ -123,10 +125,10 @@ function onInputKeydown(e){
 }
 function globalKeydown(e){
   const k=(e.key||"").toLowerCase();
-  if((e.metaKey||e.ctrlKey)&&k==="k"){ e.preventDefault(); el.root.hidden?open():close(); return; }
+  if((e.metaKey||e.ctrlKey)&&k==="k"){ e.preventDefault(); el.root.hidden?open(qFromUrl()):close(); return; }
   if(e.key==="/"&&!e.metaKey&&!e.ctrlKey&&!e.altKey){
     const ae=document.activeElement, tag=(ae&&ae.tagName)||"";
-    if(el.root.hidden && !/^(INPUT|TEXTAREA|SELECT)$/.test(tag) && !(ae&&ae.isContentEditable)){ e.preventDefault(); open(); }
+    if(el.root.hidden && !/^(INPUT|TEXTAREA|SELECT)$/.test(tag) && !(ae&&ae.isContentEditable)){ e.preventDefault(); open(qFromUrl()); }
   }
 }
 function trapTab(e){ if(e.key!=="Tab") return;
@@ -147,6 +149,6 @@ export function init(){
   el.root.addEventListener("keydown", trapTab);
   document.addEventListener("keydown", globalKeydown);
   el.root.querySelectorAll("[data-palette-dismiss]").forEach(b=>b.addEventListener("click", close));
-  const trig=document.getElementById("palette-trigger"); if(trig) trig.addEventListener("click",()=>open());
+  const trig=document.getElementById("palette-trigger"); if(trig) trig.addEventListener("click",()=>open(qFromUrl()));
   // NOTE: deliberately NO focus/handler on #query or #contentQuery — they keep their native suggest behavior.
 }

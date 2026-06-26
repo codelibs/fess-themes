@@ -110,6 +110,10 @@ mark,.highlight{ background:var(--ds-mark-bg); color:var(--ds-mark-text); }
 
 /* ----------------------------------------------------------------- reset */
 *, *::before, *::after { box-sizing: border-box; }
+/* The SPA router toggles the `hidden` attribute to switch views; ensure it always
+   wins over component display rules (e.g. #home-view{display:flex}) so an inactive
+   view (e.g. the home hero on /search) is never shown. */
+[hidden] { display: none !important; }
 
 html { min-height: 100%; position: relative; -webkit-text-size-adjust: 100%; }
 
@@ -1071,8 +1075,21 @@ footer[role="contentinfo"] {
 /* ----------------------------------------------------------------
  * Step 2 — Home hero (existing rules enhanced; #contentQuery stays real)
  * ---------------------------------------------------------------- */
-#home-view { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 1rem; }
-#home-view .searchFormBox { max-width: 600px; width: 100%; }
+/* ---- Home hero: vertically + horizontally centered docs landing ---- */
+#home-view {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; padding: 2rem 1rem 5rem;
+  min-height: calc(100vh - var(--ds-header-h) - 7rem);
+}
+#home-view .searchFormBox { max-width: 640px; width: 100%; margin: 0 auto; }
+#home-view .mainLogo { margin: 0 0 .5rem; }
+#home-view .home-logo { max-width: 240px; width: 60%; }
+#home-view .home-tagline { margin: 0 0 1.75rem; color: var(--ds-text-muted); font-size: 1.05rem; }
+#home-view #contentQuery {
+  font-size: 1.15rem; padding: 14px 18px; border-radius: var(--ds-radius-lg);
+  border: 1px solid var(--ds-border-strong); box-shadow: var(--ds-shadow-sm);
+}
+#home-view #contentQuery:focus { box-shadow: 0 0 0 4px var(--ds-accent-subtle); border-color: var(--ds-accent); }
 #home-popular-words { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: center; margin-top: .75rem; }
 #home-popular-words a {
   display: inline-flex; align-items: center;
