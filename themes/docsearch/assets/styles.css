@@ -123,7 +123,6 @@ mark,.highlight{ background:var(--ds-mark-bg); color:var(--ds-mark-text); }
   --bs-primary: var(--ds-accent); --bs-link-color: var(--ds-accent);
   --bs-success: var(--ds-success); --bs-warning: var(--ds-warning); --bs-danger: var(--ds-error);
 }
-body { font-family: var(--ds-font-body); background: var(--ds-bg); color: var(--ds-text); font-size: 16px; line-height: 1.6; }
 
 /* ----------------------------------------------------------------- reset */
 *, *::before, *::after { box-sizing: border-box; }
@@ -132,11 +131,11 @@ html { min-height: 100%; position: relative; -webkit-text-size-adjust: 100%; }
 
 body {
   margin: 0;
-  font-family: var(--df-font-body);
+  font-family: var(--ds-font-body);
   font-size: 16px;
-  line-height: 1.7;
-  color: var(--bs-body-color);
-  background-color: var(--df-bg);
+  line-height: 1.6;
+  color: var(--ds-text);
+  background-color: var(--ds-bg);
   padding-top: 4.25rem;     /* fixed header offset (app.js refines this) */
   padding-bottom: 4em;      /* sticky footer room */
   -webkit-font-smoothing: antialiased;
