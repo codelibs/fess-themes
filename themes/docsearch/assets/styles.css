@@ -34,11 +34,6 @@
   --ds-shadow-sm:0 1px 2px rgba(15,23,42,.06); --ds-shadow-md:0 4px 16px rgba(15,23,42,.08);
   --ds-shadow-lg:0 16px 48px rgba(15,23,42,.18);
   --ds-header-h:56px; --ds-sidebar-w:280px; --ds-content-max:68ch;
-  --bs-body-bg:var(--ds-bg); --bs-body-color:var(--ds-text);
-  --bs-secondary-color:var(--ds-text-muted); --bs-tertiary-color:var(--ds-text-faint);
-  --bs-border-color:var(--ds-border); --bs-border-radius:var(--ds-radius);
-  --bs-primary:var(--ds-accent); --bs-link-color:var(--ds-accent);
-  --bs-success:var(--ds-success); --bs-warning:var(--ds-warning); --bs-danger:var(--ds-error);
 }
 [data-theme="dark"] {
   --ds-bg:#0B1120; --ds-surface:#111827; --ds-surface-2:#0F172A;
@@ -119,6 +114,16 @@ mark,.highlight{ background:var(--ds-mark-bg); color:var(--ds-mark-text); }
 
   --fess-card-radius: var(--df-radius);
 }
+
+/* DocSearch: bridge --bs-* to --ds-* — placed after the legacy --df-* block so it wins (Task 6 removes the legacy block). */
+:root {
+  --bs-body-bg: var(--ds-bg); --bs-body-color: var(--ds-text);
+  --bs-secondary-color: var(--ds-text-muted); --bs-tertiary-color: var(--ds-text-faint);
+  --bs-border-color: var(--ds-border); --bs-border-radius: var(--ds-radius);
+  --bs-primary: var(--ds-accent); --bs-link-color: var(--ds-accent);
+  --bs-success: var(--ds-success); --bs-warning: var(--ds-warning); --bs-danger: var(--ds-error);
+}
+body { font-family: var(--ds-font-body); background: var(--ds-bg); color: var(--ds-text); font-size: 16px; line-height: 1.6; }
 
 /* ----------------------------------------------------------------- reset */
 *, *::before, *::after { box-sizing: border-box; }
