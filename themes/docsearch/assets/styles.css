@@ -525,7 +525,7 @@ textarea.form-control { min-height: 2.5rem; }
   font-size: .75rem; font-weight: 500; line-height: 1;
   padding: .3em .55em;
   border-radius: var(--df-radius-sm);
-  color: #fff; background: var(--df-zinc-500);
+  color: var(--ds-bg); background: var(--ds-text-muted);
 }
 .badge.rounded-pill { padding: .35em .7em; }
 
@@ -702,7 +702,7 @@ body.modal-open { overflow: hidden; }
   padding: 4px 10px;
   font-family: var(--df-font-body);
   font-size: .75rem; line-height: 1.4;
-  color: #fff; background: var(--df-zinc-900);
+  color: var(--ds-header-text); background: var(--ds-header-bg);
   border-radius: 6px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, .15);
   opacity: 0; transition: opacity .12s ease;
@@ -788,16 +788,17 @@ body.modal-open { overflow: hidden; }
   width: 460px; max-width: 100%; height: 100%; overflow: auto;
   position: fixed; top: 0; bottom: 0; right: -480px;
   padding-top: calc(var(--df-header-h) + 1.25rem); padding-bottom: 1.5rem;
-  color: var(--df-zinc-100);
-  background-color: var(--df-zinc-900);
-  box-shadow: var(--df-shadow-large);
+  color: var(--ds-text);
+  background-color: var(--ds-surface);
+  border-left: 1px solid var(--ds-border);
+  box-shadow: var(--ds-shadow-lg);
   transition: right .35s ease;
 }
 #searchOptions.show .container { right: 0; }
-#searchOptions h3 { color: #fff; }
-#searchOptions label, #searchOptions legend { color: var(--df-zinc-300); font-size: .85rem; }
-#searchOptions .form-control { background: var(--df-zinc-800); border-color: var(--df-zinc-700); color: #fff; }
-#searchOptions .form-control::placeholder { color: var(--df-zinc-500); }
+#searchOptions h3 { color: var(--ds-text); }
+#searchOptions label, #searchOptions legend { color: var(--ds-text-muted); font-size: .85rem; }
+#searchOptions .form-control { background: var(--ds-surface-2); border-color: var(--ds-border); color: var(--ds-text); }
+#searchOptions .form-control::placeholder { color: var(--ds-text-faint); }
 #searchOptions fieldset { border: 0; padding: 0; margin: 0 0 1rem; }
 #searchOptions > .container > div:last-child { display: flex; gap: .5rem; flex-wrap: wrap; }
 @media (prefers-reduced-motion: reduce) {
