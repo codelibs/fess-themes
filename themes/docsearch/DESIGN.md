@@ -100,8 +100,8 @@ component rules to reference `--ds-*` directly.
 
 2. **`docsearch.js` exports** — `initThemeToggle()`, `applyTheme(t)`, `currentTheme()`.
    These functions use `document` / `window` / `localStorage` only inside their function bodies,
-   never at module top-level, so `scripts/test-docsearch-helpers.mjs` can import the module in
-   a Node.js context without a DOM.
+   never at module top-level, so the pure helpers (`contentTypeIcon`, `deriveBreadcrumb`, …) can be
+   imported and unit-tested in a Node.js context without a DOM.
 
 3. **`app.js`** calls `initThemeToggle()` as the very first statement in `main()` (before
    `api.init()`). This syncs the `#theme-toggle` button's `aria-pressed` state and wires the
