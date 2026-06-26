@@ -3,15 +3,17 @@
  * DocSearch — self-contained static theme for Fess.
  *
  * No Bootstrap. This stylesheet:
- *   1. Defines the DocSearch design tokens and maps them onto the `--bs-*`
- *      custom properties the (unmodified) SPA modules already reference.
+ *   1. Defines the DocSearch design tokens (--ds-*) and maps them onto the
+ *      --bs-* custom properties the (unmodified) SPA modules already reference.
  *   2. Re-implements, from scratch, every Bootstrap utility/component class
  *      the theme's HTML + JS rely on.
  *   3. Carries over and re-skins all theme-specific component CSS (result
  *      cards, facets, suggest, chat, error, profile, cache, home, …).
  *
- * Fonts (Plus Jakarta Sans / Inter / Fira Code) are loaded via <link> in
- * index.html with system-font fallbacks if the network/CSP blocks them.
+ * Fonts: DocSearch self-hosts Inter + JetBrains Mono via @font-face (same-origin;
+ * CSP font-src 'self' allows them; external CDN fonts are intentionally blocked).
+ * The legacy --df-* tokens are aliased onto --ds-* so existing component CSS
+ * resolves correctly without rewriting 178 call sites.
  * ========================================================================== */
 
 /* ---------------------------------------------------------------- ds-tokens */
@@ -28,6 +30,7 @@
   --ds-border:#E2E8F0; --ds-border-strong:#CBD5E1;
   --ds-mark-bg:#FEF08A; --ds-mark-text:#422006;
   --ds-success:#16A34A; --ds-warning:#CA8A04; --ds-error:#DC2626; --ds-info:#4F46E5;
+  --ds-success-subtle:#F0FDF4; --ds-warning-subtle:#FFF7ED; --ds-error-subtle:#FEF2F2; --ds-info-subtle:#EEF2FF;
   --ds-font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --ds-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
   --ds-radius-sm:6px; --ds-radius:10px; --ds-radius-lg:14px; --ds-radius-pill:9999px;
@@ -41,6 +44,7 @@
   --ds-border:#1F2937; --ds-border-strong:#374151;
   --ds-accent:#818CF8; --ds-accent-hover:#A5B4FC; --ds-accent-subtle:#1E1B4B;
   --ds-mark-bg:#854D0E; --ds-mark-text:#FEF9C3; --ds-shadow-lg:0 16px 48px rgba(0,0,0,.6);
+  --ds-success-subtle:#052e16; --ds-warning-subtle:#431407; --ds-error-subtle:#450a0a; --ds-info-subtle:#1E1B4B;
 }
 html,body{ background:var(--ds-bg); color:var(--ds-text); font-family:var(--ds-font-body); }
 code,pre,.ds-mono{ font-family:var(--ds-font-mono); }
@@ -49,70 +53,47 @@ mark,.highlight{ background:var(--ds-mark-bg); color:var(--ds-mark-text); }
 
 /* ---------------------------------------------------------------- tokens */
 :root {
-  /* DocSearch palette */
-  --df-primary: #2563EB;
-  --df-primary-hover: #1D4ED8;
-  --df-primary-subtle: #EFF6FF;
-  --df-secondary: #7C3AED;        /* purple — syntax/version accents */
-  --df-secondary-subtle: #F5F3FF;
-  --df-success: #16A34A;
-  --df-success-subtle: #F0FDF4;
-  --df-warning: #CA8A04;
-  --df-warning-subtle: #FFF7ED;
-  --df-error: #DC2626;
-  --df-error-subtle: #FEF2F2;
-  --df-info: #2563EB;
-  --df-info-subtle: #EFF6FF;
-
-  /* neutrals (zinc) */
-  --df-bg: #FAFAFA;               /* page background */
-  --df-surface: #FFFFFF;          /* cards / panels / content */
-  --df-zinc-900: #18181B;
-  --df-zinc-800: #27272A;
-  --df-zinc-700: #3F3F46;
-  --df-zinc-600: #52525B;
-  --df-zinc-500: #71717A;
-  --df-zinc-400: #A1A1AA;
-  --df-zinc-300: #D4D4D8;
-  --df-zinc-200: #E4E4E7;
-  --df-zinc-100: #F4F4F5;
-
-  /* typography */
-  --df-font-head: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --df-font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --df-font-mono: "Fira Code", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-
-  /* radii */
-  --df-radius-sm: 4px;
-  --df-radius: 8px;
-  --df-radius-lg: 12px;
-  --df-radius-xl: 16px;
-  --df-radius-pill: 9999px;
-
-  /* elevation */
-  --df-shadow-subtle: 0 1px 2px rgba(0, 0, 0, .04);
-  --df-shadow-medium: 0 4px 12px rgba(0, 0, 0, .06);
-  --df-shadow-large: 0 12px 32px rgba(0, 0, 0, .10);
-
-  /* header height (app.js may refine body padding-top to the live value) */
-  --df-header-h: 56px;
-
-  /* ---- map DocSearch tokens onto the --bs-* vars the theme CSS uses ---- */
-  --bs-body-bg: var(--df-surface);
-  --bs-body-color: var(--df-zinc-800);
-  --bs-secondary-color: var(--df-zinc-600);
-  --bs-tertiary-color: var(--df-zinc-500);
-  --bs-border-color: var(--df-zinc-200);
-  --bs-border-radius: var(--df-radius);
-  --bs-primary: var(--df-primary);
-  --bs-link-color: var(--df-primary);
-  --bs-success: var(--df-success);
-  --bs-warning: var(--df-warning);
-  --bs-danger: var(--df-error);
-  --bs-primary-bg-subtle: var(--df-primary-subtle);
-  --bs-tertiary-bg: var(--df-zinc-100);
-
-  --fess-card-radius: var(--df-radius);
+  /* Legacy --df-* tokens — each aliased onto the canonical --ds-* token so all
+     existing component CSS (178 var() call sites) keeps working without rewrites.
+     Dark mode is automatic: when [data-theme="dark"] redefines a --ds-* token,
+     every --df-* that points to it follows. */
+  --df-bg: var(--ds-bg);
+  --df-surface: var(--ds-surface);
+  --df-zinc-900: var(--ds-text);
+  --df-zinc-800: var(--ds-text);
+  --df-zinc-700: var(--ds-text-muted);
+  --df-zinc-600: var(--ds-text-muted);
+  --df-zinc-500: var(--ds-text-faint);
+  --df-zinc-400: var(--ds-text-faint);
+  --df-zinc-300: var(--ds-border-strong);
+  --df-zinc-200: var(--ds-border);
+  --df-zinc-100: var(--ds-surface-2);
+  --df-primary: var(--ds-accent);
+  --df-primary-hover: var(--ds-accent-hover);
+  --df-primary-subtle: var(--ds-accent-subtle);
+  --df-secondary: var(--ds-accent);
+  --df-secondary-subtle: var(--ds-accent-subtle);
+  --df-success: var(--ds-success);
+  --df-success-subtle: var(--ds-success-subtle);
+  --df-warning: var(--ds-warning);
+  --df-warning-subtle: var(--ds-warning-subtle);
+  --df-error: var(--ds-error);
+  --df-error-subtle: var(--ds-error-subtle);
+  --df-info: var(--ds-accent);
+  --df-info-subtle: var(--ds-info-subtle);
+  --df-font-head: var(--ds-font-body);
+  --df-font-body: var(--ds-font-body);
+  --df-font-mono: var(--ds-font-mono);
+  --df-radius-sm: var(--ds-radius-sm);
+  --df-radius: var(--ds-radius);
+  --df-radius-lg: var(--ds-radius-lg);
+  --df-radius-xl: var(--ds-radius-lg);
+  --df-radius-pill: var(--ds-radius-pill);
+  --df-shadow-subtle: var(--ds-shadow-sm);
+  --df-shadow-medium: var(--ds-shadow-md);
+  --df-shadow-large: var(--ds-shadow-lg);
+  --df-header-h: var(--ds-header-h);
+  --fess-card-radius: var(--ds-radius);
 }
 
 /* DocSearch: bridge --bs-* to --ds-* — placed after the legacy --df-* block so it wins (Task 6 removes the legacy block). */
@@ -983,3 +964,605 @@ footer[role="contentinfo"] {
 /* ---- Focus management (showView focuses each view root) ---- */
 #page-root *:focus-visible { outline: 2px solid var(--df-primary); outline-offset: 2px; }
 #page-root [tabindex="-1"]:focus, #page-root [tabindex="-1"]:focus-visible { outline: none; }
+
+/* =====================================================================
+ * DOCSEARCH NEW COMPONENTS (Task 6)
+ * ===================================================================== */
+
+/* ----------------------------------------------------------------
+ * Step 1 — Header: palette trigger, icon buttons, theme toggle
+ * ---------------------------------------------------------------- */
+
+/* The legacy search form stays in the DOM for ID/JS contracts but is
+   completely hidden; the .ds-palette-trigger is the visible control. */
+#search-form {
+  position: absolute;
+  width: 1px; height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Palette trigger — mimics a search input field in the header */
+.ds-palette-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  min-width: 220px;
+  max-width: 340px;
+  height: 38px;
+  padding: 0 .6rem 0 .75rem;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.14);
+  border-radius: var(--ds-radius);
+  cursor: pointer;
+  color: var(--ds-text-faint);
+  font-size: .875rem;
+  font-family: var(--ds-font-body);
+  transition: border-color .15s, background .15s, box-shadow .15s;
+  user-select: none;
+  white-space: nowrap;
+}
+.ds-palette-trigger:hover {
+  border-color: rgba(255,255,255,.28);
+  background: rgba(255,255,255,.12);
+}
+.ds-palette-trigger:focus-visible {
+  outline: 2px solid var(--ds-accent);
+  outline-offset: 2px;
+}
+.ds-pt-icon {
+  flex-shrink: 0;
+  width: 16px; height: 16px;
+  opacity: .6;
+}
+.ds-pt-label {
+  flex: 1 1 auto;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ds-pt-kbd {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: .15rem;
+  padding: .15rem .35rem;
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: var(--ds-radius-sm);
+  font-family: var(--ds-font-mono);
+  font-size: .7rem;
+  line-height: 1;
+  color: rgba(255,255,255,.55);
+}
+
+/* Generic icon-only button in the header — ≥44×44px tap target */
+.ds-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: var(--ds-radius);
+  color: var(--ds-text-faint);
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  flex-shrink: 0;
+}
+.ds-icon-btn:hover { background: rgba(255,255,255,.08); color: #fff; }
+.ds-icon-btn:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 2px; }
+.ds-icon-btn svg, .ds-icon-btn i { pointer-events: none; }
+
+/* Theme toggle: show only the icon appropriate for the current theme */
+#theme-toggle { position: relative; }
+#theme-toggle .ds-theme-dark { display: none; }
+#theme-toggle .ds-theme-light { display: inline-flex; }
+[data-theme="dark"] #theme-toggle .ds-theme-dark { display: inline-flex; }
+[data-theme="dark"] #theme-toggle .ds-theme-light { display: none; }
+
+/* ----------------------------------------------------------------
+ * Step 2 — Home hero (existing rules enhanced; #contentQuery stays real)
+ * ---------------------------------------------------------------- */
+#home-view { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 0 1rem; }
+#home-view .searchFormBox { max-width: 600px; width: 100%; }
+#home-popular-words { display: flex; flex-wrap: wrap; gap: .4rem; justify-content: center; margin-top: .75rem; }
+#home-popular-words a {
+  display: inline-flex; align-items: center;
+  padding: .25rem .75rem;
+  background: var(--ds-surface-2);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-pill);
+  font-size: .8125rem;
+  color: var(--ds-text-muted);
+  text-decoration: none;
+  transition: background .15s, border-color .15s, color .15s;
+}
+#home-popular-words a:hover { background: var(--ds-accent-subtle); border-color: var(--ds-accent); color: var(--ds-accent); text-decoration: none; }
+
+/* ----------------------------------------------------------------
+ * Step 3 — Result cards: type-icon + breadcrumb + card lift
+ * ---------------------------------------------------------------- */
+
+/* Leading doc-type icon */
+.ds-type-icon-wrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; height: 32px;
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-surface-2);
+  border: 1px solid var(--ds-border);
+  color: var(--ds-text-faint);
+}
+.ds-type-icon { width: 18px; height: 18px; display: block; }
+
+/* Breadcrumb below the title */
+.ds-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .15rem;
+  margin-top: .15rem;
+  font-size: .8rem;
+  color: var(--ds-text-faint);
+  line-height: 1.3;
+}
+.ds-crumb { color: var(--ds-text-faint); text-decoration: none; }
+.ds-crumb:hover { color: var(--ds-text-muted); }
+.ds-crumb-sep { color: var(--ds-text-faint); opacity: .6; margin: 0 .1rem; }
+.ds-crumb-sep::before { content: "›"; }
+
+/* Result list card enhancements (hooks onto existing structure) */
+#result ol li {
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius);
+  padding: 1rem 1.25rem;
+  box-shadow: var(--ds-shadow-sm);
+  transition: box-shadow .15s ease, border-color .15s ease;
+}
+#result ol li:hover { box-shadow: var(--ds-shadow-md); border-color: var(--ds-border-strong); }
+#result .title a { color: var(--ds-accent); font-weight: 600; }
+#result .title a:visited { color: var(--ds-text-muted); }
+#result .site cite { color: var(--ds-success); }
+#result .info { color: var(--ds-text-faint); }
+#result mark, #result .highlight { background: var(--ds-mark-bg); color: var(--ds-mark-text); padding: 0 .15em; border-radius: 2px; }
+
+/* ----------------------------------------------------------------
+ * Step 4 — Facets: chip-style active filters + "Clear all"
+ * ---------------------------------------------------------------- */
+
+/* ds-chip: removable pill for selected filters (≥44px touch target via padding) */
+.ds-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  min-height: 28px;
+  padding: .2rem .5rem .2rem .65rem;
+  background: var(--ds-accent-subtle);
+  color: var(--ds-accent);
+  border: 1px solid color-mix(in srgb, var(--ds-accent) 30%, transparent);
+  border-radius: var(--ds-radius-pill);
+  font-size: .8125rem;
+  font-weight: 500;
+  cursor: default;
+  /* wrap in a ≥44px-tall container via the parent #active-chips flex */
+}
+.ds-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px; height: 16px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: var(--ds-radius-pill);
+  color: inherit;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  opacity: .7;
+  transition: opacity .12s;
+  /* extend tap area so touch target ≥44px when combined with chip padding */
+  margin: -12px -8px -12px 0;
+  padding: 12px 8px;
+}
+.ds-chip-remove:hover { opacity: 1; }
+
+/* Facet sidebar section headers */
+#facet-body .facet-group h3,
+#facet-body-mobile .facet-group h3 {
+  font-family: var(--ds-font-body);
+  font-size: .6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--ds-text-faint);
+  margin-bottom: .5rem;
+}
+/* Active facet item */
+#facet-body .facet-item.active,
+#facet-body-mobile .facet-item.active {
+  background: var(--ds-accent-subtle);
+  color: var(--ds-accent);
+  border-left: 2px solid var(--ds-accent);
+  font-weight: 600;
+}
+/* Facet count badge */
+.facet-count {
+  display: inline-flex;
+  align-items: center;
+  padding: .15rem .4rem;
+  background: var(--ds-surface-2);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-pill);
+  font-size: .7rem;
+  color: var(--ds-text-faint);
+  line-height: 1;
+  min-width: 1.4em;
+  justify-content: center;
+}
+
+/* ----------------------------------------------------------------
+ * Step 5 — Command palette overlay
+ * ---------------------------------------------------------------- */
+
+/* Full-screen overlay container (position:fixed, z above everything) */
+.ds-palette {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 0;
+}
+.ds-palette.is-open { display: flex; }
+
+/* Dim backdrop */
+.ds-palette-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2001;
+  background: rgba(0,0,0,.45);
+  opacity: 0;
+  transition: opacity .18s ease;
+}
+.ds-palette.is-open .ds-palette-backdrop { opacity: 1; }
+[data-theme="dark"] .ds-palette-backdrop { background: rgba(0,0,0,.65); }
+@media (prefers-reduced-motion: reduce) { .ds-palette-backdrop { transition: none; } }
+
+/* Centered panel */
+.ds-palette-panel {
+  position: relative;
+  z-index: 2002;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 640px;
+  max-height: calc(100vh - 8rem);
+  margin-top: 12vh;
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  box-shadow: var(--ds-shadow-lg);
+  overflow: hidden;
+  transform: translateY(-8px) scale(.98);
+  opacity: 0;
+  transition: transform .18s ease, opacity .18s ease;
+}
+.ds-palette.is-open .ds-palette-panel { transform: none; opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .ds-palette-panel { transition: none; } }
+/* Full-screen on narrow viewports */
+@media (max-width: 640px) {
+  .ds-palette { align-items: stretch; }
+  .ds-palette-panel {
+    max-width: 100%; max-height: 100%; margin-top: 0;
+    border-radius: 0; border: 0;
+  }
+}
+
+/* Input area */
+.ds-palette-inputwrap {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .75rem 1rem;
+  border-bottom: 1px solid var(--ds-border);
+  transition: box-shadow .15s;
+}
+.ds-palette-inputwrap:focus-within { box-shadow: 0 0 0 2px var(--ds-accent) inset; }
+.ds-palette-search-icon {
+  flex-shrink: 0;
+  width: 20px; height: 20px;
+  color: var(--ds-text-faint);
+}
+.ds-palette-input {
+  flex: 1 1 auto;
+  border: 0;
+  background: transparent;
+  font-family: var(--ds-font-body);
+  font-size: 1.1rem;
+  color: var(--ds-text);
+  outline: none;
+  caret-color: var(--ds-accent);
+}
+.ds-palette-input::placeholder { color: var(--ds-text-faint); }
+.ds-palette-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px; height: 32px;
+  border: 0;
+  background: transparent;
+  border-radius: var(--ds-radius-sm);
+  color: var(--ds-text-faint);
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+  transition: background .12s, color .12s;
+  flex-shrink: 0;
+}
+.ds-palette-close:hover { background: var(--ds-surface-2); color: var(--ds-text); }
+
+/* Results listbox */
+.ds-palette-listbox {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: .35rem 0;
+  list-style: none;
+  margin: 0;
+  overscroll-behavior: contain;
+}
+
+/* Group heading */
+.ds-palette-group {
+  padding: .35rem 1rem .2rem;
+  font-size: .6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--ds-text-faint);
+}
+
+/* Individual result row */
+.ds-palette-row {
+  display: flex;
+  align-items: center;
+  gap: .65rem;
+  min-height: 56px;
+  padding: .4rem 1rem;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: background .1s;
+}
+.ds-palette-row:hover { background: var(--ds-surface-2); }
+.ds-palette-row[aria-selected="true"],
+.ds-palette-row.is-active {
+  background: var(--ds-accent-subtle);
+  border-left-color: var(--ds-accent);
+}
+.ds-palette-row-icon {
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-surface-2);
+  border: 1px solid var(--ds-border);
+  color: var(--ds-text-faint);
+  font-size: 1rem;
+}
+.ds-palette-row[aria-selected="true"] .ds-palette-row-icon,
+.ds-palette-row.is-active .ds-palette-row-icon {
+  background: var(--ds-accent-subtle);
+  border-color: color-mix(in srgb, var(--ds-accent) 30%, transparent);
+  color: var(--ds-accent);
+}
+.ds-palette-row-body { flex: 1 1 auto; min-width: 0; }
+.ds-palette-row-title {
+  font-size: .9375rem;
+  font-weight: 500;
+  color: var(--ds-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ds-palette-row[aria-selected="true"] .ds-palette-row-title,
+.ds-palette-row.is-active .ds-palette-row-title { color: var(--ds-accent); }
+.ds-palette-row-sub {
+  font-size: .8rem;
+  color: var(--ds-text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: .1rem;
+}
+
+/* Star / recent indicators */
+.ds-palette-star {
+  flex-shrink: 0;
+  font-size: .9rem;
+  color: var(--ds-warning);
+  opacity: .8;
+}
+.ds-palette-norecent {
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--ds-text-faint);
+  font-size: .9rem;
+}
+.ds-palette-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1rem;
+  gap: .75rem;
+}
+.ds-palette-empty-list { list-style: none; margin: 0; padding: 0; }
+.ds-palette-empty-list li { display: none; }
+
+/* Footer: kbd hints */
+.ds-palette-footer {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: .5rem 1rem;
+  border-top: 1px solid var(--ds-border);
+  background: var(--ds-surface-2);
+  font-size: .75rem;
+  color: var(--ds-text-faint);
+  flex-wrap: wrap;
+}
+.ds-palette-footer kbd {
+  display: inline-flex;
+  align-items: center;
+  padding: .15rem .35rem;
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border-strong);
+  border-radius: var(--ds-radius-sm);
+  font-family: var(--ds-font-mono);
+  font-size: .7rem;
+  line-height: 1;
+  color: var(--ds-text-muted);
+  box-shadow: 0 1px 0 var(--ds-border-strong);
+}
+.ds-palette-footer-hint { display: flex; align-items: center; gap: .3rem; }
+
+/* ----------------------------------------------------------------
+ * Step 6 — Chat / Ask-AI restyle
+ * ---------------------------------------------------------------- */
+
+/* AI banner in results (e.g. "Ask AI about these results") */
+.ds-ai-banner {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .75rem 1rem;
+  background: var(--ds-accent-subtle);
+  border: 1px solid color-mix(in srgb, var(--ds-accent) 25%, transparent);
+  border-radius: var(--ds-radius-lg);
+  margin-bottom: 1rem;
+}
+.ds-ai-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  padding: .2rem .55rem;
+  background: var(--ds-accent);
+  color: #fff;
+  border-radius: var(--ds-radius-pill);
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.ds-ai-disclaimer {
+  font-size: .8rem;
+  color: var(--ds-text-faint);
+  margin-top: .35rem;
+}
+
+/* Ask-AI card in the search sidebar or results column */
+.ds-askai-card {
+  background: var(--ds-surface);
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-lg);
+  padding: 1.25rem;
+  box-shadow: var(--ds-shadow-sm);
+  margin-bottom: 1rem;
+}
+.ds-askai-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  padding: 10px 18px;
+  background: var(--ds-accent);
+  color: #fff;
+  border: 0;
+  border-radius: var(--ds-radius);
+  font-family: var(--ds-font-body);
+  font-size: .9375rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .15s;
+}
+.ds-askai-btn:hover { background: var(--ds-accent-hover); }
+.ds-askai-btn:focus-visible { outline: 2px solid var(--ds-accent); outline-offset: 2px; }
+.ds-ai-spark { flex-shrink: 0; width: 18px; height: 18px; }
+
+/* Chat message bubbles — re-skin to DocSearch tokens */
+.chat-msg.user {
+  background: var(--ds-accent-subtle);
+  color: var(--ds-text);
+  border: 1px solid color-mix(in srgb, var(--ds-accent) 20%, transparent);
+}
+.chat-msg.assistant {
+  background: var(--ds-surface-2);
+  border: 1px solid var(--ds-border);
+  color: var(--ds-text);
+}
+#chat-column .chat-msg.user {
+  background: var(--ds-accent-subtle);
+  border: 1px solid color-mix(in srgb, var(--ds-accent) 20%, transparent);
+}
+#chat-column .chat-msg.assistant {
+  background: var(--ds-surface-2);
+  border: 1px solid var(--ds-border);
+}
+
+/* Chat source cards — bordered with accent links */
+.source-card {
+  border: 1px solid var(--ds-border);
+  border-radius: var(--ds-radius-sm);
+  background: var(--ds-surface);
+  padding: .35rem .5rem;
+  transition: border-color .12s, box-shadow .12s;
+}
+.source-card:hover {
+  border-color: var(--ds-accent);
+  box-shadow: var(--ds-shadow-sm);
+  background: var(--ds-surface);
+}
+.source-title { color: var(--ds-accent); font-weight: 500; }
+.source-card:hover .source-title { text-decoration: underline; }
+
+/* Typing dots animation */
+.chat-typing-dot {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--ds-text-faint);
+  animation: ds-typing-bounce 1.2s infinite ease-in-out;
+}
+.chat-typing-dot:nth-child(2) { animation-delay: .2s; }
+.chat-typing-dot:nth-child(3) { animation-delay: .4s; }
+@keyframes ds-typing-bounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: .5; }
+  40% { transform: translateY(-5px); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-typing-dot { animation: none; opacity: .7; }
+}
+
+/* Chat welcome screen — DocSearch gradient */
+.chat-welcome {
+  color: var(--ds-text-faint);
+  background: linear-gradient(180deg, var(--ds-bg) 0%, var(--ds-surface) 100%);
+}
+.chat-welcome-icon {
+  background: linear-gradient(135deg, var(--ds-accent) 0%, color-mix(in srgb, var(--ds-accent) 50%, #60A5FA) 100%);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--ds-accent) 30%, transparent);
+}
+.chat-welcome-title { color: var(--ds-text); }
+
+/* Chat progress / phase strip */
+.chat-progress-wrap { background: var(--ds-surface-2); border-top: 1px solid var(--ds-border); }
+.chat-progress-message { color: var(--ds-text-muted); }
