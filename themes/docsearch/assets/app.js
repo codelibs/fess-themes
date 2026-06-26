@@ -12,6 +12,7 @@ import * as profile from "./profile.js";
 import * as help from "./help.js";
 import * as advance from "./advance.js";
 import * as cache from "./cache.js";
+import { initThemeToggle } from "./docsearch.js";
 
 /** Show one SPA view section and hide the rest. H.2: focus management on route change. */
 function showView(id) {
@@ -540,6 +541,7 @@ function registerRoutes() {
 }
 
 async function main() {
+  initThemeToggle();
   try {
     await api.init();
   } catch (e) {

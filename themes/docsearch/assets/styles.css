@@ -14,6 +14,44 @@
  * index.html with system-font fallbacks if the network/CSP blocks them.
  * ========================================================================== */
 
+/* ---------------------------------------------------------------- ds-tokens */
+/* self-hosted fonts — same-origin @font-face (CSP font-src falls back to 'self') */
+@font-face{font-family:"Inter";font-style:normal;font-weight:400;font-display:swap;src:url("/themes/docsearch/assets/fonts/inter-400.woff2") format("woff2");}
+@font-face{font-family:"Inter";font-style:normal;font-weight:500;font-display:swap;src:url("/themes/docsearch/assets/fonts/inter-500.woff2") format("woff2");}
+@font-face{font-family:"Inter";font-style:normal;font-weight:600;font-display:swap;src:url("/themes/docsearch/assets/fonts/inter-600.woff2") format("woff2");}
+@font-face{font-family:"JetBrains Mono";font-style:normal;font-weight:400;font-display:swap;src:url("/themes/docsearch/assets/fonts/jetbrains-mono-400.woff2") format("woff2");}
+@font-face{font-family:"JetBrains Mono";font-style:normal;font-weight:500;font-display:swap;src:url("/themes/docsearch/assets/fonts/jetbrains-mono-500.woff2") format("woff2");}
+:root {
+  --ds-accent:#4F46E5; --ds-accent-hover:#4338CA; --ds-accent-subtle:#EEF2FF;
+  --ds-bg:#FFFFFF; --ds-surface:#FFFFFF; --ds-surface-2:#F8FAFC;
+  --ds-text:#0F172A; --ds-text-muted:#475569; --ds-text-faint:#94A3B8;
+  --ds-border:#E2E8F0; --ds-border-strong:#CBD5E1;
+  --ds-mark-bg:#FEF08A; --ds-mark-text:#422006;
+  --ds-success:#16A34A; --ds-warning:#CA8A04; --ds-error:#DC2626; --ds-info:#4F46E5;
+  --ds-font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --ds-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  --ds-radius-sm:6px; --ds-radius:10px; --ds-radius-lg:14px; --ds-radius-pill:9999px;
+  --ds-shadow-sm:0 1px 2px rgba(15,23,42,.06); --ds-shadow-md:0 4px 16px rgba(15,23,42,.08);
+  --ds-shadow-lg:0 16px 48px rgba(15,23,42,.18);
+  --ds-header-h:56px; --ds-sidebar-w:280px; --ds-content-max:68ch;
+  --bs-body-bg:var(--ds-bg); --bs-body-color:var(--ds-text);
+  --bs-secondary-color:var(--ds-text-muted); --bs-tertiary-color:var(--ds-text-faint);
+  --bs-border-color:var(--ds-border); --bs-border-radius:var(--ds-radius);
+  --bs-primary:var(--ds-accent); --bs-link-color:var(--ds-accent);
+  --bs-success:var(--ds-success); --bs-warning:var(--ds-warning); --bs-danger:var(--ds-error);
+}
+[data-theme="dark"] {
+  --ds-bg:#0B1120; --ds-surface:#111827; --ds-surface-2:#0F172A;
+  --ds-text:#E5E7EB; --ds-text-muted:#9CA3AF; --ds-text-faint:#6B7280;
+  --ds-border:#1F2937; --ds-border-strong:#374151;
+  --ds-accent:#818CF8; --ds-accent-hover:#A5B4FC; --ds-accent-subtle:#1E1B4B;
+  --ds-mark-bg:#854D0E; --ds-mark-text:#FEF9C3; --ds-shadow-lg:0 16px 48px rgba(0,0,0,.6);
+}
+html,body{ background:var(--ds-bg); color:var(--ds-text); font-family:var(--ds-font-body); }
+code,pre,.ds-mono{ font-family:var(--ds-font-mono); }
+mark,.highlight{ background:var(--ds-mark-bg); color:var(--ds-mark-text); }
+@media (prefers-reduced-motion: reduce){ *{ transition:none!important; animation:none!important; } }
+
 /* ---------------------------------------------------------------- tokens */
 :root {
   /* DocuForge palette */

@@ -52,3 +52,29 @@ export function deriveBreadcrumb(doc = {}) {
   if (doc.site) { const segs = String(doc.site).split("/").filter(Boolean); return segs.length ? [segs.at(-1)] : []; }
   return [];
 }
+
+// --- light/dark toggle (DOM; called from app.js, never at import) ---
+const THEME_KEY = "ds-theme";
+export function currentTheme() {
+  let s = null; try { s = localStorage.getItem(THEME_KEY); } catch {}
+  if (s === "light" || s === "dark") return s;
+  return (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+}
+export function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  const b = document.getElementById("theme-toggle");
+  if (b) b.setAttribute("aria-pressed", String(theme === "dark"));
+}
+export function initThemeToggle() {
+  applyTheme(currentTheme());                 // sync button state (theme-init already set the attr pre-paint)
+  const b = document.getElementById("theme-toggle");
+  if (b) b.addEventListener("click", () => {
+    const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    try { localStorage.setItem(THEME_KEY, next); } catch {}
+    applyTheme(next);
+  });
+  if (window.matchMedia) window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+    let s = null; try { s = localStorage.getItem(THEME_KEY); } catch {}
+    if (s !== "light" && s !== "dark") applyTheme(e.matches ? "dark" : "light");
+  });
+}
