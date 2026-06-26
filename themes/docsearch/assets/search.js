@@ -3,6 +3,7 @@ import * as api from "./api.js";
 import { t, languageLabel } from "./i18n.js";
 import { formatFileSize, formatDate, renderHighlightedSnippet, sanitizeHtml } from "./format.js";
 import { navigate } from "./router.js";
+import { contentTypeIcon, deriveBreadcrumb } from "./docsearch.js";
 
 /** Guard: prevent duplicate event-listener registration on hot-reload. */
 let attached = false;
@@ -193,6 +194,25 @@ function buildResultCard(d, queryId, order) {
   }
   h3.appendChild(a);
   li.appendChild(h3);
+
+  // DocSearch: normalized fields for helpers
+  const dsDoc = { url: d.url_link || d.url, site: d.site_path || d.site, mimetype: d.mimetype, filetype: d.filetype };
+  // content-type icon — insert into h3 before the title link
+  const icon = document.createElement("span");
+  icon.className = "ds-type-icon-wrap"; icon.setAttribute("aria-hidden", "true");
+  icon.innerHTML = contentTypeIcon(dsDoc);            // static SVG constant — XSS-safe
+  h3.insertBefore(icon, a);
+  // breadcrumb — new FIRST child of li
+  const crumbs = deriveBreadcrumb(dsDoc);
+  if (crumbs.length) {
+    const crumb = document.createElement("div"); crumb.className = "ds-breadcrumb";
+    crumbs.forEach((seg, i) => {
+      const s = document.createElement("span"); s.className = "ds-crumb"; s.textContent = seg; crumb.appendChild(s);
+      if (i < crumbs.length - 1) { const sep = document.createElement("span"); sep.className = "ds-crumb-sep"; sep.textContent = "›"; crumb.appendChild(sep); }
+    });
+    li.appendChild(crumb);
+    li.insertBefore(crumb, li.firstChild);
+  }
 
   // --- div.body > (thumbnail)? + div.description ---
   const body = el("div", { className: "body" });
