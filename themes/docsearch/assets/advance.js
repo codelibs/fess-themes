@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Advanced Search view for the DocuForge SPA.
+// Advanced Search view for the DocSearch SPA.
 // All DOM construction uses createElement/textContent/setAttribute — no innerHTML.
 
 import { getConfig } from "./api.js";

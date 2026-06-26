@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPA cache viewer for the DocuForge theme.
+// SPA cache viewer for the DocSearch theme.
 // Fetches cached content from /api/v2/cache/{docId} and renders it inside a
 // sandboxed iframe (no allow-same-origin, no allow-scripts) so that arbitrary
 // crawled HTML is fully isolated from the SPA shell.

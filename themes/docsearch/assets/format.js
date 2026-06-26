@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Common formatting utilities for the DocuForge SPA.
+// Common formatting utilities for the DocSearch SPA.
 // No DOM access — pure functions, safe to import from any module.
 
 const UNITS = ["B", "KB", "MB", "GB", "TB", "PB"];

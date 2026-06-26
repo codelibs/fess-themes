@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Centralised /api/v2 client for the DocuForge theme. Owns the CSRF token
+// Centralised /api/v2 client for the DocSearch theme. Owns the CSRF token
 // (header name X-Fess-CSRF-Token; verified in SearchApiV2Manager.java:172),
 // envelope unwrapping ({ response: { status, ...} }), and locale propagation.
 

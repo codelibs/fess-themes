@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Profile / password-change view for the DocuForge SPA.
+// Profile / password-change view for the DocSearch SPA.
 // All DOM construction uses createElement/textContent/setAttribute — no innerHTML.
 
 import * as api from "./api.js";

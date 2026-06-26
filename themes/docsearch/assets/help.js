@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Help page renderer for the DocuForge SPA.
+// Help page renderer for the DocSearch SPA.
 // Section titles use textContent; section HTML is sanitized through a
 // whitelist sanitizer before being appended — no raw innerHTML on live DOM nodes.
 

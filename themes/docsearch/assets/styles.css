@@ -1,9 +1,9 @@
 /* SPDX-License-Identifier: Apache-2.0 */
 /* ============================================================================
- * DocuForge — self-contained static theme for Fess.
+ * DocSearch — self-contained static theme for Fess.
  *
  * No Bootstrap. This stylesheet:
- *   1. Defines the DocuForge design tokens and maps them onto the `--bs-*`
+ *   1. Defines the DocSearch design tokens and maps them onto the `--bs-*`
  *      custom properties the (unmodified) SPA modules already reference.
  *   2. Re-implements, from scratch, every Bootstrap utility/component class
  *      the theme's HTML + JS rely on.
@@ -49,7 +49,7 @@ mark,.highlight{ background:var(--ds-mark-bg); color:var(--ds-mark-text); }
 
 /* ---------------------------------------------------------------- tokens */
 :root {
-  /* DocuForge palette */
+  /* DocSearch palette */
   --df-primary: #2563EB;
   --df-primary-hover: #1D4ED8;
   --df-primary-subtle: #EFF6FF;
@@ -97,7 +97,7 @@ mark,.highlight{ background:var(--ds-mark-bg); color:var(--ds-mark-text); }
   /* header height (app.js may refine body padding-top to the live value) */
   --df-header-h: 56px;
 
-  /* ---- map DocuForge tokens onto the --bs-* vars the theme CSS uses ---- */
+  /* ---- map DocSearch tokens onto the --bs-* vars the theme CSS uses ---- */
   --bs-body-bg: var(--df-surface);
   --bs-body-color: var(--df-zinc-800);
   --bs-secondary-color: var(--df-zinc-600);
@@ -588,7 +588,7 @@ textarea.form-control { min-height: 2.5rem; }
 .page-item.active .page-link { background: var(--df-primary); border-color: var(--df-primary); color: #fff; }
 .page-item.disabled .page-link { color: var(--df-zinc-400); pointer-events: none; background: var(--df-surface); }
 
-/* ---- Navbar / header (DocuForge dark docs top-bar) ---- */
+/* ---- Navbar / header (DocSearch dark docs top-bar) ---- */
 .navbar { display: flex; align-items: center; }
 .fixed-top { position: fixed; top: 0; right: 0; left: 0; z-index: 1030; }
 .df-header {

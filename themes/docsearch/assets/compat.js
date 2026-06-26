@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
- * DocuForge theme — Bootstrap JavaScript compatibility shim.
+ * DocSearch theme — Bootstrap JavaScript compatibility shim.
  *
- * The DocuForge theme ships no Bootstrap/Popper. The SPA modules (app.js,
+ * The DocSearch theme ships no Bootstrap/Popper. The SPA modules (app.js,
  * auth.js, search.js, chat.js) however still drive a handful of interactive
  * widgets through the Bootstrap 5 JS API (`window.bootstrap.{Modal,Collapse,
  * Tooltip}`) and through declarative `data-bs-*` attributes (dropdown, modal,

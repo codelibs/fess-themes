@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Predicate-driven client-side router for the DocuForge SPA.
+// Predicate-driven client-side router for the DocSearch SPA.
 // Supports pushState / popstate navigation and intercepts data-spa anchors.
 
 /** @type {Array<{predicate: (path: string) => boolean, handler: (path: string) => void}>} */

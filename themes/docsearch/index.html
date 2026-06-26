@@ -6,7 +6,7 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Fess</title>
-  <!-- DocuForge is self-contained: no Bootstrap. styles.css implements every
+  <!-- DocSearch is self-contained: no Bootstrap. styles.css implements every
        utility/component class the SPA relies on; compat.js re-implements the
        Bootstrap JS API surface (Modal/Collapse/Dropdown/Offcanvas/Tooltip). -->
   <link rel="stylesheet" href="/css/font-awesome.min.css">
@@ -27,7 +27,7 @@
        and the right-side ul.nav.navbar-nav.d-none.d-md-flex of li.nav-item
        entries (warnings + auth + chat + help).  The search box is shown on
        EVERY view (only hidden on /chat — toggled by app.js setSearchFormVisible).
-       DocuForge restyles this as a slim, dark docs top-bar (.df-header).
+       DocSearch restyles this as a slim, dark docs top-bar (.df-header).
        =================================================================== -->
   <header>
     <nav class="navbar navbar-expand-md fixed-top df-header d-print-none" role="banner">
@@ -192,7 +192,7 @@
          div#subheader.row (status), the mobile facet button + offcanvas,
          div#result.row (aside.facet sidebar + ol.list-unstyled results), and
          div.row > nav#subfooter (pagination).
-         DocuForge places the facet aside as a persistent LEFT sidebar
+         DocSearch places the facet aside as a persistent LEFT sidebar
          (docs-style) ahead of the results column.
          =================================================================== -->
     <section id="results-view">
@@ -244,7 +244,7 @@
         <div id="results-warning" class="alert alert-warning d-none mb-2" role="status" aria-live="polite"></div>
 
         <!-- Results grid (parity searchResults.jsp div#result.row).
-             DocuForge: facet aside is the LEFT sidebar, results to its right. -->
+             DocSearch: facet aside is the LEFT sidebar, results to its right. -->
         <div id="result" class="row">
           <input type="hidden" id="queryId" value="">
           <input type="hidden" id="rt" value="">
