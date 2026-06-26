@@ -13,6 +13,7 @@ import * as help from "./help.js";
 import * as advance from "./advance.js";
 import * as cache from "./cache.js";
 import { initThemeToggle } from "./docsearch.js";
+import * as palette from "./palette.js";
 
 /** Show one SPA view section and hide the rest. H.2: focus management on route change. */
 function showView(id) {
@@ -548,6 +549,7 @@ async function main() {
     console.error("Fess /ui/config failed:", e);
   }
   await i18n.init();
+  palette.init();
   // Render warning indicators after config is loaded.
   renderWarnings();
   // Render notification banners from config.notifications.
