@@ -210,7 +210,6 @@ function buildResultCard(d, queryId, order) {
       const s = document.createElement("span"); s.className = "ds-crumb"; s.textContent = seg; crumb.appendChild(s);
       if (i < crumbs.length - 1) { const sep = document.createElement("span"); sep.className = "ds-crumb-sep"; sep.textContent = "›"; crumb.appendChild(sep); }
     });
-    li.appendChild(crumb);
     li.insertBefore(crumb, li.firstChild);
   }
 

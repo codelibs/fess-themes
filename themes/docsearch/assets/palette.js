@@ -29,12 +29,12 @@ function goDoc(d, queryId, rt, order){
 }
 
 export function open(prefill){
-  lastFocused=document.activeElement; el.root.hidden=false; document.body.style.overflow="hidden";
+  lastFocused=document.activeElement; el.root.hidden=false; el.root.classList.add("is-open"); document.body.style.overflow="hidden";
   el.input.value=prefill||""; el.input.setAttribute("aria-expanded","false"); el.input.focus();
   if(prefill) onInput(); else renderEmpty();
 }
 export function close(){ if(el.root.hidden) return;
-  el.root.hidden=true; document.body.style.overflow=""; clearTimeout(debTimer); clearTimeout(stallTimer);
+  el.root.hidden=true; el.root.classList.remove("is-open"); document.body.style.overflow=""; clearTimeout(debTimer); clearTimeout(stallTimer);
   el.status.textContent=""; activeIndex=-1; rows=[]; if(lastFocused&&lastFocused.focus) lastFocused.focus(); }
 
 function clearList(){ el.listbox.replaceChildren(); rows=[]; activeIndex=-1; el.input.removeAttribute("aria-activedescendant"); }
