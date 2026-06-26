@@ -1135,6 +1135,12 @@ export function attachStandalone(initialQuery, autoSend) {
     return;
   }
 
+  // DocSearch: AI-generated label + disclaimer (research: AI content must be labeled + disclaimed).
+  const aiBanner = el("div", { className: "ds-ai-banner", attrs: { id: "ds-ai-banner" } });
+  aiBanner.appendChild(el("span", { className: "ds-ai-badge", text: t("ai.generated_label") }));
+  aiBanner.appendChild(el("span", { className: "ds-ai-disclaimer", text: t("ai.disclaimer") }));
+  container.appendChild(aiBanner);
+
   const row = el("div", { className: "row justify-content-center" });
   const col = el("div", { className: "col-12 col-lg-10 col-xl-8" });
 
