@@ -1410,6 +1410,21 @@ footer[role="contentinfo"] {
   gap: .75rem;
 }
 .ds-palette-empty-list { list-style: none; margin: 0; padding: 0; }
+/* Empty-state recent/favorite rows render as buttons — reset UA chrome to clean palette rows */
+.ds-palette-empty-list .ds-palette-row { display: flex; align-items: center; gap: .25rem; padding: 0 .25rem; }
+.ds-palette-empty-list .ds-palette-row-body {
+  flex: 1 1 auto; min-width: 0; text-align: left; background: transparent; border: 0;
+  padding: .55rem .65rem; border-radius: var(--ds-radius); color: var(--ds-text);
+  font: inherit; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ds-palette-empty-list .ds-palette-row-body:hover { background: var(--ds-accent-subtle); }
+.ds-palette-empty-list .ds-palette-star {
+  flex-shrink: 0; background: transparent; border: 0; cursor: pointer;
+  min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--ds-radius); color: var(--ds-text-faint); font-size: 1rem;
+}
+.ds-palette-empty-list .ds-palette-star.is-fav { color: var(--ds-warning); }
+.ds-palette-empty-list .ds-palette-star:hover { background: var(--ds-surface-2); color: var(--ds-text); }
 
 /* Footer: kbd hints */
 .ds-palette-footer {
