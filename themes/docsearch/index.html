@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-src blob:; child-src blob:; base-uri 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-src blob:; child-src blob:; base-uri 'self'">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Fess</title>
@@ -10,9 +10,7 @@
        utility/component class the SPA relies on; compat.js re-implements the
        Bootstrap JS API surface (Modal/Collapse/Dropdown/Offcanvas/Tooltip). -->
   <link rel="stylesheet" href="/css/font-awesome.min.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&family=Fira+Code:wght@400;500&display=swap">
+  <script src="/themes/docsearch/assets/theme-init.js"></script>
   <link rel="stylesheet" href="/themes/docsearch/assets/styles.css">
   <link rel="icon" href="/favicon.ico">
 
@@ -55,6 +53,12 @@
             <button type="button" class="btn btn-light" id="searchOptionsButton" data-bs-toggle="collapse" data-bs-target="#searchOptions" aria-expanded="false" aria-controls="searchOptions"><i class="fa fa-cog" aria-hidden="true"></i> <span class="visually-hidden" data-i18n="search.options">Options</span></button>
             <ul class="list-group position-absolute top-100 start-0 end-0 mt-1 d-none shadow-sm" id="suggest-dropdown" role="listbox" aria-label="Search suggestions"></ul>
           </form>
+          <button type="button" id="palette-trigger" class="ds-palette-trigger"
+                  aria-haspopup="dialog" aria-controls="palette" data-i18n-aria-label="palette.open">
+            <span class="ds-pt-icon" aria-hidden="true">🔍</span>
+            <span class="ds-pt-label" data-i18n="palette.placeholder">Search docs…</span>
+            <kbd class="ds-pt-kbd" aria-hidden="true">⌘K</kbd>
+          </button>
         </div>
         <ul class="nav navbar-nav d-none d-md-flex ms-auto" id="header-nav">
           <!-- Warning indicators (EOL / dev-mode) rendered by app.js as li.nav-item -->
@@ -62,6 +66,13 @@
           <li class="nav-item" id="auth-controls" data-i18n-aria-label="aria.auth_controls"></li>
           <!-- Chat (AI mode) — shown by app.js when rag_chat_enabled -->
           <li class="nav-item d-none" id="chat-nav-item"><a class="nav-link" href="/chat" id="chat-nav-link" data-spa role="button"><i class="fa fa-fw fa-robot" aria-hidden="true"></i> <span data-i18n="nav.chat_ai_mode">AI Search</span></a></li>
+          <li class="nav-item">
+            <button type="button" id="theme-toggle" class="ds-icon-btn" aria-pressed="false"
+                    data-i18n-aria-label="theme.toggle">
+              <span class="ds-theme-light" aria-hidden="true">☀️</span>
+              <span class="ds-theme-dark" aria-hidden="true">🌙</span>
+            </button>
+          </li>
           <li class="nav-item"><a class="nav-link help-link" href="/help" id="help-link" data-spa role="help"><i class="fa fa-fw fa-question-circle" aria-hidden="true"></i> <span data-i18n="nav.help">Help</span></a></li>
         </ul>
       </div>
@@ -331,5 +342,31 @@
   -->
   <script src="/themes/docsearch/assets/compat.js" defer></script>
   <script type="module" src="/themes/docsearch/assets/app.js"></script>
+
+  <div id="palette" class="ds-palette" role="dialog" aria-modal="true"
+       data-i18n-aria-label="palette.title" hidden>
+    <div class="ds-palette-backdrop" data-palette-dismiss></div>
+    <div class="ds-palette-panel" role="document">
+      <div class="ds-palette-inputwrap">
+        <span class="ds-palette-search-icon" aria-hidden="true">🔍</span>
+        <input id="palette-input" class="ds-palette-input" type="text" role="combobox"
+               aria-expanded="false" aria-controls="palette-listbox" aria-autocomplete="list"
+               autocomplete="off" spellcheck="false" data-i18n-placeholder="palette.placeholder" />
+        <button type="button" class="ds-palette-close" data-palette-dismiss
+                data-i18n-aria-label="palette.close_hint">Esc</button>
+      </div>
+      <div id="palette-status" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
+      <div class="ds-palette-results">
+        <div id="palette-empty" class="ds-palette-empty"></div>
+        <ul id="palette-listbox" class="ds-palette-listbox" role="listbox"
+            data-i18n-aria-label="palette.results"></ul>
+      </div>
+      <div class="ds-palette-footer" aria-hidden="true">
+        <span><kbd>↑</kbd><kbd>↓</kbd> <span data-i18n="palette.nav_hint">Navigate</span></span>
+        <span><kbd>↵</kbd> <span data-i18n="palette.select_hint">Select</span></span>
+        <span><kbd>esc</kbd> <span data-i18n="palette.close_hint">Close</span></span>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
