@@ -336,5 +336,12 @@
   "labels.facet_filetype_scala": "Scala",
   "labels.facet_filetype_shell": "Shell腳本",
   "labels.facet_filetype_vb": "Visual Basic",
-  "labels.facet_label_reset": "重置"
+  "labels.facet_label_reset": "重置",
+  "search.scope_all": "all repos",
+  "search.home_tagline": "Search across your code, paths, and symbols.",
+  "ask.title": "Ask",
+  "ask.empty": "Ask a question about the search results to get an AI answer grounded in your code.",
+  "ask.toggle": "Toggle Ask panel",
+  "ask.close": "Close panel",
+  "theme.toggle": "Toggle dark / light theme"
 }

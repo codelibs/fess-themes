@@ -417,6 +417,101 @@ function attachAdvanceLinkSync() {
   updateAdvanceLinks();
 }
 
+/* ============================================================ THEME TOGGLE
+ *
+ * Dark-first. The persisted preference is read from localStorage and applied to
+ * <html data-theme>. The static markup defaults to data-theme="dark" so dark
+ * users get no flash; only a stored "light" preference flips it after boot.
+ */
+const THEME_KEY = "codesearch.theme";
+
+function applyTheme(theme) {
+  const t = theme === "light" ? "light" : "dark";
+  document.documentElement.dataset.theme = t;
+  const btn = document.getElementById("theme-toggle");
+  if (btn) btn.setAttribute("aria-pressed", String(t === "light"));
+}
+
+function attachThemeToggle() {
+  // Apply the stored preference (default dark). localStorage may throw in some
+  // privacy modes, so guard the read.
+  let stored = null;
+  try { stored = localStorage.getItem(THEME_KEY); } catch { /* ignore */ }
+  applyTheme(stored === "light" ? "light" : "dark");
+
+  const btn = document.getElementById("theme-toggle");
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+    applyTheme(next);
+    try { localStorage.setItem(THEME_KEY, next); } catch { /* ignore */ }
+  });
+}
+
+/* ====================================================== SHELL INTERACTIONS
+ *
+ * Task-2 wiring that the reused search.js no longer provides because the header
+ * search box is #query-input (not #search-form/#query). Tasks 4/6 will own the
+ * real search/ask behaviour; these are minimal so the shell is usable and boots
+ * without errors.
+ */
+function attachShell() {
+  // Header search box → navigate to /search?q=... (search.attach() is inert against
+  // the new ids, so wire the submit here). Carries no options; Task 4 expands this.
+  const bar = document.getElementById("search-bar");
+  const input = document.getElementById("query-input");
+  if (bar && input) {
+    bar.addEventListener("submit", ev => {
+      ev.preventDefault();
+      const q = input.value.trim();
+      const params = new URLSearchParams(location.search);
+      if (q) params.set("q", q); else params.delete("q");
+      params.delete("start");
+      router.navigate("/search?" + params.toString());
+    });
+  }
+
+  // Ask-panel collapse toggle (desktop) / open drawer (mobile, ≤960px).
+  const shell = document.getElementById("app-shell");
+  const askToggle = document.getElementById("ask-toggle");
+  const askPanel = document.getElementById("ask-panel");
+  const askClose = document.getElementById("ask-close");
+  const scrim = document.getElementById("drawer-scrim");
+  const isMobile = () => window.matchMedia("(max-width: 960px)").matches;
+
+  function closeDrawers() {
+    askPanel?.classList.remove("is-open");
+    document.getElementById("facet-rail")?.classList.remove("is-open");
+    if (scrim) scrim.hidden = true;
+  }
+
+  if (askToggle) {
+    askToggle.addEventListener("click", () => {
+      if (isMobile()) {
+        const open = askPanel?.classList.toggle("is-open");
+        if (scrim) scrim.hidden = !open;
+      } else if (shell) {
+        const collapsed = shell.classList.toggle("ask-collapsed");
+        askToggle.setAttribute("aria-pressed", String(!collapsed));
+      }
+    });
+  }
+  askClose?.addEventListener("click", closeDrawers);
+  scrim?.addEventListener("click", closeDrawers);
+  // Close any open drawer on route change so navigation feels clean.
+  document.addEventListener("fess:route:change", closeDrawers);
+
+  // Reflect the URL q= into the header search box on every route change so the
+  // box shows the current query (search.js's input-sync targets the old ids).
+  function syncHeaderQuery() {
+    if (!input) return;
+    if (document.activeElement === input) return; // don't clobber while typing
+    input.value = new URLSearchParams(location.search).get("q") || "";
+  }
+  document.addEventListener("fess:route:change", syncHeaderQuery);
+  syncHeaderQuery();
+}
+
 function registerRoutes() {
   // Home route — "/" with no q= parameter shows the centered home view.
   router.register(
@@ -531,6 +626,9 @@ function registerRoutes() {
 }
 
 async function main() {
+  // Apply the persisted theme as early as possible (before any await) so a stored
+  // light preference flips before first interaction.
+  attachThemeToggle();
   try {
     await api.init();
   } catch (e) {
@@ -581,6 +679,9 @@ async function main() {
 
   // Keep the "Advanced" links carrying the current query (JSP parity).
   attachAdvanceLinkSync();
+
+  // Task-2 shell wiring: header search submit, ask-panel toggle, mobile drawers.
+  attachShell();
 
   // Client-side routing: register routes then attach listeners and dispatch.
   registerRoutes();
