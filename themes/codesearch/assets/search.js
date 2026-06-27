@@ -650,11 +650,13 @@ export function runFromUrl() {
 
 /**
  * Translate the query box and navigate to /search. The submit path is:
- *   toFessQuery(parseQuery(#query-input.value)) → set q in the URL → runSearch().
+ *   toFessQuery(parseQuery(rawInput)) → set q in the URL → runSearch().
+ * Exported so the home-view form (app.js) uses the same translation path as
+ * the header search box, ensuring `repo:foo bar` → Fess qualifier syntax on both.
  * @param {string} rawInput - raw text from the search box
- * @param {URLSearchParams} [base] - existing params to carry forward (num/sort)
+ * @param {URLSearchParams} [base] - existing params to carry forward (num/sort/lang)
  */
-function submitQuery(rawInput, base) {
+export function submitQuery(rawInput, base) {
   const fessQuery = toFessQuery(parseQuery(rawInput || ""));
   const params = base ? new URLSearchParams(base) : new URLSearchParams(location.search);
   if (fessQuery) params.set("q", fessQuery); else params.delete("q");

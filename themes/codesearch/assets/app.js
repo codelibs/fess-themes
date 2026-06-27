@@ -192,20 +192,21 @@ function attachHomeView() {
     form.addEventListener("submit", ev => {
       ev.preventDefault();
       const input = document.getElementById("contentQuery");
-      const q = input ? input.value.trim() : "";
-      if (q) {
-        const params = new URLSearchParams();
-        params.set("q", q);
-        // JSP parity: carry the shared drawer's sort / num / lang selections into
-        // the first search so options set on the home view before searching are applied
-        // (these selects no longer auto-run a search on change).
+      const rawQ = input ? input.value.trim() : "";
+      if (rawQ) {
+        // Build a base-params object carrying the shared drawer's sort / num / lang
+        // selections so options set on the home view before searching are applied.
+        // q is intentionally omitted here — submitQuery() applies the
+        // parseQuery → toFessQuery translation and sets q on the params itself,
+        // ensuring `repo:foo bar` is translated identically on home and header.
+        const base = new URLSearchParams();
         const sortSel = document.getElementById("sortSearchOption");
-        if (sortSel && sortSel.value) params.set("sort", sortSel.value);
+        if (sortSel && sortSel.value) base.set("sort", sortSel.value);
         const numSel = document.getElementById("numSearchOption");
-        if (numSel && numSel.value) params.set("num", numSel.value);
+        if (numSel && numSel.value) base.set("num", numSel.value);
         const langSel = document.getElementById("langSearchOption");
-        if (langSel) Array.from(langSel.selectedOptions).map(o => o.value).filter(Boolean).forEach(v => params.append("lang", v));
-        router.navigate("/search?" + params.toString());
+        if (langSel) Array.from(langSel.selectedOptions).map(o => o.value).filter(Boolean).forEach(v => base.append("lang", v));
+        search.submitQuery(rawQ, base);
         // JSP parity: disable the submit button for 3s after navigation has been
         // triggered, to prevent rapid double-submits.
         search.disableSubmitBriefly(document.querySelector("#home-search-form button[type=submit]"));
