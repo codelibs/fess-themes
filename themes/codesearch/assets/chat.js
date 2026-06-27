@@ -931,6 +931,332 @@ function submitQuestion(question, uiRefs) {
 }
 
 // ---------------------------------------------------------------------------
+// Ask-panel — mounted into #ask-body (results page sidebar)
+// ---------------------------------------------------------------------------
+
+let askPanelMounted = false;
+
+/**
+ * Generate a UUID v4-style session identifier without external dependencies.
+ * Uses crypto.getRandomValues when available; falls back to Math.random.
+ * @returns {string}
+ */
+function generateSessionId() {
+  if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+    const buf = new Uint8Array(16);
+    crypto.getRandomValues(buf);
+    buf[6] = (buf[6] & 0x0f) | 0x40; // version 4
+    buf[8] = (buf[8] & 0x3f) | 0x80; // variant
+    const hex = Array.from(buf).map(b => b.toString(16).padStart(2, "0"));
+    return [hex.slice(0,4).join(""), hex.slice(4,6).join(""), hex.slice(6,8).join(""), hex.slice(8,10).join(""), hex.slice(10).join("")].join("-");
+  }
+  // Fallback
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === "x" ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+/**
+ * Like submitQuestion() but uses a caller-supplied sessionId instead of
+ * the module-level sessionId. Used by attachAskPanel() to keep each panel
+ * mount's session independent.
+ */
+function askSubmitQuestion(question, uiRefs, panelSessionId) {
+  if (!question) return;
+
+  const { log, phaseStrip, statusLozenge, errorBanner, inputEl, submitEl, emptyState, getFilters, progressMessageEl } = uiRefs;
+
+  if (emptyState) emptyState.hidden = true;
+
+  errorBanner.hide();
+  phaseStrip.reset();
+  statusLozenge.setStatus("thinking");
+
+  if (inputEl) inputEl.disabled = true;
+  if (submitEl) submitEl.disabled = true;
+
+  appendUserBubble(log, question);
+  const assistantBubbleCtx = appendAssistantBubble(log, t("chat.thinking"));
+
+  if (currentStream) {
+    currentStream.abort();
+    currentStream = null;
+  }
+
+  const filters = getFilters ? getFilters() : { fields: [], extraQ: [] };
+  const body = { message: question };
+  if (panelSessionId) body.session_id = panelSessionId;
+  if (filters.fields && filters.fields.length > 0) body.fields = { label: filters.fields.slice() };
+  if (filters.extraQ && filters.extraQ.length > 0) body.extra_queries = filters.extraQ.slice();
+
+  let mdBuffer = "";
+  let deltaCleared = false;
+  let activeBubble = assistantBubbleCtx;
+
+  function onEvent({ type, data }) {
+    if (type === "phase") {
+      const phase = data && data.phase;
+      const status = data && data.status;
+      const hitCount = data && data.hit_count;
+      if (phase) {
+        if (status === "complete") {
+          phaseStrip.complete(phase, hitCount);
+        } else {
+          phaseStrip.advanceTo(phase);
+          statusLozenge.setStatus("thinking");
+          if (progressMessageEl) {
+            progressMessageEl.classList.remove("d-none");
+            progressMessageEl.textContent = (data && data.keywords)
+              ? t("labels.chat_phase_" + phase, [data.keywords])
+              : t("labels.chat_phase_" + phase);
+          }
+        }
+      }
+      return;
+    }
+    if (type === "chunk" || type === "delta") {
+      const content = (data && data.content != null) ? String(data.content) : "";
+      if (!deltaCleared) {
+        mdBuffer = "";
+        deltaCleared = true;
+        while (activeBubble.bubble.firstChild) activeBubble.bubble.removeChild(activeBubble.bubble.firstChild);
+      }
+      mdBuffer += content;
+      activeBubble.setBuffer(mdBuffer);
+      return;
+    }
+    if (type === "sources") {
+      const sources = data && (data.sources || data);
+      if (Array.isArray(sources)) activeBubble.appendSources(sources);
+      return;
+    }
+    if (type === "done") {
+      currentStream = null;
+      if (inputEl) inputEl.disabled = false;
+      if (submitEl) submitEl.disabled = false;
+      statusLozenge.setStatus("ready");
+      if (data && data.html_content) activeBubble.setHtmlContent(data.html_content);
+      if (inputEl) inputEl.focus();
+      return;
+    }
+    if (type === "error") {
+      currentStream = null;
+      if (inputEl) inputEl.disabled = false;
+      if (submitEl) submitEl.disabled = false;
+      statusLozenge.setStatus("error");
+      const code = data && data.error_code;
+      const msg = errorCodeToText(code);
+      errorBanner.show(msg);
+      if (activeBubble && activeBubble.wrap) activeBubble.wrap.remove();
+      return;
+    }
+    if (type === "retry") {
+      const seconds = Math.max(1, Math.round(((data && data.sleep_ms) || 0) / 1000));
+      activeBubble.setStatusLine(t("labels.chat_retrying", {
+        attempt: (data && data.attempt != null) ? data.attempt : "?",
+        max: (data && data.max_attempts != null) ? data.max_attempts : "?",
+        seconds
+      }));
+      return;
+    }
+    if (type === "waiting") {
+      activeBubble.setStatusLine(t("labels.chat_waiting_queue"));
+      return;
+    }
+    if (type === "fallback") {
+      const reason = data && data.reason;
+      let fallbackMsg;
+      if (reason === "no_results") {
+        fallbackMsg = t("labels.chat_fallback_no_results");
+      } else if (reason === "no_relevant_results") {
+        fallbackMsg = t("labels.chat_fallback_no_relevant_results");
+      } else {
+        fallbackMsg = t("labels.chat_fallback_model");
+      }
+      activeBubble.setStatusLine(fallbackMsg);
+      return;
+    }
+    if (type === "warning") {
+      const code = data && data.code;
+      if (code === "reasoning_token_exhausted" || code === "token_exhausted") {
+        activeBubble.setStatusLine(t("labels.chat_warning_token_exhausted"));
+      }
+      return;
+    }
+    if (type === "eof") {
+      if (currentStream !== null) {
+        currentStream = null;
+        if (inputEl) inputEl.disabled = false;
+        if (submitEl) submitEl.disabled = false;
+        if (mdBuffer) {
+          statusLozenge.setStatus("ready");
+        } else {
+          statusLozenge.setStatus("error");
+          errorBanner.show(t("error.server"));
+        }
+      }
+      return;
+    }
+  }
+
+  function onError(err) {
+    currentStream = null;
+    if (inputEl) inputEl.disabled = false;
+    if (submitEl) submitEl.disabled = false;
+    statusLozenge.setStatus("error");
+    const msg = (err && err.name === "NetworkError") ? t("error.network") : t("error.server");
+    errorBanner.show(msg);
+    if (activeBubble && activeBubble.wrap) activeBubble.wrap.remove();
+  }
+
+  currentStream = api.sseStream("/chat/stream", body, onEvent, onError);
+}
+
+/**
+ * Mount or show the ask panel in #ask-body.
+ * Lazy: builds DOM once, re-shows on subsequent calls.
+ *
+ * @param {() => { fields: string[], extra_queries: string[] }} getContext
+ *   Callback that returns the current search context (active facet qualifiers / labels).
+ */
+export function attachAskPanel(getContext) {
+  // Register route-change abort listener once.
+  if (!routeListenerAttached) {
+    routeListenerAttached = true;
+    document.addEventListener("fess:route:change", () => {
+      if (currentStream) {
+        try { currentStream.abort(); } catch { /* ignore */ }
+        currentStream = null;
+      }
+    });
+  }
+
+  const container = document.getElementById("ask-body");
+  if (!container) return;
+
+  if (askPanelMounted) return;
+  askPanelMounted = true;
+
+  // Generate a session ID for this panel mount.
+  const panelSessionId = generateSessionId();
+
+  // Clear placeholder content.
+  while (container.firstChild) container.removeChild(container.firstChild);
+
+  // Message log
+  const log = el("div", {
+    className: "ask-log",
+    attrs: { role: "log", "aria-live": "polite", "aria-label": t("labels.chat_messages_area") }
+  });
+
+  // Welcome / empty state
+  const emptyState = el("p", {
+    className: "ask-empty",
+    attrs: { "data-i18n": "ask.empty" },
+    text: t("ask.empty") || "Ask a question about the search results to get an AI answer grounded in your code."
+  });
+  log.appendChild(emptyState);
+
+  // Error banner
+  let lastAskQuestion = "";
+  const { banner: errorBannerEl, show: showError, hide: hideError } = buildErrorBanner(() => {
+    if (lastAskQuestion) doAskSubmit(lastAskQuestion);
+  });
+
+  // Phase strip
+  const { strip: phaseStripEl, advanceTo: phaseAdvanceTo, complete: phaseComplete, reset: phaseReset } = buildPhaseStrip();
+
+  // Status lozenge
+  const { lozenge, setStatus } = buildStatusLozenge();
+
+  // Progress message
+  const progressMessageEl = el("div", {
+    className: "ask-progress-message small mt-1 d-none",
+    attrs: { "aria-live": "polite" }
+  });
+
+  // Input form
+  const form = el("form", { className: "ask-form", attrs: { id: "ask-panel-form" } });
+  const input = el("textarea", {
+    className: "ask-input",
+    attrs: {
+      id: "ask-input",
+      autocomplete: "off",
+      placeholder: t("labels.chat_input_placeholder") || "Ask about the results…",
+      rows: "2",
+      maxlength: "4000"
+    }
+  });
+  const submit = el("button", {
+    className: "ask-send hbtn",
+    attrs: { type: "submit", "aria-label": t("labels.chat_send") || "Send" }
+  });
+  const sendIcon = el("i", { attrs: { "aria-hidden": "true" } });
+  sendIcon.textContent = "▶";
+  submit.appendChild(sendIcon);
+  form.appendChild(input);
+  form.appendChild(submit);
+
+  // Assemble
+  container.appendChild(lozenge);
+  container.appendChild(phaseStripEl);
+  container.appendChild(progressMessageEl);
+  container.appendChild(log);
+  container.appendChild(errorBannerEl);
+  container.appendChild(form);
+
+  const refs = {
+    log,
+    phaseStrip: { advanceTo: phaseAdvanceTo, complete: phaseComplete, reset: phaseReset },
+    statusLozenge: { setStatus },
+    errorBanner: { show: showError, hide: hideError },
+    inputEl: input,
+    submitEl: submit,
+    emptyState,
+    progressMessageEl,
+    getFilters: () => {
+      const ctx = getContext ? getContext() : { fields: [], extra_queries: [] };
+      return { fields: ctx.fields || [], extraQ: ctx.extra_queries || [] };
+    }
+  };
+
+  function doAskSubmit(q) {
+    if (!q) return;
+    lastAskQuestion = q;
+    progressMessageEl.classList.remove("d-none");
+    phaseReset();
+    progressMessageEl.textContent = "";
+    // Override submitQuestion to use panelSessionId
+    askSubmitQuestion(q, refs, panelSessionId);
+  }
+
+  // IME guard
+  let askComposing = false;
+  input.addEventListener("compositionstart", () => { askComposing = true; });
+  input.addEventListener("compositionend", () => { askComposing = false; });
+
+  input.addEventListener("keydown", ev => {
+    if (ev.key === "Enter" && !ev.shiftKey && !ev.isComposing && !askComposing) {
+      ev.preventDefault();
+      const q = input.value.trim();
+      if (q && !input.disabled) {
+        input.value = "";
+        doAskSubmit(q);
+      }
+    }
+  });
+
+  form.addEventListener("submit", ev => {
+    ev.preventDefault();
+    const q = input.value.trim();
+    if (!q || input.disabled) return;
+    input.value = "";
+    doAskSubmit(q);
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Inline panel (sidebar) — renamed from attach()
 // ---------------------------------------------------------------------------
 

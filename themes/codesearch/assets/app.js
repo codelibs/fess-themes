@@ -476,6 +476,8 @@ function attachShell() {
 
   if (askToggle) {
     askToggle.addEventListener("click", () => {
+      // Mount the ask panel on first open (lazy, idempotent after that).
+      chat.attachAskPanel(() => search.getSearchContext());
       if (isMobile()) {
         const open = askPanel?.classList.toggle("is-open");
         if (scrim) scrim.hidden = !open;
@@ -625,6 +627,12 @@ async function main() {
   renderFooterCopyright();
   // D.4: Conditionally insert Chat nav link.
   renderChatNavLink();
+  // If rag_chat_enabled is false, hide the ask-toggle button.
+  const features = api.getConfig()?.features || {};
+  if (!features.rag_chat_enabled) {
+    const askToggleBtn = document.getElementById("ask-toggle");
+    if (askToggleBtn) askToggleBtn.hidden = true;
+  }
   await auth.attach();
   search.attach();
   // JSP parity: searchResults.jsp has NO inline chat sidebar — chat lives only on the

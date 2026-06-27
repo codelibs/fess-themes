@@ -1007,5 +1007,35 @@ export function attachSuggest(input, dropdown, opts = {}) {
   input.addEventListener("blur", () => setTimeout(clear, 120));
 }
 
+/**
+ * Return { fields, extra_queries } derived from the active facet qualifiers and
+ * the current query state. Used by chat.js attachAskPanel() to ground the AI
+ * answer in the results-page context.
+ *
+ * fields: array of label values from the #labelSearchOption select (for Fess
+ *   label filters active in the search options drawer).
+ * extra_queries: array of Fess-style qualifier strings derived from the active
+ *   qualifiers in the parsed query (e.g. "repository:fess", "filetype:java").
+ */
+export function getSearchContext() {
+  // Derive extra_queries from active qualifiers in the current query.
+  const queryInput = document.getElementById("query-input");
+  const rawQ = queryInput ? queryInput.value : "";
+  const parsed = parseQuery(rawQ);
+  const activeQualifiers = (parsed.qualifiers || []).filter(q => !q.negate);
+  const extra_queries = activeQualifiers.map(q => {
+    const fessField = QUALIFIER_MAP[q.key] || q.key;
+    return fessField + ":" + q.value;
+  });
+
+  // Derive fields (label values) from the #labelSearchOption select.
+  const labelSel = document.getElementById("labelSearchOption");
+  const fields = labelSel
+    ? Array.from(labelSel.selectedOptions).map(o => o.value).filter(v => v !== "")
+    : [];
+
+  return { fields, extra_queries };
+}
+
 // Exported for Task 5 (facets) to extend rendering and re-run from the same state.
 export { runSearch, buildResultCard, renderResults, renderSummary, renderPagination, el, state as _state };
