@@ -341,15 +341,13 @@ function setChatNavSearchMode(onChat) {
   link.appendChild(span);
 }
 
-// GAP A: keep body top-padding equal to the fixed-top header height so content is never hidden beneath it.
+// GAP A: The new header is position:sticky (.app-header), so no body padding offset is needed.
+// We update the --header-h CSS custom property to match the live rendered height so that
+// sticky-positioned children (facet-rail, ask-panel, etc.) use the correct top offset.
 function syncHeaderOffset() {
-  const header = document.querySelector(".navbar.fixed-top");
+  const header = document.querySelector(".app-header");
   if (!header) return;
-  // JSP parity (css/style.css: body { padding: 1em 0; margin: 56px 0 4em }): content
-  // clears the fixed-top navbar plus a 1em gap, so add that gap on top of the live
-  // navbar height instead of butting content right against the bar.
-  const gap = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-  document.body.style.paddingTop = (header.offsetHeight + gap) + "px";
+  document.documentElement.style.setProperty("--header-h", header.offsetHeight + "px");
 }
 
 /** Attach back-to-top button behaviour. */

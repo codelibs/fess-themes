@@ -43,6 +43,8 @@
 
   --shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
 
+  --on-accent: #07101f;  /* text on --accent buttons (dark bg needs dark text) */
+
   color-scheme: dark;
 }
 
@@ -62,6 +64,8 @@
   --ok:      #1a7a48;
 
   --shadow: 0 8px 28px rgba(20, 30, 50, 0.14);
+
+  --on-accent: #ffffff;  /* text on --accent in light mode (blue btn needs white text) */
 
   color-scheme: light;
 }
@@ -176,6 +180,7 @@ h1, h2, h3, h4 { font-weight: 600; line-height: 1.25; margin: 0 0 .5em; }
 }
 .search-bar:focus-within {
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(90, 160, 255, 0.22);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
 }
 .search-bar .prompt {
@@ -438,6 +443,7 @@ mark, .match {
 }
 .home .home-search:focus-within {
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(90, 160, 255, 0.22);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
 }
 .home .home-search .prompt { font-family: var(--mono); color: var(--faint); font-weight: 700; }
@@ -450,7 +456,7 @@ mark, .match {
 .home .home-search button {
   flex: 0 0 auto;
   height: 34px; padding: 0 16px;
-  background: var(--accent); color: #07101f;
+  background: var(--accent); color: var(--on-accent);
   border: 0; border-radius: var(--r-sm);
   font-weight: 600; font-size: 13px;
 }
@@ -493,7 +499,7 @@ mark, .match {
   font-size: 13px; font-weight: 500;
 }
 .btn:hover { border-color: var(--accent); text-decoration: none; }
-.btn-primary { background: var(--accent); color: #07101f; border-color: transparent; }
+.btn-primary { background: var(--accent); color: var(--on-accent); border-color: transparent; }
 .btn-primary:hover { filter: brightness(1.08); }
 
 /* Back-to-top floating control. */
@@ -532,9 +538,116 @@ mark, .match {
   max-width: 920px; margin: 0 auto; padding: 20px 24px;
 }
 
-/* Login modal — kept functional; minimal styling (auth.js shows/hides it). */
-.modal { display: none; }
+/* ============================================================ COMPAT COMPONENTS
+ * These classes are toggled by compat.js (the Bootstrap JS shim). Styled with
+ * this theme's dark-first design tokens — no --df-* or --bs-* vars.          */
+
+/* ---- Collapse ---- */
+.collapse:not(.show) { display: none; }
+
+/* ---- Dropdown ---- */
+.dropdown { position: relative; }
+.dropdown-toggle::after {
+  content: ""; display: inline-block; margin-left: .35em;
+  border: .3em solid transparent; border-top-color: currentColor; border-bottom: 0;
+  vertical-align: middle;
+}
+.dropdown-menu {
+  display: none;
+  position: absolute; right: 0; top: 100%; z-index: 1040;
+  min-width: 180px; margin-top: .35rem; padding: .35rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  list-style: none;
+}
+.dropdown-menu.show { display: block; }
+.dropdown-item {
+  display: flex; align-items: center; gap: .5rem;
+  width: 100%; padding: .5rem .65rem;
+  color: var(--text);
+  background: transparent; border: 0; border-radius: var(--r-sm);
+  text-align: left; text-decoration: none; cursor: pointer; font-size: .9rem;
+}
+.dropdown-item:hover { background: var(--raised); color: var(--text); text-decoration: none; }
+
+/* ---- Modal ---- */
+.modal {
+  display: none;
+  position: fixed; inset: 0; z-index: 1055;
+  overflow-y: auto; padding: 1rem;
+}
 .modal.show { display: block; }
+.modal.fade .modal-dialog { transition: transform .2s ease, opacity .2s ease; transform: translateY(-12px); opacity: 0; }
+.modal.fade.show .modal-dialog { transform: none; opacity: 1; }
+.modal-dialog { max-width: 480px; margin: 3.5rem auto; }
+.modal-content {
+  display: flex; flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r); box-shadow: var(--shadow); overflow: hidden;
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+}
+.modal-title { margin: 0; font-size: 1.1rem; }
+.modal-body { padding: 1.25rem; }
+.modal-footer {
+  display: flex; align-items: center; justify-content: flex-end; gap: .5rem;
+  padding: 1rem 1.25rem; border-top: 1px solid var(--border);
+}
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 1050;
+  background: rgba(0, 0, 0, 0.55);
+  opacity: 0; transition: opacity .2s ease;
+}
+.modal-backdrop.show { opacity: 1; }
+body.modal-open { overflow: hidden; }
+
+/* ---- Login modal sizing (replaces former inline style= attributes) ---- */
+.login-modal-body { max-width: 420px; }
+.login-modal-body-input { width: 100%; }
+
+/* ---- Offcanvas ---- */
+.offcanvas {
+  position: fixed; top: 0; bottom: 0; z-index: 1055;
+  display: flex; flex-direction: column;
+  width: 320px; max-width: 85vw;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transition: transform .25s ease; visibility: hidden;
+}
+.offcanvas-end { right: 0; transform: translateX(100%); border-left: 1px solid var(--border); }
+.offcanvas.show { transform: none; visibility: visible; }
+.offcanvas-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+}
+.offcanvas-title { margin: 0; font-size: 1.05rem; }
+.offcanvas-body { padding: 1.25rem; overflow-y: auto; flex: 1 1 auto; }
+.offcanvas-backdrop {
+  position: fixed; inset: 0; z-index: 1050;
+  background: rgba(0, 0, 0, 0.55);
+  opacity: 0; transition: opacity .2s ease;
+}
+.offcanvas-backdrop.show { opacity: 1; }
+
+/* ---- Tooltip ---- */
+.bs-tooltip {
+  position: absolute; z-index: 1080;
+  padding: 4px 8px;
+  background: var(--raised);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  pointer-events: none;
+  opacity: 0; transition: opacity .15s ease;
+  white-space: nowrap;
+}
+.bs-tooltip.show { opacity: 1; }
 
 /* ============================================================ RESPONSIVE */
 
