@@ -36,6 +36,7 @@ export const QUALIFIER_MAP = {
 /**
  * Tokenize a raw query string into an array of raw token strings.
  * Respects double-quoted values: `path:"src/main app"` yields one token.
+ * Unbalanced quotes in key:"value form are tolerated (closing quote is optional).
  * A token is one of:
  *   - key:"quoted value"
  *   - key:unquoted-value
@@ -46,7 +47,7 @@ export const QUALIFIER_MAP = {
 function tokenize(input) {
   const tokens = [];
   // Regex: optionally a leading -, then either key:"…" | key:word | "…" | word
-  const re = /(-?[A-Za-z0-9_.*/-]+:"[^"]*"|-?[A-Za-z0-9_.*/-]+:[^\s"]+|"[^"]*"|-?[^\s"]+)/g;
+  const re = /(-?[A-Za-z0-9_.*/-]+:"[^"]*"?|-?[A-Za-z0-9_.*/-]+:[^\s"]+|"[^"]*"|-?[^\s"]+)/g;
   let m;
   while ((m = re.exec(input)) !== null) {
     tokens.push(m[1]);
@@ -88,9 +89,12 @@ export function parseQuery(input) {
       const key = token.slice(0, colonIdx);
       let value = token.slice(colonIdx + 1);
 
-      // Strip surrounding quotes from value if present
-      if (value.startsWith('"') && value.endsWith('"')) {
+      // Strip surrounding quotes from value if present (balanced or leading-only for unbalanced)
+      if (value.startsWith('"') && value.endsWith('"') && value.length > 1) {
         value = value.slice(1, -1);
+      } else if (value.startsWith('"')) {
+        // Unbalanced quote: strip the leading quote only
+        value = value.slice(1);
       }
 
       qualifiers.push({ key, value, negate });
@@ -130,6 +134,8 @@ export function toFessQuery(parsed) {
 
   for (const { key, value, negate } of parsed.qualifiers) {
     const field = QUALIFIER_MAP[key] !== undefined ? QUALIFIER_MAP[key] : key;
+    // Values are emitted verbatim (no Lucene special-character escaping).
+    // Callers must supply controlled facet labels or otherwise-trusted input.
     const quotedValue = value.includes(' ') ? `"${value}"` : value;
     const fieldExpr = `${field}:${quotedValue}`;
     parts.push(negate ? `NOT ${fieldExpr}` : fieldExpr);
@@ -169,12 +175,25 @@ export function addQualifier(input, mappedField, value) {
   const quotedValue = value.includes(' ') ? `"${value}"` : value;
   const token = `${mappedField}:${quotedValue}`;
 
-  // Deduplicate: check whether the token already exists
-  if (_containsToken(input, token)) {
-    return input;
+  // Remove any existing negated form to avoid contradictory tokens like
+  // `-repository:fess repository:fess`.
+  let base = input ? input.trim() : '';
+  if (base) {
+    // Strip -field:value
+    const negToken = `-${token}`;
+    const escapedNeg = _reEscape(negToken);
+    base = base.replace(new RegExp(`(?:^|\\s)${escapedNeg}(?=\\s|$)`, 'g'), ' ').replace(/\s+/g, ' ').trim();
+    // Strip NOT field:value
+    const notToken = `NOT ${token}`;
+    const escapedNot = _reEscape(notToken);
+    base = base.replace(new RegExp(`(?:^|\\s)${escapedNot}(?=\\s|$)`, 'g'), ' ').replace(/\s+/g, ' ').trim();
   }
 
-  const base = input ? input.trim() : '';
+  // Deduplicate: check whether the positive token already exists
+  if (_containsToken(base, token)) {
+    return base;
+  }
+
   return base ? `${base} ${token}` : token;
 }
 
