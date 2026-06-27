@@ -948,3 +948,12 @@ body.modal-open { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; scroll-behavior: auto !important; }
 }
+
+/* ── Display utilities (Bootstrap-compatible) ── */
+.d-none         { display: none !important; }
+.d-block        { display: block !important; }
+.d-flex         { display: flex !important; }
+.d-inline-flex  { display: inline-flex !important; }
+@media (min-width: 576px) {
+  .d-sm-inline-block { display: inline-block !important; }
+}

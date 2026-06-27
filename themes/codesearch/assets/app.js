@@ -41,17 +41,9 @@ function showView(id) {
 
 /** Toggle the header search form visibility (hides the whole input-group wrapper). */
 function setSearchFormVisible(visible) {
-  const wrap = document.getElementById("search-form-wrap") || document.getElementById("search-form");
+  const wrap = document.getElementById("search-bar");
   if (!wrap) return;
-  if (visible) {
-    wrap.removeAttribute("hidden");
-    wrap.classList.remove("d-none");
-    wrap.classList.add("d-flex");
-  } else {
-    wrap.setAttribute("hidden", "");
-    wrap.classList.remove("d-flex");
-    wrap.classList.add("d-none");
-  }
+  wrap.hidden = !visible;
 }
 
 /** Toggle the header brand logo. JSP parity: home (index.jsp) has an empty
@@ -307,7 +299,7 @@ function renderChatNavLink() {
   // The chat nav entry is the li.nav-item#chat-nav-item in markup (header.jsp
   // parity). Reveal it by removing d-none from the li wrapper.
   const item = document.getElementById("chat-nav-item");
-  if (item) item.classList.remove("d-none");
+  if (item) item.hidden = false;
 }
 
 /**
@@ -377,7 +369,7 @@ function hasSearchQuery() {
  * falling back to the current URL's q= param.
  */
 function updateAdvanceLinks() {
-  const headerVal = (document.getElementById("query") || {}).value;
+  const headerVal = (document.getElementById("query-input") || {}).value;
   const homeVal = (document.getElementById("contentQuery") || {}).value;
   const urlParams = new URLSearchParams(location.search);
   const urlQ = urlParams.get("q") || "";
@@ -404,7 +396,7 @@ function updateAdvanceLinks() {
 
 /** Wire input/route hooks so the Advanced links stay in sync with the query. */
 function attachAdvanceLinkSync() {
-  for (const id of ["query", "contentQuery"]) {
+  for (const id of ["query-input", "contentQuery"]) {
     const el = document.getElementById(id);
     if (el && !el.dataset.advLinkSync) {
       el.dataset.advLinkSync = "1";
