@@ -214,11 +214,20 @@ export function removeQualifier(input, mappedField, value) {
   if (!input) return '';
 
   const quotedValue = value.includes(' ') ? `"${value}"` : value;
-  // Build a regex that matches the token with or without a leading '-'
-  // Escape special regex characters in field and value
-  const escaped = _reEscape(`${mappedField}:${quotedValue}`);
-  const re = new RegExp(`-?${escaped}`, 'g');
-  return input.replace(re, '').replace(/\s+/g, ' ').trim();
+  const token = `${mappedField}:${quotedValue}`;
+  const escaped = _reEscape(token);
+
+  // Remove the positive token (optionally negated with a leading '-')
+  let result = input.replace(
+    new RegExp(`(?:^|(?<=\\s))-?${escaped}(?=\\s|$)`, 'g'),
+    ''
+  );
+  // Remove the NOT form: "NOT field:value"
+  result = result.replace(
+    new RegExp(`(?:^|(?<=\\s))NOT\\s+${escaped}(?=\\s|$)`, 'g'),
+    ''
+  );
+  return result.replace(/\s+/g, ' ').trim();
 }
 
 // ---------------------------------------------------------------------------

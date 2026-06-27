@@ -15,6 +15,7 @@
   "facet.filter_button": "フィルター",
   "facet.clear": "クリア",
   "facet.empty": "ファセットなし — 検索してください。",
+  "facets.empty": "このキーワードに利用できるフィルターはありません。",
   "facet.not_found": "該当する絞り込みがありません。",
   "pagination.next": "次へ",
   "pagination.prev": "前へ",

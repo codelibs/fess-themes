@@ -15,6 +15,7 @@
   "facet.filter_button": "Filters",
   "facet.clear": "Clear",
   "facet.empty": "No facets yet — run a search.",
+  "facets.empty": "No filters available for this search.",
   "facet.not_found": "No matching filters.",
   "pagination.next": "Next",
   "pagination.prev": "Previous",

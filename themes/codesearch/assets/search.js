@@ -22,7 +22,7 @@ import * as api from "./api.js";
 import { t } from "./i18n.js";
 import { formatFileSize, formatDate, renderHighlightedSnippet } from "./format.js";
 import { navigate } from "./router.js";
-import { parseQuery, toFessQuery, addQualifier, removeQualifier } from "./query.js";
+import { parseQuery, toFessQuery, addQualifier, removeQualifier, QUALIFIER_MAP } from "./query.js";
 
 /** Guard: prevent duplicate event-listener registration on hot-reload / re-attach. */
 let attached = false;
@@ -589,7 +589,7 @@ function renderFacets(env) {
     // Show empty placeholder
     const empty = document.createElement("p");
     empty.className = "rail-empty";
-    empty.textContent = "";
+    empty.textContent = t("facets.empty");
     rail.appendChild(empty);
     return;
   }
@@ -634,7 +634,7 @@ function renderFacets(env) {
       if (!value) continue;
 
       const isChecked = activeQualifiers.some(
-        q => q.key === group.field && String(q.value).toLowerCase() === value.toLowerCase()
+        q => (QUALIFIER_MAP[q.key] || q.key) === group.field && String(q.value).toLowerCase() === value.toLowerCase()
       );
 
       const li = document.createElement("li");
@@ -684,7 +684,7 @@ function renderFacets(env) {
   if (!anyRendered) {
     const empty = document.createElement("p");
     empty.className = "rail-empty";
-    empty.textContent = "";
+    empty.textContent = t("facets.empty");
     rail.appendChild(empty);
   }
 }
@@ -730,7 +730,7 @@ function renderActiveChips() {
   chips.hidden = false;
 
   for (const q of qualifiers) {
-    const fieldLabel = FACET_FIELD_LABELS[q.key] || q.key;
+    const fieldLabel = FACET_FIELD_LABELS[QUALIFIER_MAP[q.key] || q.key] || q.key;
 
     const chip = document.createElement("span");
     chip.className = "active-chip";
