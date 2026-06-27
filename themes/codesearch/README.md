@@ -1,94 +1,102 @@
-# Bootstrap — Fess Reference Static Theme
+# codesearch — Source-Code-Search Static Theme
 
-This directory is the **canonical reference implementation** for a Fess
-static theme. It is bundled with the Fess WAR and ships in the RPM/DEB
-packages. Activate it by setting `theme.default=bootstrap` in the admin
-UI (`/admin/theme/`) or by binding it to a virtual host.
+A Fess **static theme** optimised for source-code search (GitHub Code Search /
+Sourcegraph class). It replaces the legacy JSP-based `fess-theme-codesearch`
+Bootstrap plugin and targets the `docker-codesearch` deployment. Built with
+vanilla JS and CSS (no Bootstrap, no CDN).
 
-## Layout
+## Features
 
-```
-bootstrap/
-├── theme.yml             # manifest (apiVersion: fess.codelibs.org/v1)
-├── index.html            # SPA shell — semantic HTML5 + Bootstrap 5
-├── thumbnail.png         # shown in /admin/theme/ (≤512KB, ≤512x512)
-├── assets/
-│   ├── app.js            # entry point; loads modules in order
-│   ├── api.js            # centralised fetch wrapper (CSRF, envelope)
-│   ├── auth.js           # login, logout, /auth/me probe
-│   ├── search.js         # search, suggest, facets, pagination, sort, favorite
-│   ├── chat.js           # optional RAG chat (rag_chat_enabled feature flag)
-│   ├── i18n.js           # JSON bundle loader; navigator.language → en/ja
-│   └── styles.css        # overrides on top of /css/bootstrap.min.css
-├── i18n/
-│   ├── messages.en.json
-│   └── messages.ja.json
-└── README.md
-```
+- **3-column layout** — facet rail · results · Ask AI panel
+- **Query-as-source-of-truth** — inline `repo:`, `org:`, `path:`, `file:`,
+  `lang:` qualifiers map to Fess field queries; facet selections append qualifiers
+  into the query string; deep-linkable URLs
+- **Per-file code cards** — `org / repo · path` breadcrumb, ↗ open-in-repo link,
+  language badge, snippet with line-number gutter parsed from ingest-time `Lnn:`
+  prefixes, match terms highlighted on a tinted row
+- **Facet rail** — Repository, Language (filetype), Organization, Path/Filename;
+  active filters shown as removable chips
+- **Grounded AI panel** — "Ask AI" right-side collapsible panel + standalone
+  `/chat` page (requires `rag.chat.enabled=true` and an LLM plugin)
+- **Dark-first IDE aesthetic** — slate palette, monospace gutters/paths/counts,
+  light theme via `[data-theme="light"]` toggle persisted in `localStorage`
+- **Graceful fallback** — degrades to a generic card when the seven code fields
+  are absent (works on non-codesearch indexes too)
 
-## API endpoints consumed
+## Requirements
 
-All under `/api/v2`. See the Fess static-theme API reference doc for
-the full schema. The wrapper in `assets/api.js` is the single source
-of truth — third-party themes are encouraged to start by copying it.
+- Fess **15.7+** (static-theme support)
 
-| Module | Endpoints |
-|---|---|
-| `api.js` | `GET /ui/config` |
-| `auth.js` | `GET /auth/me`, `POST /auth/login`, `POST /auth/logout` |
-| `search.js` | `GET /search`, `GET /suggest-words`, `GET /labels`, `GET /popular-words`, `GET /documents/{id}/favorite`, `POST /documents/{id}/favorite`, `POST /click`, `GET /cache/{id}` (link target) |
-| `chat.js` | `POST /chat/stream` (streaming SSE via fetch — see below) |
+## Install
 
-## Streaming chat (`/chat/stream`)
+### Via Fess Admin UI
 
-The `/api/v2/chat/stream` endpoint is **POST-only** and requires the
-`X-Fess-CSRF-Token` header. The browser's native `EventSource` API only
-supports GET requests and cannot attach custom headers, so it is
-incompatible with this endpoint.
+1. Package the theme:
+   ```bash
+   ./scripts/package.sh codesearch
+   # → dist/codesearch-1.0.0.zip
+   ```
+2. Open **Admin → Theme** (`/admin/theme/`) and upload the ZIP.
+3. Activate it or set `theme.default=codesearch`.
 
-Use `api.sseStream(path, body, onEvent, onError)` instead:
+### Via server config property
 
-```js
-import * as api from "./api.js";
-
-const ctrl = api.sseStream("/chat/stream", { q: "my question" }, (event) => {
-  // event.type — e.g. "message", "done", "error", "phase"
-  // event.data — JSON-parsed payload (or raw string if not valid JSON)
-  if (event.type === "message") bubble.textContent += event.data.token ?? "";
-  if (event.type === "done")    ctrl.abort(); // tidy up
-}, (err) => {
-  // err is ApiError (HTTP-level) or NetworkError (offline/DNS).
-  console.error(err);
-});
-
-// Cancel the stream at any time:
-ctrl.abort();
+```properties
+theme.default=codesearch
 ```
 
-The function returns an `AbortController`. Call `.abort()` to cancel
-the fetch before the server sends a final `done` event (e.g. on user
-navigation or a new submission).
+## Required server configuration
 
-## CSRF
+The theme relies on seven extra fields indexed by `fess-ds-git`
+(`domain`, `organization`, `repository`, `path`, `repository_url`, `owner`,
+`homepage`). Add the following to your Fess configuration
+(`fess_config.properties` or as `-Dfess.config.*` JVM arguments):
 
-All state-changing requests echo the token returned by `/ui/config` in
-the `X-Fess-CSRF-Token` HTTP header. The token rotates on login and
-logout; `auth.js` re-reads it from `/ui/config` after each change (or
-directly from the logout response body if the server embeds it there).
+```properties
+# Expose the seven custom fields to /api/v2/search responses (REQUIRED)
+query.additional.api.response.fields=domain,organization,repository,path,repository_url,owner,homepage
 
-## XSS-safety
+# Expose them in standard response (already set in docker-codesearch)
+query.additional.response.fields=domain,organization,repository,path,repository_url,owner,homepage
 
-No DOM construction in this theme uses `innerHTML` with dynamic data.
-All result cards, facet items, suggest items, pagination, and chat
-messages are built with `document.createElement` and `textContent`. The
-only `innerHTML` writes are static empty-string clears (`el.innerHTML = ""`).
-Theme authors who copy this code should preserve this pattern.
+# Enable facet fields for the left-rail filter
+query.facet.fields=label,organization,repository,filename,filetype
 
-## Customising
+# Facet queries used by the rail
+query.additional.facet.fields=organization,repository,filename
+```
 
-Copy this directory, rename it, edit `theme.yml#name` to match, and
-upload as a ZIP via `/admin/theme/`. The reserved name `bootstrap`
-must remain on this bundled directory.
+> **Note:** `query.additional.api.response.fields` is the critical setting.
+> Without it the SPA cannot render code-aware cards.
+
+### Optional: Enable AI chat
+
+```properties
+rag.chat.enabled=true
+```
+
+Then install a compatible LLM plugin (e.g. `fess-llm-openai`) and configure the
+model. The Ask AI panel and standalone `/chat` page are hidden when this is
+`false` (default).
+
+## Supported query qualifiers
+
+| Qualifier | Maps to Fess field | Example |
+|---|---|---|
+| `repo:<value>` | `repository` | `repo:fess lang:java` |
+| `org:<value>` | `organization` | `org:codelibs` |
+| `path:<value>` | `path` | `path:src/main` |
+| `file:<value>` | `filename` | `file:*.java` |
+| `lang:<value>` | `filetype` | `lang:python` |
+| free text | content / title | `parse tree` |
+
+Prefix a qualifier with `-` to exclude: `-lang:xml parse`.
+
+## Locales
+
+Messages are in `i18n/messages.<locale>.json`. The 16 supported locales are:
+`de`, `en`, `es`, `fr`, `hi`, `id`, `it`, `ja`, `ko`, `nl`, `pl`, `pt-BR`,
+`ru`, `tr`, `zh-CN`, `zh-TW`. Untranslated keys fall back to `en`.
 
 ## License
 

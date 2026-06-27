@@ -12,6 +12,7 @@ theme can be reviewed, re-skinned, or used as a starting point for a new one.
 
 | Theme | Description |
 |---|---|
+| [`codesearch`](themes/codesearch/) | Source-code-search-optimised static theme — dark-first IDE aesthetic, inline qualifier syntax (`repo:` / `org:` / `path:` / `file:` / `lang:`), per-file code cards with line-number gutters, query-refining facet rail, grounded Ask-AI panel. Requires Fess 15.7+ and `query.additional.api.response.fields`. Ships its [`DESIGN.md`](themes/codesearch/DESIGN.md). |
 | [`docuforge`](themes/docuforge/) | Documentation-style theme on the DocuForge design system — blue/purple/gray palette, persistent facet sidebar, docs-grade typography, **no Bootstrap**. Ships its [`DESIGN.md`](themes/docuforge/DESIGN.md) spec. |
 | [`docsearch`](themes/docsearch/) | Documentation search — ⌘K command palette, grouped results, breadcrumb cards, optional cited Ask-AI. DocSearch design language: indigo/slate palette, self-hosted Inter + JetBrains Mono, FOUC-safe light/dark mode, **no Bootstrap**. |
 | [`nomadkit`](themes/nomadkit/) | Free-spirited theme on the NomadKit design system — warm sand / ocean / forest palette, persistent facet sidebar, accessible (AA) contrast, **no Bootstrap**. Ships its [`DESIGN.md`](themes/nomadkit/DESIGN.md) spec. |
