@@ -343,5 +343,11 @@
   "ask.empty": "Ask a question about the search results to get an AI answer grounded in your code.",
   "ask.toggle": "Toggle Ask panel",
   "ask.close": "Close panel",
-  "theme.toggle": "Toggle dark / light theme"
+  "theme.toggle": "Toggle dark / light theme",
+  "result.files": "件",
+  "result.open_in_repo": "リポジトリで開く",
+  "search.sort.relevance": "関連度",
+  "search.density": "表示密度",
+  "search.density_comfortable": "標準",
+  "search.density_compact": "コンパクト"
 }

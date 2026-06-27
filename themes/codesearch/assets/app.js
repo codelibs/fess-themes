@@ -454,20 +454,10 @@ function attachThemeToggle() {
  * without errors.
  */
 function attachShell() {
-  // Header search box → navigate to /search?q=... (search.attach() is inert against
-  // the new ids, so wire the submit here). Carries no options; Task 4 expands this.
-  const bar = document.getElementById("search-bar");
-  const input = document.getElementById("query-input");
-  if (bar && input) {
-    bar.addEventListener("submit", ev => {
-      ev.preventDefault();
-      const q = input.value.trim();
-      const params = new URLSearchParams(location.search);
-      if (q) params.set("q", q); else params.delete("q");
-      params.delete("start");
-      router.navigate("/search?" + params.toString());
-    });
-  }
+  // NOTE: the header search box (#search-bar / #query-input) submit is now owned by
+  // search.attach() (Task 4), which runs the real parseQuery→toFessQuery→navigate
+  // path. The Task 2 temporary header-submit + URL-sync placeholder was removed here
+  // to avoid double-handling the submit.
 
   // Ask-panel collapse toggle (desktop) / open drawer (mobile, ≤960px).
   const shell = document.getElementById("app-shell");
@@ -498,16 +488,9 @@ function attachShell() {
   scrim?.addEventListener("click", closeDrawers);
   // Close any open drawer on route change so navigation feels clean.
   document.addEventListener("fess:route:change", closeDrawers);
-
-  // Reflect the URL q= into the header search box on every route change so the
-  // box shows the current query (search.js's input-sync targets the old ids).
-  function syncHeaderQuery() {
-    if (!input) return;
-    if (document.activeElement === input) return; // don't clobber while typing
-    input.value = new URLSearchParams(location.search).get("q") || "";
-  }
-  document.addEventListener("fess:route:change", syncHeaderQuery);
-  syncHeaderQuery();
+  // NOTE: the Task 2 temporary URL→#query-input sync was removed; search.js now
+  // syncs both inputs from the URL via runFromUrl()/syncSearchInputs() on every
+  // route dispatch (it owns #query-input and #contentQuery).
 }
 
 function registerRoutes() {

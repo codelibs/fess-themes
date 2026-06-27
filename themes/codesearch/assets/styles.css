@@ -378,6 +378,229 @@ mark, .match {
   font-family: var(--mono);
   font-size: 13px;
 }
+#pagination .page-item { list-style: none; }
+#pagination .page-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text);
+}
+#pagination .page-link:hover { border-color: var(--accent); text-decoration: none; }
+#pagination .page-item.active .page-link {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: transparent;
+}
+#pagination .page-item.disabled .page-link {
+  color: var(--faint);
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* ---- Result summary: count + sort + density controls ---- */
+#result-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+#result-summary .exec-time { color: var(--faint); }
+#result-summary .summary-controls {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+#result-summary .sort-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+#result-summary .control-label { color: var(--faint); }
+#result-summary .sort-select {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 2px 6px;
+}
+#result-summary .density-toggle {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 2px 8px;
+  cursor: pointer;
+}
+#result-summary .density-toggle:hover { border-color: var(--accent); color: var(--text); }
+
+/* ---- Result card ---- */
+.result-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.result-card .result-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--raised);
+}
+.result-card .result-crumb {
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.result-card .crumb-org { color: var(--muted); }
+.result-card .crumb-repo { color: var(--text); font-weight: 600; }
+.result-card .crumb-path { color: var(--link); }
+.result-card .result-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.result-card .lang-badge {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.result-card .open-repo {
+  display: inline-flex;
+  align-items: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+.result-card .open-repo:hover { color: var(--accent); }
+.result-card .favorite-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+}
+.result-card .favorite-btn:hover,
+.result-card .favorite-btn.is-on { color: var(--match); }
+.result-card .favorite-count { font-family: var(--mono); font-size: 11px; }
+
+/* Line-gutter code block — the snippet body. */
+.result-card .code-block {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.55;
+  overflow-x: auto;
+  padding: 8px 0;
+}
+.result-card .code-row {
+  display: grid;
+  grid-template-columns: var(--gutter-w, 3.5em) 1fr;
+  align-items: start;
+}
+.result-card .code-gutter {
+  text-align: right;
+  padding: 0 12px 0 8px;
+  color: var(--faint);
+  user-select: none;          /* the line number is never copyable code */
+  -webkit-user-select: none;
+  white-space: nowrap;
+}
+.result-card .code-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text);
+  background: none;
+  padding: 0 12px 0 0;
+}
+.result-card .code-text strong,
+.result-card .code-text em {
+  background: var(--match-bg);
+  color: var(--match);
+  font-style: normal;
+  font-weight: 600;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+.result-card .result-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.result-card .result-foot .foot-sep { color: var(--faint); }
+
+/* Generic fallback card (non-codesearch index). */
+.result-generic .result-title { flex: 1 1 auto; min-width: 0; }
+.result-generic .result-link { font-weight: 600; }
+.result-generic .result-snippet {
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+}
+.result-generic .result-snippet strong,
+.result-generic .result-snippet em {
+  background: var(--match-bg);
+  color: var(--match);
+  font-style: normal;
+  font-weight: 600;
+}
+
+/* Compact density: tighter cards + smaller code. */
+:root[data-density="compact"] ol#results { gap: 8px; }
+:root[data-density="compact"] .result-card .result-head { padding: 6px 10px; }
+:root[data-density="compact"] .result-card .code-block { font-size: 11.5px; line-height: 1.4; padding: 4px 0; }
+:root[data-density="compact"] .result-card .result-foot { padding: 5px 10px; }
+
+/* Home popular-words + suggest dropdown (rendered by search.js). */
+.home .home-popular .popular-label { color: var(--faint); margin-right: 4px; }
+.home .home-popular .popular-word { font-family: var(--mono); margin: 0 6px; }
+#home-suggest-dropdown:not(.visually-hidden),
+.suggest-list:not(.visually-hidden) {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 4px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+}
+.suggest-item {
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+.suggest-item:hover { background: var(--raised); }
 
 /* ---- Right: Ask panel (collapsible) ---- */
 .ask-panel {
