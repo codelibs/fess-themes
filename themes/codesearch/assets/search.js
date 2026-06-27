@@ -22,7 +22,7 @@ import * as api from "./api.js";
 import { t } from "./i18n.js";
 import { formatFileSize, formatDate, renderHighlightedSnippet } from "./format.js";
 import { navigate } from "./router.js";
-import { parseQuery, toFessQuery } from "./query.js";
+import { parseQuery, toFessQuery, addQualifier, removeQualifier } from "./query.js";
 
 /** Guard: prevent duplicate event-listener registration on hot-reload / re-attach. */
 let attached = false;
@@ -557,6 +557,211 @@ function renderPagination(env) {
 }
 
 // ---------------------------------------------------------------------------
+// Faceted filtering rail + active qualifier chips
+// ---------------------------------------------------------------------------
+
+/**
+ * Populate #facet-rail from env.facet_field.
+ * Builds collapsible <details>/<summary> groups for: Repository, Language,
+ * Organization, Path/Filename. Each item is a checkbox label with count.
+ * Checked state is derived from the current query qualifiers.
+ * XSS-safe: all facet values written via textContent only.
+ */
+function renderFacets(env) {
+  const rail = document.getElementById("facet-rail");
+  if (!rail) return;
+
+  // Mapping from display label to fess field name
+  const GROUPS = [
+    { label: "Repository",    field: "repository" },
+    { label: "Language",      field: "filetype" },
+    { label: "Organization",  field: "organization" },
+    { label: "Path/Filename", field: "filename" },
+  ];
+
+  // Clear everything except a .rail-title heading if present
+  const keepTitle = rail.querySelector(".rail-title");
+  while (rail.firstChild) rail.removeChild(rail.firstChild);
+  if (keepTitle) rail.appendChild(keepTitle);
+
+  const facetFields = (env && env.facet_field) || [];
+  if (facetFields.length === 0) {
+    // Show empty placeholder
+    const empty = document.createElement("p");
+    empty.className = "rail-empty";
+    empty.textContent = "";
+    rail.appendChild(empty);
+    return;
+  }
+
+  // Index facet_field array by name for quick lookup
+  const byName = {};
+  for (const ff of facetFields) {
+    if (ff && ff.name) byName[ff.name] = ff.result || [];
+  }
+
+  // Get current raw query for checked state detection
+  const queryInput = document.getElementById("query-input");
+  const currentRawQuery = queryInput ? queryInput.value : "";
+  const parsed = parseQuery(currentRawQuery);
+  const activeQualifiers = parsed.qualifiers || [];
+
+  let anyRendered = false;
+  let firstGroup = true;
+
+  for (const group of GROUPS) {
+    const results = byName[group.field];
+    if (!results || results.length === 0) continue;
+
+    const details = document.createElement("details");
+    if (firstGroup) {
+      details.open = true;
+      firstGroup = false;
+    }
+    details.className = "facet-group";
+
+    const summary = document.createElement("summary");
+    summary.className = "facet-group-label";
+    summary.textContent = group.label;
+    details.appendChild(summary);
+
+    const ul = document.createElement("ul");
+    ul.className = "facet-list";
+
+    for (const item of results) {
+      const value = String(item.value || "");
+      const count = Number(item.count) || 0;
+      if (!value) continue;
+
+      const isChecked = activeQualifiers.some(
+        q => q.key === group.field && String(q.value).toLowerCase() === value.toLowerCase()
+      );
+
+      const li = document.createElement("li");
+      li.className = "facet-item";
+
+      const label = document.createElement("label");
+      label.className = "facet-label";
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "facet-check";
+      checkbox.checked = isChecked;
+
+      checkbox.addEventListener("change", () => {
+        const qi = document.getElementById("query-input");
+        const raw = qi ? qi.value : "";
+        const newQuery = checkbox.checked
+          ? addQualifier(raw, group.field, value)
+          : removeQualifier(raw, group.field, value);
+        if (qi) qi.value = newQuery;
+        const params = new URLSearchParams(location.search);
+        params.set("q", newQuery);
+        params.delete("start");
+        navigate("/search?" + params.toString());
+      });
+
+      const valueSpan = document.createElement("span");
+      valueSpan.className = "facet-value";
+      valueSpan.textContent = value; // XSS-safe: textContent only
+
+      const countSpan = document.createElement("span");
+      countSpan.className = "facet-count";
+      countSpan.textContent = "(" + count + ")"; // XSS-safe: count is a number
+
+      label.appendChild(checkbox);
+      label.appendChild(valueSpan);
+      label.appendChild(countSpan);
+      li.appendChild(label);
+      ul.appendChild(li);
+    }
+
+    details.appendChild(ul);
+    rail.appendChild(details);
+    anyRendered = true;
+  }
+
+  if (!anyRendered) {
+    const empty = document.createElement("p");
+    empty.className = "rail-empty";
+    empty.textContent = "";
+    rail.appendChild(empty);
+  }
+}
+
+/** Display label for a fess field name. */
+const FACET_FIELD_LABELS = {
+  repository:   "Repository",
+  filetype:     "Language",
+  organization: "Organization",
+  filename:     "Path/Filename",
+};
+
+/**
+ * Render removable qualifier chips in #active-chips (inserted before #results).
+ * Chips are rebuilt on every search; container is hidden when empty.
+ * XSS-safe: qualifier values written via textContent only.
+ */
+function renderActiveChips() {
+  const results = document.getElementById("results");
+  if (!results) return;
+
+  // Create or reuse #active-chips container (inserted directly before #results)
+  let chips = document.getElementById("active-chips");
+  if (!chips) {
+    chips = document.createElement("div");
+    chips.id = "active-chips";
+    chips.className = "active-chips";
+    results.parentNode.insertBefore(chips, results);
+  }
+
+  // Clear current chips
+  while (chips.firstChild) chips.removeChild(chips.firstChild);
+
+  const queryInput = document.getElementById("query-input");
+  const currentRawQuery = queryInput ? queryInput.value : "";
+  const parsed = parseQuery(currentRawQuery);
+  const qualifiers = (parsed.qualifiers || []).filter(q => !q.negate);
+
+  if (qualifiers.length === 0) {
+    chips.hidden = true;
+    return;
+  }
+  chips.hidden = false;
+
+  for (const q of qualifiers) {
+    const fieldLabel = FACET_FIELD_LABELS[q.key] || q.key;
+
+    const chip = document.createElement("span");
+    chip.className = "active-chip";
+
+    // Label text: "Repository: fess"
+    const labelText = document.createTextNode(fieldLabel + ": " + q.value + " ");
+    chip.appendChild(labelText);
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "chip-remove";
+    removeBtn.textContent = "×"; // XSS-safe: textContent
+    removeBtn.setAttribute("aria-label", "Remove filter");
+
+    removeBtn.addEventListener("click", () => {
+      const qi = document.getElementById("query-input");
+      const raw = qi ? qi.value : "";
+      const newQuery = removeQualifier(raw, q.key, q.value);
+      if (qi) qi.value = newQuery;
+      const params = new URLSearchParams(location.search);
+      params.set("q", newQuery);
+      params.delete("start");
+      navigate("/search?" + params.toString());
+    });
+
+    chip.appendChild(removeBtn);
+    chips.appendChild(chip);
+  }
+}
+
+// ---------------------------------------------------------------------------
 // runSearch — URL is the source of truth
 // ---------------------------------------------------------------------------
 
@@ -594,6 +799,8 @@ async function runSearch() {
     renderResults(env);
     renderSummary(env);
     renderPagination(env);
+    renderFacets(env);
+    renderActiveChips();
 
     if (errBox) errBox.hidden = true;
     // Expose the envelope so Task 5 (facets) can render from the same response.
@@ -711,6 +918,7 @@ export function clearSearchState() {
   if (summary) summary.innerHTML = "";
   const pagination = document.getElementById("pagination");
   if (pagination) pagination.innerHTML = "";
+  renderActiveChips();
 }
 
 /**
