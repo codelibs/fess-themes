@@ -671,7 +671,7 @@ async function main() {
   syncHeaderOffset();
   window.addEventListener("resize", syncHeaderOffset);
   if (window.ResizeObserver) {
-    const header = document.querySelector(".navbar.fixed-top");
+    const header = document.querySelector(".app-header");
     if (header) new ResizeObserver(syncHeaderOffset).observe(header);
   }
 

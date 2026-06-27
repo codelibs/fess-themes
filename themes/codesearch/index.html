@@ -163,24 +163,32 @@
 
   <!-- Login modal (auth.js toggles .show). -->
   <div class="modal" id="login-modal" tabindex="-1" aria-labelledby="login-modal-title" aria-hidden="true">
-    <div class="view-pane login-modal-body">
-      <form id="login-form" class="notification">
-        <h2 class="modal-title" id="login-modal-title" data-i18n="auth.login">Login</h2>
-        <div class="notification" id="login-notification" role="status" aria-live="polite" hidden></div>
-        <div class="alert alert-danger" id="login-error" role="alert" hidden></div>
-        <p>
-          <label for="login-username" data-i18n="auth.username">Username</label><br>
-          <input class="btn login-modal-body-input" id="login-username" name="username" autocomplete="username" required>
-        </p>
-        <p>
-          <label for="login-password" data-i18n="auth.password">Password</label><br>
-          <input class="btn login-modal-body-input" id="login-password" name="password" type="password" autocomplete="current-password" required>
-        </p>
-        <p>
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title" id="login-modal-title" data-i18n="auth.login">Login</h2>
+        </div>
+        <div class="modal-body">
+          <form id="login-form">
+            <div class="notification" id="login-notification" role="status" aria-live="polite" hidden></div>
+            <div class="alert alert-danger" id="login-error" role="alert" hidden></div>
+            <p>
+              <label for="login-username" data-i18n="auth.username">Username</label><br>
+              <input class="btn login-modal-body-input" id="login-username" name="username" autocomplete="username" required>
+            </p>
+            <p>
+              <label for="login-password" data-i18n="auth.password">Password</label><br>
+              <input class="btn login-modal-body-input" id="login-password" name="password" type="password" autocomplete="current-password" required>
+            </p>
+            <p>
+              <button type="submit" class="btn btn-primary" data-i18n="auth.login">Login</button>
+            </p>
+          </form>
+        </div>
+        <div class="modal-footer">
           <button type="button" class="btn" data-bs-dismiss="modal" data-i18n="auth.cancel">Cancel</button>
-          <button type="submit" class="btn btn-primary" data-i18n="auth.login">Login</button>
-        </p>
-      </form>
+        </div>
+      </div>
     </div>
   </div>
 

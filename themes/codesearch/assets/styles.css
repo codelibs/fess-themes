@@ -262,6 +262,14 @@ h1, h2, h3, h4 { font-weight: 600; line-height: 1.25; margin: 0 0 .5em; }
 [data-theme="light"] .theme-toggle .moon { display: inline; }
 [data-theme="light"] .theme-toggle .sun  { display: none; }
 
+/* Light-mode focus-glow fallback for browsers without color-mix() support. */
+[data-theme="light"] .search-bar:focus-within {
+  box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.22);
+}
+[data-theme="light"] .home .home-search:focus-within {
+  box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.22);
+}
+
 /* ============================================================ APP SHELL */
 
 /* 3-column grid: facets | results | ask-panel. The ask column is removable
