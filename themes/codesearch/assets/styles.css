@@ -1,0 +1,963 @@
+/* SPDX-License-Identifier: Apache-2.0
+ *
+ * codesearch theme — dark-first design system + 3-column app shell.
+ *
+ * Self-contained: NO Bootstrap, NO external fonts/CDNs. Everything renders from
+ * the design tokens below. The theme is an IDE-adjacent, dense, source-code-search
+ * interface (GitHub Code Search / Sourcegraph class). The one reserved accent is
+ * --match (the amber search-match highlight); --link is the functional blue for
+ * clickable code tokens; --accent drives interactive chrome (focus, active rail).
+ *
+ * Built in Task 2: tokens + theming + the static shell. Result cards, facets, and
+ * the Ask panel body are filled by Tasks 4/5/6 — their containers are empty here.
+ */
+
+/* ============================================================ DESIGN TOKENS */
+
+:root {
+  /* Dark is the default. Deep blue-slate "editor void", not a flat near-black. */
+  --bg:      #0b0f17;
+  --surface: #121821;
+  --raised:  #182230;
+  --border:  #1f2733;
+  --text:    #d7dee8;
+  --muted:   #8b97a8;
+  --faint:   #5c6678;
+  --accent:  #5aa0ff;  /* interactive chrome: focus rings, active rail item */
+  --match:   #ffb454;  /* reserved: search-match highlight (grep-hit amber)   */
+  --match-bg: rgba(255, 180, 84, 0.16);
+  --link:    #6cb6ff;  /* clickable code tokens / paths                       */
+  --danger:  #ff6b6b;
+  --ok:      #54c98a;
+
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, "Liberation Mono", monospace;
+  --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  /* Geometry — tight, IDE-dense. Hairline borders, small radii. */
+  --r:        6px;
+  --r-sm:     4px;
+  --gap:      16px;
+  --rail-w:   268px;
+  --ask-w:    360px;
+  --header-h: 56px;
+
+  --shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+
+  --on-accent: #07101f;  /* text on --accent buttons (dark bg needs dark text) */
+
+  color-scheme: dark;
+}
+
+[data-theme="light"] {
+  --bg:      #fbfcfe;
+  --surface: #ffffff;
+  --raised:  #f1f4f9;
+  --border:  #d9e0ea;
+  --text:    #1c232e;
+  --muted:   #5a6675;
+  --faint:   #8b97a8;
+  --accent:  #1f6feb;
+  --match:   #b8730a;
+  --match-bg: rgba(255, 180, 84, 0.32);
+  --link:    #0a5cc4;
+  --danger:  #c92a2a;
+  --ok:      #1a7a48;
+
+  --shadow: 0 8px 28px rgba(20, 30, 50, 0.14);
+
+  --on-accent: #ffffff;  /* text on --accent in light mode (blue btn needs white text) */
+
+  color-scheme: light;
+}
+
+/* ================================================================== RESET */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+button { font: inherit; color: inherit; cursor: pointer; }
+
+img { max-width: 100%; height: auto; }
+
+code, kbd, samp, pre, .mono { font-family: var(--mono); }
+
+h1, h2, h3, h4 { font-weight: 600; line-height: 1.25; margin: 0 0 .5em; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+::selection { background: var(--match-bg); }
+
+/* Screen-reader-only utility (replaces Bootstrap's .visually-hidden). */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0);
+  white-space: nowrap; border: 0;
+}
+.skip-link {
+  position: absolute; top: 8px; left: 8px;
+  z-index: 200;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
+  transform: translateY(-200%);
+  transition: transform .15s ease;
+}
+.skip-link:focus { transform: translateY(0); }
+
+[hidden] { display: none !important; }
+
+/* =============================================================== HEADER */
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: var(--gap);
+  height: var(--header-h);
+  padding: 0 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+.brand:hover { text-decoration: none; }
+.brand .brand-sigil {
+  color: var(--match);
+  font-size: 18px;
+  line-height: 1;
+}
+.brand img { height: 22px; width: auto; }
+.brand .brand-name b { color: var(--accent); font-weight: 600; }
+
+/* The search bar styled as a command/prompt line — the page's signature. */
+.search-bar {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 10px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  transition: border-color .12s ease, box-shadow .12s ease;
+}
+.search-bar:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(90, 160, 255, 0.22);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.search-bar .prompt {
+  flex: 0 0 auto;
+  font-family: var(--mono);
+  font-weight: 700;
+  color: var(--faint);
+  user-select: none;
+}
+.search-bar input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 13.5px;
+  outline: none;
+}
+.search-bar input::placeholder { color: var(--faint); }
+.search-bar .scope-pill {
+  flex: 0 0 auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--raised);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+
+.header-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Header icon/text buttons (theme toggle, ask toggle, nav). */
+.hbtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+}
+.hbtn:hover { background: var(--raised); color: var(--text); }
+.hbtn[aria-pressed="true"],
+.hbtn.is-active { color: var(--accent); border-color: var(--border); }
+.hbtn .icon { font-size: 15px; line-height: 1; }
+
+#header-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+#header-nav .nav-item { display: inline-flex; }
+#header-nav .nav-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 32px; padding: 0 10px;
+  color: var(--muted); border-radius: var(--r-sm); font-size: 13px;
+}
+#header-nav .nav-link:hover { background: var(--raised); color: var(--text); text-decoration: none; }
+#header-nav .warning-indicator .nav-link { color: var(--match); }
+#header-nav .text-danger { color: var(--danger); }
+#header-nav .text-warning { color: var(--match); }
+
+/* Theme toggle shows the icon for the theme you'd switch TO. */
+.theme-toggle .moon { display: none; }
+.theme-toggle .sun  { display: inline; }
+[data-theme="light"] .theme-toggle .moon { display: inline; }
+[data-theme="light"] .theme-toggle .sun  { display: none; }
+
+/* Light-mode focus-glow fallback for browsers without color-mix() support. */
+[data-theme="light"] .search-bar:focus-within {
+  box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.22);
+}
+[data-theme="light"] .home .home-search:focus-within {
+  box-shadow: 0 0 0 3px rgba(31, 111, 235, 0.22);
+}
+
+/* ============================================================ APP SHELL */
+
+/* 3-column grid: facets | results | ask-panel. The ask column is removable
+ * (collapsed) by toggling the .ask-collapsed class on the shell. */
+.app-shell {
+  display: grid;
+  grid-template-columns: var(--rail-w) minmax(0, 1fr) var(--ask-w);
+  align-items: start;
+  gap: 0;
+  min-height: calc(100vh - var(--header-h));
+}
+.app-shell.ask-collapsed {
+  grid-template-columns: var(--rail-w) minmax(0, 1fr) 0;
+}
+
+/* Generic full-width views (home, error, profile, help, chat, cache, advance)
+ * that are NOT the 3-column results layout sit centered in a content column. */
+.view-pane {
+  grid-column: 1 / -1;
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 32px 24px;
+}
+
+/* ---- Left rail: facets (file-tree-like gutter) ---- */
+.facet-rail {
+  position: sticky;
+  top: var(--header-h);
+  align-self: start;
+  height: calc(100vh - var(--header-h));
+  overflow-y: auto;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  padding: 16px 12px;
+}
+.facet-rail .rail-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--faint);
+  margin: 0 4px 10px;
+}
+.facet-rail .rail-empty {
+  color: var(--faint);
+  font-size: 12.5px;
+  padding: 4px;
+}
+
+/* ---- Center: results ---- */
+.results-col {
+  min-width: 0;
+  padding: 16px 20px 64px;
+}
+#result-summary {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--muted);
+  padding: 4px 2px 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+  min-height: 1.5em;
+}
+#result-summary .count { color: var(--text); font-weight: 600; }
+#result-summary .term  { color: var(--match); }
+
+ol#results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Match highlight — the one reserved accent. Used wherever a query term is shown
+ * inside a code line / path / snippet (Task 4 emits <mark> inside #results). */
+mark, .match {
+  background: var(--match-bg);
+  color: var(--match);
+  border-radius: 2px;
+  padding: 0 1px;
+  font-weight: 600;
+}
+
+/* Empty / loading states for the center column. */
+.results-empty,
+.results-loading {
+  color: var(--faint);
+  text-align: center;
+  padding: 64px 16px;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+.results-loading .dot { color: var(--accent); }
+
+#pagination {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  margin: 28px 0 0;
+  padding: 0;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+#pagination .page-item { list-style: none; }
+#pagination .page-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  color: var(--text);
+}
+#pagination .page-link:hover { border-color: var(--accent); text-decoration: none; }
+#pagination .page-item.active .page-link {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: transparent;
+}
+#pagination .page-item.disabled .page-link {
+  color: var(--faint);
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* ---- Result summary: count + sort + density controls ---- */
+#result-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+#result-summary .exec-time { color: var(--faint); }
+#result-summary .summary-controls {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+#result-summary .sort-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+#result-summary .control-label { color: var(--faint); }
+#result-summary .sort-select {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 2px 6px;
+}
+#result-summary .density-toggle {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 2px 8px;
+  cursor: pointer;
+}
+#result-summary .density-toggle:hover { border-color: var(--accent); color: var(--text); }
+
+/* ---- Result card ---- */
+.result-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.result-card .result-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--raised);
+}
+.result-card .result-crumb {
+  min-width: 0;
+  flex: 1 1 auto;
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.result-card .crumb-org { color: var(--muted); }
+.result-card .crumb-repo { color: var(--text); font-weight: 600; }
+.result-card .crumb-path { color: var(--link); }
+.result-card .result-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.result-card .lang-badge {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 1px 8px;
+}
+.result-card .open-repo {
+  display: inline-flex;
+  align-items: center;
+  color: var(--muted);
+  font-size: 14px;
+}
+.result-card .open-repo:hover { color: var(--accent); }
+.result-card .favorite-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0;
+}
+.result-card .favorite-btn:hover,
+.result-card .favorite-btn.is-on { color: var(--match); }
+.result-card .favorite-count { font-family: var(--mono); font-size: 11px; }
+
+/* Line-gutter code block — the snippet body. */
+.result-card .code-block {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.55;
+  overflow-x: auto;
+  padding: 8px 0;
+}
+.result-card .code-row {
+  display: grid;
+  grid-template-columns: var(--gutter-w, 3.5em) 1fr;
+  align-items: start;
+}
+.result-card .code-gutter {
+  text-align: right;
+  padding: 0 12px 0 8px;
+  color: var(--faint);
+  user-select: none;          /* the line number is never copyable code */
+  -webkit-user-select: none;
+  white-space: nowrap;
+}
+.result-card .code-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text);
+  background: none;
+  padding: 0 12px 0 0;
+}
+.result-card .code-text strong,
+.result-card .code-text em {
+  background: var(--match-bg);
+  color: var(--match);
+  font-style: normal;
+  font-weight: 600;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+.result-card .result-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.result-card .result-foot .foot-sep { color: var(--faint); }
+
+/* Generic fallback card (non-codesearch index). */
+.result-generic .result-title { flex: 1 1 auto; min-width: 0; }
+.result-generic .result-link { font-weight: 600; }
+.result-generic .result-snippet {
+  padding: 10px 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text);
+}
+.result-generic .result-snippet strong,
+.result-generic .result-snippet em {
+  background: var(--match-bg);
+  color: var(--match);
+  font-style: normal;
+  font-weight: 600;
+}
+
+/* Compact density: tighter cards + smaller code. */
+:root[data-density="compact"] ol#results { gap: 8px; }
+:root[data-density="compact"] .result-card .result-head { padding: 6px 10px; }
+:root[data-density="compact"] .result-card .code-block { font-size: 11.5px; line-height: 1.4; padding: 4px 0; }
+:root[data-density="compact"] .result-card .result-foot { padding: 5px 10px; }
+
+/* Home popular-words + suggest dropdown (rendered by search.js). */
+.home .home-popular .popular-label { color: var(--faint); margin-right: 4px; }
+.home .home-popular .popular-word { font-family: var(--mono); margin: 0 6px; }
+#home-suggest-dropdown:not(.visually-hidden),
+.suggest-list:not(.visually-hidden) {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 4px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+}
+.suggest-item {
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 4px 8px;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+.suggest-item:hover { background: var(--raised); }
+
+/* ---- Right: Ask panel (collapsible) ---- */
+.ask-panel {
+  position: sticky;
+  top: var(--header-h);
+  align-self: start;
+  height: calc(100vh - var(--header-h));
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-left: 1px solid var(--border);
+  overflow: hidden;
+}
+.ask-collapsed .ask-panel { display: none; }
+.ask-panel .ask-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+}
+.ask-panel .ask-title {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 600;
+  margin: 0;
+}
+.ask-panel .ask-title .icon { color: var(--accent); }
+.ask-panel .ask-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 16px 14px;
+}
+.ask-panel .ask-empty {
+  color: var(--faint);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+/* ============================================================ HOME VIEW */
+
+.home {
+  text-align: center;
+  padding: clamp(48px, 12vh, 140px) 24px 64px;
+}
+.home .home-mark {
+  font-family: var(--mono);
+  font-size: clamp(28px, 6vw, 44px);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin: 0 0 6px;
+}
+.home .home-mark .sigil { color: var(--match); }
+.home .home-tag {
+  color: var(--muted);
+  font-size: 14px;
+  margin: 0 auto 28px;
+  max-width: 38ch;
+}
+.home .home-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 0 14px;
+  height: 48px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+}
+.home .home-search:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(90, 160, 255, 0.22);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.home .home-search .prompt { font-family: var(--mono); color: var(--faint); font-weight: 700; }
+.home .home-search input {
+  flex: 1 1 auto; min-width: 0;
+  background: transparent; border: 0; outline: none;
+  color: var(--text); font-family: var(--mono); font-size: 15px;
+}
+.home .home-search input::placeholder { color: var(--faint); }
+.home .home-search button {
+  flex: 0 0 auto;
+  height: 34px; padding: 0 16px;
+  background: var(--accent); color: var(--on-accent);
+  border: 0; border-radius: var(--r-sm);
+  font-weight: 600; font-size: 13px;
+}
+.home .home-search button:hover { filter: brightness(1.08); }
+.home .home-popular { margin-top: 18px; color: var(--muted); font-size: 12.5px; }
+.home .home-popular a { font-family: var(--mono); margin: 0 6px; }
+.home .home-flash {
+  max-width: 620px; margin: 0 auto 18px;
+  padding: 10px 14px; border-radius: var(--r-sm);
+  border: 1px solid var(--border); background: var(--surface);
+  font-size: 13px;
+}
+.home .home-flash.danger { border-color: var(--danger); color: var(--danger); }
+
+/* ============================================================ GENERIC UI */
+
+.notification {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--r-sm);
+  padding: 10px 14px;
+  font-size: 13px;
+}
+.alert {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--r-sm);
+  padding: 10px 14px;
+  font-size: 13px;
+}
+.alert-danger { border-color: var(--danger); color: var(--danger); }
+.alert-warning { border-color: var(--match); color: var(--match); }
+.alert-info { border-color: var(--accent); }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 34px; padding: 0 14px;
+  border-radius: var(--r-sm); border: 1px solid var(--border);
+  background: var(--raised); color: var(--text);
+  font-size: 13px; font-weight: 500;
+}
+.btn:hover { border-color: var(--accent); text-decoration: none; }
+.btn-primary { background: var(--accent); color: var(--on-accent); border-color: transparent; }
+.btn-primary:hover { filter: brightness(1.08); }
+
+/* Back-to-top floating control. */
+.back-to-top {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 90;
+  width: 40px; height: 40px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: var(--shadow);
+  transition: opacity .15s ease, transform .15s ease;
+}
+.back-to-top.is-hidden { opacity: 0; pointer-events: none; transform: translateY(8px); }
+
+/* Footer. */
+.app-footer {
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding: 18px 24px;
+  text-align: center;
+}
+.app-footer p { margin: 0; color: var(--muted); font-size: 12.5px; }
+.text-muted { color: var(--muted); }
+
+/* Search-options drawer (header.jsp parity). Hidden by default; openable later.
+ * Styled minimally here; Task 4 owns the option controls. */
+#searchOptions { display: none; }
+#searchOptions.show,
+#searchOptions.open { display: block; }
+#searchOptions .drawer-inner {
+  max-width: 920px; margin: 0 auto; padding: 20px 24px;
+}
+
+/* ============================================================ COMPAT COMPONENTS
+ * These classes are toggled by compat.js (the Bootstrap JS shim). Styled with
+ * this theme's dark-first design tokens — no --df-* or --bs-* vars.          */
+
+/* ---- Collapse ---- */
+.collapse:not(.show) { display: none; }
+
+/* ---- Dropdown ---- */
+.dropdown { position: relative; }
+.dropdown-toggle::after {
+  content: ""; display: inline-block; margin-left: .35em;
+  border: .3em solid transparent; border-top-color: currentColor; border-bottom: 0;
+  vertical-align: middle;
+}
+.dropdown-menu {
+  display: none;
+  /* Left-align the menu under its toggle and grow rightward. The user menu
+     sits left-of-center in the header's right cluster (user · help · ask ·
+     theme), so right-aligning made the menu protrude leftward over the search
+     bar. left:0 drops it directly under the username and stays on-screen. */
+  position: absolute; left: 0; right: auto; top: 100%; z-index: 1040;
+  min-width: 180px; margin-top: .35rem; padding: .35rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  list-style: none;
+}
+.dropdown-menu.show { display: block; }
+.dropdown-item {
+  display: flex; align-items: center; gap: .5rem;
+  width: 100%; padding: .5rem .65rem;
+  color: var(--text);
+  background: transparent; border: 0; border-radius: var(--r-sm);
+  text-align: left; text-decoration: none; cursor: pointer; font-size: .9rem;
+}
+.dropdown-item:hover { background: var(--raised); color: var(--text); text-decoration: none; }
+
+/* ---- Modal ---- */
+.modal {
+  display: none;
+  position: fixed; inset: 0; z-index: 1055;
+  overflow-y: auto; padding: 1rem;
+}
+.modal.show { display: block; }
+.modal.fade .modal-dialog { transition: transform .2s ease, opacity .2s ease; transform: translateY(-12px); opacity: 0; }
+.modal.fade.show .modal-dialog { transform: none; opacity: 1; }
+.modal-dialog { max-width: 480px; margin: 3.5rem auto; }
+.modal-content {
+  display: flex; flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r); box-shadow: var(--shadow); overflow: hidden;
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+}
+.modal-title { margin: 0; font-size: 1.1rem; }
+.modal-body { padding: 1.25rem; }
+.modal-footer {
+  display: flex; align-items: center; justify-content: flex-end; gap: .5rem;
+  padding: 1rem 1.25rem; border-top: 1px solid var(--border);
+}
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 1050;
+  background: rgba(0, 0, 0, 0.55);
+  opacity: 0; transition: opacity .2s ease;
+}
+.modal-backdrop.show { opacity: 1; }
+body.modal-open { overflow: hidden; }
+
+/* ---- Login modal sizing (replaces former inline style= attributes) ---- */
+.login-modal-body { max-width: 420px; }
+.login-modal-body-input { width: 100%; }
+
+/* ---- Offcanvas ---- */
+.offcanvas {
+  position: fixed; top: 0; bottom: 0; z-index: 1055;
+  display: flex; flex-direction: column;
+  width: 320px; max-width: 85vw;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  transition: transform .25s ease; visibility: hidden;
+}
+.offcanvas-end { right: 0; transform: translateX(100%); border-left: 1px solid var(--border); }
+.offcanvas.show { transform: none; visibility: visible; }
+.offcanvas-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 1.25rem; border-bottom: 1px solid var(--border);
+}
+.offcanvas-title { margin: 0; font-size: 1.05rem; }
+.offcanvas-body { padding: 1.25rem; overflow-y: auto; flex: 1 1 auto; }
+.offcanvas-backdrop {
+  position: fixed; inset: 0; z-index: 1050;
+  background: rgba(0, 0, 0, 0.55);
+  opacity: 0; transition: opacity .2s ease;
+}
+.offcanvas-backdrop.show { opacity: 1; }
+
+/* ---- Tooltip ---- */
+.bs-tooltip {
+  position: absolute; z-index: 1080;
+  padding: 4px 8px;
+  background: var(--raised);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  font-size: 12px;
+  pointer-events: none;
+  opacity: 0; transition: opacity .15s ease;
+  white-space: nowrap;
+}
+.bs-tooltip.show { opacity: 1; }
+
+/* ============================================================ RESPONSIVE */
+
+/* Below ~960px the 3 columns collapse: facets + ask become off-canvas drawers
+ * and the results column spans the full width. */
+@media (max-width: 960px) {
+  .app-shell,
+  .app-shell.ask-collapsed {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .facet-rail {
+    position: fixed;
+    top: var(--header-h);
+    left: 0;
+    width: min(82vw, var(--rail-w));
+    height: calc(100vh - var(--header-h));
+    z-index: 80;
+    border-right: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    transform: translateX(-102%);
+    transition: transform .2s ease;
+  }
+  .facet-rail.is-open { transform: translateX(0); }
+
+  .ask-panel {
+    position: fixed;
+    top: var(--header-h);
+    right: 0;
+    width: min(92vw, var(--ask-w));
+    height: calc(100vh - var(--header-h));
+    z-index: 80;
+    border-left: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    display: flex;
+    transform: translateX(102%);
+    transition: transform .2s ease;
+  }
+  /* On mobile the ask panel is a drawer: visible only when explicitly opened,
+   * regardless of the desktop .ask-collapsed state. */
+  .ask-panel:not(.is-open),
+  .ask-collapsed .ask-panel:not(.is-open) { transform: translateX(102%); }
+  .ask-panel.is-open { transform: translateX(0); }
+
+  /* Scrim behind an open drawer. */
+  .drawer-scrim {
+    position: fixed;
+    inset: var(--header-h) 0 0;
+    z-index: 70;
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .results-col { padding: 14px 16px 56px; }
+}
+
+@media (min-width: 961px) {
+  /* The mobile-only facet/ask drawer toggles are hidden on desktop. */
+  .drawer-toggle { display: none; }
+  .drawer-scrim { display: none; }
+}
+
+@media (max-width: 600px) {
+  .search-bar .scope-pill { display: none; }
+  .brand .brand-name { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* ── Display utilities (Bootstrap-compatible) ── */
+.d-none         { display: none !important; }
+.d-block        { display: block !important; }
+.d-flex         { display: flex !important; }
+.d-inline-flex  { display: inline-flex !important; }
+@media (min-width: 576px) {
+  .d-sm-inline-block { display: inline-block !important; }
+}

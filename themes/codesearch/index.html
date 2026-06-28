@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-src blob:; child-src blob:; base-uri 'self'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fess Code Search</title>
+  <link rel="stylesheet" href="/themes/codesearch/assets/styles.css">
+  <link rel="icon" href="/favicon.ico">
+</head>
+<body>
+  <a href="#page-root" class="skip-link" data-i18n="aria.skip_to_main">Skip to main content</a>
+  <!-- Visually-hidden h1 for screen readers and SEO; text updated by i18n.js. -->
+  <h1 class="visually-hidden" data-i18n="page.heading">Fess Code Search</h1>
+
+  <!-- ===================================================================
+       HEADER — command line. Brand sigil + the single #query-input search
+       box styled as a prompt, then header actions: nav (#header-nav with
+       auth/chat/help), the Ask-panel toggle (#ask-toggle), and the dark/light
+       #theme-toggle. app.js wires auth/chat/warnings into #header-nav.
+       =================================================================== -->
+  <header class="app-header" role="banner">
+    <a class="brand" href="/" id="brand-link" data-spa aria-label="Fess Code Search home">
+      <span class="brand-sigil" aria-hidden="true">⌗</span>
+      <span class="brand-name"><b>fess</b>/code</span>
+    </a>
+
+    <!-- The header search box. NOTE: id is #query-input (consumed by Task 4's
+         search rewrite). It is intentionally NOT #search-form/#query, so the
+         current search.js attach() finds no mount point and stays inert; the
+         submit below is wired minimally in app.js (navigate to /search?q=). -->
+    <form class="search-bar" id="search-bar" role="search" aria-label="Code search">
+      <span class="prompt" aria-hidden="true">&gt;</span>
+      <input
+          id="query-input"
+          type="search"
+          name="q"
+          maxlength="1000"
+          autocomplete="off"
+          spellcheck="false"
+          aria-label="Search query"
+          data-i18n-placeholder="search.placeholder"
+          placeholder="Search code, paths, symbols…">
+      <span class="scope-pill" data-i18n="search.scope_all">all repos</span>
+    </form>
+
+    <nav class="header-actions" aria-label="Primary">
+      <ul id="header-nav">
+        <!-- Warnings (EOL / dev-mode) and auth/chat entries injected by app.js / auth.js. -->
+        <li class="nav-item" id="auth-controls" data-i18n-aria-label="aria.auth_controls"></li>
+        <li class="nav-item" id="chat-nav-item" hidden>
+          <a class="nav-link" href="/chat" id="chat-nav-link" data-spa role="button">
+            <span class="icon" aria-hidden="true">✦</span> <span data-i18n="nav.chat_ai_mode">AI Search</span>
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link help-link" href="/help" id="help-link" data-spa>
+            <span class="icon" aria-hidden="true">?</span> <span data-i18n="nav.help">Help</span>
+          </a>
+        </li>
+      </ul>
+      <!-- Ask-panel toggle (right column). Wired in app.js. -->
+      <button type="button" class="hbtn" id="ask-toggle" aria-pressed="true" aria-controls="ask-panel" data-i18n-aria-label="ask.toggle">
+        <span class="icon" aria-hidden="true">✦</span> <span data-i18n="ask.title">Ask</span>
+      </button>
+      <!-- Dark/light toggle. Wired in app.js; persists to localStorage. -->
+      <button type="button" class="hbtn theme-toggle" id="theme-toggle" aria-label="Toggle theme" data-i18n-aria-label="theme.toggle">
+        <span class="icon sun" aria-hidden="true">☀</span><span class="icon moon" aria-hidden="true">☾</span>
+      </button>
+    </nav>
+  </header>
+
+  <main id="page-root" role="main">
+
+    <!-- ===================================================================
+         HOME VIEW — centered prompt landing (shown at "/" with no q=).
+         Keeps #home-search-form / #contentQuery / #home-suggest-dropdown /
+         #home-popular-words / #home-notification / #home-flash so the reused
+         app.js attachHomeView() wiring works unchanged.
+         =================================================================== -->
+    <section id="home-view" class="view-pane home" hidden>
+      <p class="home-mark"><span class="sigil" aria-hidden="true">⌗</span> <span data-i18n="page.heading">Fess Code Search</span></p>
+      <p class="home-tag" data-i18n="search.home_tagline">Search across your code, paths, and symbols.</p>
+      <div class="notification" id="home-notification" role="status" aria-live="polite" hidden></div>
+      <div id="home-flash" class="home-flash" role="alert" aria-live="assertive" aria-atomic="true" hidden></div>
+      <form id="home-search-form" role="search" aria-label="Home search">
+        <div class="home-search">
+          <span class="prompt" aria-hidden="true">&gt;</span>
+          <input id="contentQuery" type="search" name="q" maxlength="1000" autocomplete="off" spellcheck="false"
+                 data-i18n-placeholder="search.placeholder" placeholder="Search code, paths, symbols…"
+                 aria-label="Search query">
+          <button type="submit" id="home-search-submit" class="btn-primary" data-i18n="search.button">Search</button>
+        </div>
+        <ul class="visually-hidden" id="home-suggest-dropdown" role="listbox" aria-label="Search suggestions"></ul>
+        <p class="home-popular" id="home-popular-words"></p>
+      </form>
+    </section>
+
+    <!-- ===================================================================
+         RESULTS VIEW — the 3-column app shell: facets | results | ask.
+         #facet-rail, #result-summary, #results, #pagination, #ask-panel are
+         filled by Tasks 4/5/6; they are empty placeholders here.
+         =================================================================== -->
+    <section id="results-view">
+      <div class="app-shell" id="app-shell">
+        <!-- Left: facet rail (file-tree-style filters). Filled by Task 5. -->
+        <aside class="facet-rail" id="facet-rail" aria-label="Filters">
+          <p class="rail-title" data-i18n="facet.title">Filters</p>
+          <p class="rail-empty" data-i18n="facet.empty">Run a search to filter results.</p>
+        </aside>
+
+        <!-- Center: results column. Cards rendered by Task 4 into #results. -->
+        <div class="results-col">
+          <div id="results-notification" class="notification" role="status" aria-live="polite" hidden></div>
+          <div id="search-error" class="alert alert-danger" role="alert" aria-live="assertive" hidden></div>
+          <p id="result-summary" aria-live="polite" aria-atomic="true"></p>
+          <input type="hidden" id="queryId" value="">
+          <input type="hidden" id="rt" value="">
+          <ol id="results" role="list"></ol>
+          <div class="results-empty" id="empty-state" hidden>
+            <p data-i18n="search.did_not_match_suggestion">Try different keywords or fewer keywords.</p>
+          </div>
+          <nav aria-label="Pagination">
+            <ul id="pagination"></ul>
+          </nav>
+        </div>
+
+        <!-- Right: Ask panel (collapsible AI side-panel). Body filled by Task 6. -->
+        <aside class="ask-panel" id="ask-panel" aria-label="Ask AI">
+          <div class="ask-header">
+            <h2 class="ask-title"><span class="icon" aria-hidden="true">✦</span> <span data-i18n="ask.title">Ask</span></h2>
+            <button type="button" class="hbtn drawer-toggle" id="ask-close" aria-label="Close panel" data-i18n-aria-label="ask.close">×</button>
+          </div>
+          <div class="ask-body" id="ask-body">
+            <p class="ask-empty" data-i18n="ask.empty">Ask a question about the search results to get an AI answer grounded in your code.</p>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- Standalone / routed views (kept from bootstrap; app.js routes to these). -->
+    <section id="advance-view" class="view-pane" hidden>
+      <div id="advance-notification" class="notification" role="status" aria-live="polite" hidden></div>
+    </section>
+    <section id="error-view" class="view-pane" hidden></section>
+    <section id="profile-view" class="view-pane" hidden></section>
+    <section id="help-view" class="view-pane" hidden></section>
+    <section id="chat-view" class="view-pane" hidden></section>
+    <section id="cache-view" class="view-pane" hidden></section>
+  </main>
+
+  <footer class="app-footer" role="contentinfo" data-i18n-aria-label="aria.footer">
+    <p class="text-muted" id="footer-copyright"></p>
+  </footer>
+
+  <!-- Mobile drawer scrim (shown by app.js when a drawer is open under 960px). -->
+  <div class="drawer-scrim" id="drawer-scrim" hidden></div>
+
+  <!-- Back to top button. -->
+  <button id="back-to-top" class="back-to-top is-hidden" type="button"
+          aria-label="Back to top" data-i18n-aria-label="footer.back_to_top">↑</button>
+
+  <!-- Login modal (auth.js toggles .show). -->
+  <div class="modal" id="login-modal" tabindex="-1" aria-labelledby="login-modal-title" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title" id="login-modal-title" data-i18n="auth.login">Login</h2>
+        </div>
+        <div class="modal-body">
+          <form id="login-form">
+            <div class="notification" id="login-notification" role="status" aria-live="polite" hidden></div>
+            <div class="alert alert-danger" id="login-error" role="alert" hidden></div>
+            <p>
+              <label for="login-username" data-i18n="auth.username">Username</label><br>
+              <input class="btn login-modal-body-input" id="login-username" name="username" autocomplete="username" required>
+            </p>
+            <p>
+              <label for="login-password" data-i18n="auth.password">Password</label><br>
+              <input class="btn login-modal-body-input" id="login-password" name="password" type="password" autocomplete="current-password" required>
+            </p>
+            <p>
+              <button type="submit" class="btn btn-primary" data-i18n="auth.login">Login</button>
+            </p>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn" data-bs-dismiss="modal" data-i18n="auth.cancel">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search-options drawer (header.jsp parity). Hidden; option selects are kept
+       so the reused option-reset helpers find their controls. Task 4 styles/uses it. -->
+  <div id="searchOptions">
+    <div class="drawer-inner">
+      <select id="numSearchOption" name="num" aria-label="Results per page"></select>
+      <select id="sortSearchOption" name="sort" aria-label="Sort order"></select>
+      <select id="langSearchOption" name="lang" multiple aria-label="Language filter"></select>
+      <select id="labelSearchOption" name="fields.label" multiple aria-label="Label filter"></select>
+      <input type="text" id="geo-lat">
+      <input type="text" id="geo-lon">
+      <input type="text" id="geo-distance">
+      <button type="button" id="searchOptionsClearButton" data-i18n="facet.clear">Clear</button>
+      <button type="submit" data-i18n="nav.search">Search</button>
+    </div>
+  </div>
+
+  <!-- contextPath hidden field (parity index.jsp). -->
+  <input type="hidden" id="contextPath" value="">
+
+  <script src="/themes/codesearch/assets/compat.js" defer></script>
+  <script type="module" src="/themes/codesearch/assets/app.js"></script>
+</body>
+</html>
