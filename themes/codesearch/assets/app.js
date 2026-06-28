@@ -619,11 +619,19 @@ async function main() {
   renderFooterCopyright();
   // D.4: Conditionally insert Chat nav link.
   renderChatNavLink();
-  // If rag_chat_enabled is false, hide the ask-toggle button.
+  // If rag_chat_enabled is false, hide the entire Ask (RAG) UI: the header
+  // toggle button AND the results-page Ask panel/column. The Ask panel is the
+  // RAG answer panel and does nothing without RAG, so leaving it visible just
+  // shows an unusable teaser. Collapsing the column reflows results to the
+  // freed width.
   const features = api.getConfig()?.features || {};
   if (!features.rag_chat_enabled) {
     const askToggleBtn = document.getElementById("ask-toggle");
     if (askToggleBtn) askToggleBtn.hidden = true;
+    const askPanel = document.getElementById("ask-panel");
+    if (askPanel) askPanel.hidden = true;
+    const appShell = document.getElementById("app-shell");
+    if (appShell) appShell.classList.add("ask-collapsed");
   }
   await auth.attach();
   search.attach();

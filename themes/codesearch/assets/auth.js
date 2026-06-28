@@ -185,11 +185,11 @@ function setLoggedIn(user) {
   if (newLogoutBtn) {
     newLogoutBtn.addEventListener("click", async (ev) => {
       ev.preventDefault();
-      let logoutEnv = null;
-      try { logoutEnv = await api.post("/auth/logout", {}); } catch { /* server may have already invalidated */ }
-      await rotateCsrf(logoutEnv);
-      setLoggedOut();
-      document.dispatchEvent(new CustomEvent("fess:auth:logout"));
+      // Invalidate the server session, then return to the top page with a clean
+      // slate. A full navigation to "/" clears the query input and the results
+      // view, and the fresh load re-probes auth (showing the login link).
+      try { await api.post("/auth/logout", {}); } catch { /* server may have already invalidated */ }
+      window.location.assign("/");
     });
   }
 }

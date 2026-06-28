@@ -785,7 +785,11 @@ mark, .match {
 }
 .dropdown-menu {
   display: none;
-  position: absolute; right: 0; top: 100%; z-index: 1040;
+  /* Left-align the menu under its toggle and grow rightward. The user menu
+     sits left-of-center in the header's right cluster (user · help · ask ·
+     theme), so right-aligning made the menu protrude leftward over the search
+     bar. left:0 drops it directly under the username and stays on-screen. */
+  position: absolute; left: 0; right: auto; top: 100%; z-index: 1040;
   min-width: 180px; margin-top: .35rem; padding: .35rem;
   background: var(--surface);
   border: 1px solid var(--border);
