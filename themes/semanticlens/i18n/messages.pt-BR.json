@@ -346,5 +346,14 @@
   "searcher.legend_title": "Tipo de busca:",
   "searcher.legend_semantic": "correspondência por significado",
   "searcher.legend_keyword": "correspondência por palavras-chave",
-  "searcher.legend_hybrid": "correspondência por ambas"
+  "searcher.legend_hybrid": "correspondência por ambas",
+  "searcher.why_hybrid": "Correspondido por palavra-chave e significado",
+  "searcher.why_semantic": "Correspondido por significado",
+  "searcher.why_keyword": "Correspondido por palavra-chave",
+  "composition.results": "resultados",
+  "composition.balanced": "Uma combinação equilibrada de palavras-chave e significado",
+  "composition.mostly_semantic": "Principalmente por significado",
+  "composition.mostly_keyword": "Principalmente correspondências por palavras-chave",
+  "sidebar.caption_semantic": "A maioria dos resultados é por significado. Os filtros reduzem todos, incluindo as correspondências semânticas.",
+  "sidebar.caption_mixed": "Os filtros reduzem o conjunto completo de resultados — tanto por palavras-chave quanto semânticos."
 }

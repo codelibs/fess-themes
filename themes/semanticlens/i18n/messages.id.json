@@ -346,5 +346,14 @@
   "searcher.legend_title": "Search type:",
   "searcher.legend_semantic": "matched by meaning",
   "searcher.legend_keyword": "matched by keywords",
-  "searcher.legend_hybrid": "matched by both"
+  "searcher.legend_hybrid": "matched by both",
+  "searcher.why_hybrid": "Dicocokkan oleh kata kunci dan makna",
+  "searcher.why_semantic": "Dicocokkan berdasarkan makna",
+  "searcher.why_keyword": "Dicocokkan berdasarkan kata kunci",
+  "composition.results": "hasil",
+  "composition.balanced": "Perpaduan seimbang antara kata kunci dan makna",
+  "composition.mostly_semantic": "Sebagian besar dicocokkan berdasarkan makna",
+  "composition.mostly_keyword": "Sebagian besar cocok berdasarkan kata kunci",
+  "sidebar.caption_semantic": "Sebagian besar hasil dicocokkan berdasarkan makna. Filter mempersempit semuanya, termasuk kecocokan semantik.",
+  "sidebar.caption_mixed": "Filter mempersempit set hasil penuh — baik kata kunci maupun semantik."
 }

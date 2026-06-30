@@ -346,5 +346,14 @@
   "searcher.legend_title": "Search type:",
   "searcher.legend_semantic": "matched by meaning",
   "searcher.legend_keyword": "matched by keywords",
-  "searcher.legend_hybrid": "matched by both"
+  "searcher.legend_hybrid": "matched by both",
+  "searcher.why_hybrid": "कीवर्ड और अर्थ दोनों से मिलान",
+  "searcher.why_semantic": "अर्थ से मिलान",
+  "searcher.why_keyword": "कीवर्ड से मिलान",
+  "composition.results": "परिणाम",
+  "composition.balanced": "कीवर्ड और अर्थ का संतुलित मिश्रण",
+  "composition.mostly_semantic": "मुख्यतः अर्थ से मिलान",
+  "composition.mostly_keyword": "मुख्यतः कीवर्ड मिलान",
+  "sidebar.caption_semantic": "अधिकांश परिणाम अर्थ से मेल खाते हैं। फ़िल्टर सभी परिणामों को संकुचित करते हैं, जिनमें सिमेंटिक मिलान भी शामिल हैं।",
+  "sidebar.caption_mixed": "फ़िल्टर पूरे परिणाम सेट को संकुचित करते हैं — कीवर्ड और सिमेंटिक दोनों।"
 }

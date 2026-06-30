@@ -346,5 +346,14 @@
   "searcher.legend_title": "Search type:",
   "searcher.legend_semantic": "matched by meaning",
   "searcher.legend_keyword": "matched by keywords",
-  "searcher.legend_hybrid": "matched by both"
+  "searcher.legend_hybrid": "matched by both",
+  "searcher.why_hybrid": "通過關鍵字和語義雙重匹配",
+  "searcher.why_semantic": "通過語義匹配",
+  "searcher.why_keyword": "通過關鍵字匹配",
+  "composition.results": "筆",
+  "composition.balanced": "關鍵字與語義的均衡搜尋",
+  "composition.mostly_semantic": "主要以語義匹配",
+  "composition.mostly_keyword": "主要以關鍵字匹配",
+  "sidebar.caption_semantic": "大多數結果通過語義匹配。過濾器縮小所有結果的範圍，包括語義匹配。",
+  "sidebar.caption_mixed": "過濾器縮小完整結果集的範圍——關鍵字和語義結果均適用。"
 }

@@ -37,6 +37,13 @@
   --df-info: #0369A1;             /* Cyan */
   --df-info-subtle: #E0F2FE;
 
+  /* SemanticLens source-of-match colors — keyword / semantic / hybrid provenance.
+     Used everywhere the searcher origin is surfaced: composition band, result
+     badges, card spines, sidebar caption. Exact hues are spec-mandated. */
+  --sl-hybrid:#0D9488;   --sl-hybrid-subtle:#DCF5F1;   --sl-hybrid-text:#0B6B62;
+  --sl-semantic:#7C3AED; --sl-semantic-subtle:#F1E9FE; --sl-semantic-text:#5B21B6;
+  --sl-keyword:#D97706;  --sl-keyword-subtle:#FEF3E2;  --sl-keyword-text:#9A5A05;
+
   /* neutrals (cool slate) */
   --df-bg: #FAFBFF;               /* cool near-white page background */
   --df-surface: #FFFFFF;          /* cards / panels / content */
@@ -996,17 +1003,121 @@ footer[role="contentinfo"] {
   white-space: nowrap; border: 1px solid transparent;
 }
 .searcher-badge .fa, .searcher-badge .fas, .searcher-badge .far { font-size: .92em; }
-.searcher-badge--semantic { color: #5B21B6; background: #EDE9FE; border-color: #DDD6FE; }
-.searcher-badge--keyword  { color: #075985; background: #E0F2FE; border-color: #BAE6FD; }
-.searcher-badge--hybrid   { color: #92400E; background: #FEF3C7; border-color: #FDE68A; }
-.searcher-badge--other    { color: #374151; background: #F3F4F6; border-color: #E5E7EB; }
+.searcher-badge--hybrid   { color: var(--sl-hybrid-text);   background: var(--sl-hybrid-subtle); }
+.searcher-badge--semantic { color: var(--sl-semantic-text); background: var(--sl-semantic-subtle); }
+.searcher-badge--keyword  { color: var(--sl-keyword-text);  background: var(--sl-keyword-subtle); }
+.searcher-badge--other    { color: var(--df-stone-700);     background: var(--df-stone-100); }
 
-.searcher-legend {
-  display: flex; flex-wrap: wrap; align-items: center; gap: .4rem 1.1rem;
-  margin: 0 0 1rem; padding: .5rem .8rem;
-  background: #F4F6FB; border: 1px solid #E2E8F0; border-radius: 10px;
-  font-size: .8rem;
+/* ===== SemanticLens: Search Composition band ============================== */
+.composition {
+  display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;
+  margin: 0 0 1.25rem; padding: .85rem 1.1rem;
+  background: var(--df-surface);
+  border: 1px solid var(--bs-border-color);
+  border-radius: var(--df-radius-lg);
+  box-shadow: var(--df-shadow-subtle);
 }
-.searcher-legend__title { font-weight: 700; color: #475569; }
-.searcher-legend__item { display: inline-flex; align-items: center; gap: .4rem; }
-.searcher-legend__desc { color: #475569; }
+.comp-lead { display: flex; align-items: baseline; gap: .4rem; flex: 0 0 auto; }
+.comp-count { font-size: 1.5rem; font-weight: 800; line-height: 1; color: var(--df-stone-900); }
+.comp-count-label {
+  font-size: .72rem; font-weight: 600; letter-spacing: .04em;
+  text-transform: uppercase; color: var(--df-stone-500);
+}
+.comp-mid { flex: 1 1 260px; min-width: 220px; }
+.comp-verdict { font-weight: 600; font-size: .9rem; color: var(--df-stone-700); margin-bottom: .5rem; }
+.comp-bar {
+  display: flex; height: 12px; border-radius: 7px; overflow: hidden;
+  background: var(--df-stone-200);
+}
+.comp-seg { display: block; height: 100%; }
+.comp-seg--hybrid   { background: var(--sl-hybrid); }
+.comp-seg--semantic { background: var(--sl-semantic); }
+.comp-seg--keyword  { background: var(--sl-keyword); }
+.comp-legend { display: flex; gap: .25rem 1rem; flex-wrap: wrap; flex: 0 0 auto; }
+.comp-legend__item { display: inline-flex; align-items: center; gap: .4rem; font-size: .78rem; color: var(--df-stone-600); }
+.comp-dot { width: .6rem; height: .6rem; border-radius: 3px; flex: 0 0 auto; }
+.comp-dot--hybrid   { background: var(--sl-hybrid); }
+.comp-dot--semantic { background: var(--sl-semantic); }
+.comp-dot--keyword  { background: var(--sl-keyword); }
+
+/* ===== SemanticLens: provenance-forward result cards ===================== */
+li[id^="result"].result--hybrid,
+li[id^="result"].result--semantic,
+li[id^="result"].result--keyword {
+  position: relative;
+  padding-left: .85rem;
+  border-left: 3px solid var(--df-stone-200);
+  border-radius: 2px;
+}
+.result--hybrid   { border-left-color: var(--sl-hybrid); }
+.result--semantic { border-left-color: var(--sl-semantic); }
+.result--keyword  { border-left-color: var(--sl-keyword); }
+.result-why {
+  margin-top: .35rem; font-size: .78rem; color: var(--df-stone-500);
+  display: inline-flex; align-items: center; gap: .4rem;
+}
+.result-why::before {
+  content: ""; width: .5rem; height: .5rem; border-radius: 50%;
+  flex: 0 0 auto; background: var(--df-stone-400);
+}
+.result-why--hybrid::before   { background: var(--sl-hybrid); }
+.result-why--semantic::before { background: var(--sl-semantic); }
+.result-why--keyword::before  { background: var(--sl-keyword); }
+
+/* ===== SemanticLens: count-free filter sidebar ========================== */
+.facet-cap {
+  font-size: .78rem; line-height: 1.5; color: var(--df-stone-700);
+  background: var(--df-stone-100);
+  border-left: 3px solid var(--df-stone-300);
+  border-radius: var(--df-radius-sm);
+  padding: .6rem .75rem; margin-bottom: .9rem;
+}
+.facet-cap.cap--semantic {
+  border-left-color: var(--sl-semantic);
+  background: var(--sl-semantic-subtle);
+  color: var(--sl-semantic-text);
+}
+.facet-cap.cap--mixed {
+  border-left-color: var(--sl-hybrid);
+  background: var(--sl-hybrid-subtle);
+  color: var(--sl-hybrid-text);
+}
+.filter-group { padding: .6rem 0; border-top: 1px solid var(--bs-border-color); }
+.filter-group:first-of-type { border-top: 0; padding-top: 0; }
+.filter-group__title { font-size: .8rem; font-weight: 700; color: var(--df-stone-700); margin-bottom: .4rem; }
+.filter-opts { display: flex; flex-direction: column; }
+.filter-opt {
+  display: flex; align-items: center; gap: .55rem;
+  padding: .3rem .4rem; border-radius: var(--df-radius-sm);
+  font-size: .85rem; color: var(--df-stone-700); cursor: pointer;
+}
+.filter-opt:hover { background: var(--df-primary-subtle); }
+.filter-opt:focus-visible { outline: 2px solid var(--df-secondary); outline-offset: 1px; }
+.filter-chk {
+  width: 15px; height: 15px; flex: 0 0 auto; position: relative;
+  border: 1.5px solid var(--df-stone-300); border-radius: 4px;
+  background: var(--df-surface);
+}
+.filter-opt.is-active { color: var(--df-primary-text); font-weight: 600; }
+.filter-opt.is-active .filter-chk { background: var(--df-primary); border-color: var(--df-primary); }
+.filter-opt.is-active .filter-chk::after {
+  content: ""; position: absolute; left: 4px; top: 1px;
+  width: 4px; height: 8px; border: solid var(--df-on-primary);
+  border-width: 0 2px 2px 0; transform: rotate(45deg);
+}
+.filter-opt__label { flex: 1 1 auto; min-width: 0; }
+
+/* ===== SemanticLens: brand lens mark (spectral focus ring) ============== */
+.sl-lensmark {
+  width: 22px; height: 22px; border-radius: 50%; flex: 0 0 auto;
+  margin-right: .5rem; position: relative;
+  background:
+    radial-gradient(circle at 34% 32%, #fff 0 13%, transparent 15%),
+    conic-gradient(from 210deg, var(--sl-keyword), var(--sl-semantic), var(--sl-hybrid), var(--sl-keyword));
+  box-shadow: inset 0 0 4px rgba(0, 0, 0, .35);
+}
+.sl-lensmark::after {
+  content: ""; position: absolute; inset: 36% 0 0 40%;
+  width: 5px; height: 5px; border-radius: 50%;
+  background: var(--df-stone-900); box-shadow: 0 0 0 2px rgba(255, 255, 255, .3);
+}

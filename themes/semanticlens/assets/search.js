@@ -29,12 +29,6 @@ const state = {
   highlightParams: ""   // server-supplied highlight_params string (e.g. "&hl.q=...&hl.fragsize=...")
 };
 
-/** Filetype values shown in the static filetype facet group. Matches query.facet.queries defaults. */
-const FILETYPE_VALUES = [
-  "html", "word", "excel", "powerpoint",
-  "odt", "ods", "odp", "pdf", "txt", "others"
-];
-
 // XSS-safety: this module builds every result-card DOM node with
 // document.createElement + textContent. No untrusted string is ever
 // passed to innerHTML.
@@ -208,32 +202,78 @@ function buildSearcherBadge(d) {
   return badge;
 }
 
-/** Populate + reveal #searcher-legend when any hit carries known searcher data; else hide it. */
-function renderSearcherLegend(data) {
-  const box = document.getElementById("searcher-legend");
+/**
+ * Read-only tally of a result page's searcher provenance kinds. Display-only —
+ * its result is used solely to drive the composition band's bar/verdict and the
+ * sidebar caption. It is NEVER used to build filters (honors the "no client-side
+ * facet computation" rule). Returns { hybrid, semantic, keyword, total }.
+ *
+ * @param {Object[]} data - the search response hit array (env.data)
+ */
+function tallyKinds(data) {
+  const counts = { hybrid: 0, semantic: 0, keyword: 0 };
+  (data || []).forEach(d => {
+    const kind = searcherBadgeKind(searcherKinds(d));
+    if (kind === "hybrid" || kind === "semantic" || kind === "keyword") counts[kind]++;
+  });
+  counts.total = counts.hybrid + counts.semantic + counts.keyword;
+  return counts;
+}
+
+/**
+ * SemanticLens Search Composition band. Shows the server's record_count total, a
+ * plain-language verdict (balanced / mostly meaning / mostly keyword), a
+ * proportional 3-segment bar, and a count-free legend. The proportions/verdict
+ * come from a read-only page tally (tallyKinds) — display only, never numbers per
+ * source. Hidden gracefully when no hit carries known searcher provenance.
+ *
+ * @param {Object} env - the search response envelope
+ */
+function renderComposition(env) {
+  const box = document.getElementById("search-composition");
   if (!box) return;
-  const anyKnown = (data || []).some(d => {
-    const k = searcherBadgeKind(searcherKinds(d));
-    return k === "semantic" || k === "keyword" || k === "hybrid";
+  while (box.firstChild) box.removeChild(box.firstChild);
+  const tally = tallyKinds(env.data || []);
+  if (tally.total === 0) { box.classList.add("d-none"); return; }
+
+  // Verdict by 60% thresholds of the visible page.
+  let verdictKey = "composition.balanced";
+  if (tally.semantic / tally.total >= 0.6) verdictKey = "composition.mostly_semantic";
+  else if (tally.keyword / tally.total >= 0.6) verdictKey = "composition.mostly_keyword";
+
+  // Left cluster: server total + "results" label.
+  const lead = el("div", { className: "comp-lead" });
+  const total = env.record_count != null ? env.record_count : tally.total;
+  lead.appendChild(el("span", { className: "comp-count", text: total.toLocaleString() }));
+  lead.appendChild(el("span", { className: "comp-count-label", text: t("composition.results") }));
+  box.appendChild(lead);
+
+  // Middle: verdict + proportional bar (segment widths set inline).
+  const mid = el("div", { className: "comp-mid" });
+  mid.appendChild(el("div", { className: "comp-verdict", text: t(verdictKey) }));
+  const bar = el("div", { className: "comp-bar" });
+  const addSeg = (kind, n) => {
+    if (n <= 0) return;
+    const seg = el("i", { className: "comp-seg comp-seg--" + kind });
+    seg.style.width = (n / tally.total * 100) + "%";
+    bar.appendChild(seg);
+  };
+  addSeg("hybrid", tally.hybrid);
+  addSeg("semantic", tally.semantic);
+  addSeg("keyword", tally.keyword);
+  mid.appendChild(bar);
+  box.appendChild(mid);
+
+  // Legend: count-free dots + labels.
+  const legend = el("div", { className: "comp-legend" });
+  [["hybrid", "searcher.hybrid"], ["semantic", "searcher.semantic"], ["keyword", "searcher.keyword"]].forEach(([kind, key]) => {
+    const item = el("span", { className: "comp-legend__item" });
+    item.appendChild(el("span", { className: "comp-dot comp-dot--" + kind, attrs: { "aria-hidden": "true" } }));
+    item.appendChild(el("span", { text: t(key) }));
+    legend.appendChild(item);
   });
-  box.innerHTML = ""; // empty-string literal — clears children, no untrusted data
-  if (!anyKnown) { box.classList.add("d-none"); return; }
-  box.appendChild(el("span", { className: "searcher-legend__title", text: t("searcher.legend_title") }));
-  const items = [
-    ["semantic", "searcher.legend_semantic"],
-    ["keyword", "searcher.legend_keyword"],
-    ["hybrid", "searcher.legend_hybrid"]
-  ];
-  items.forEach(([kind, descKey]) => {
-    const spec = SEARCHER_BADGES[kind];
-    const item = el("span", { className: "searcher-legend__item" });
-    const chip = el("span", { className: "searcher-badge searcher-badge--" + kind });
-    chip.appendChild(el("i", { className: spec.icon, attrs: { "aria-hidden": "true" } }));
-    chip.appendChild(el("span", { className: "searcher-badge__label", text: t(spec.label) }));
-    item.appendChild(chip);
-    item.appendChild(el("span", { className: "searcher-legend__desc", text: t(descKey) }));
-    box.appendChild(item);
-  });
+  box.appendChild(legend);
+
   box.classList.remove("d-none");
 }
 
@@ -253,6 +293,13 @@ function buildResultCard(d, queryId, order) {
     attrs: { id: "result" + idx0 },
     dataset: { docId: d.doc_id || "", queryId: queryId || "" }
   });
+
+  // SemanticLens: source-of-match kind drives the colored left spine + microcopy.
+  // Absent searcher field → no kind → card renders unchanged (graceful degradation).
+  const kind = searcherBadgeKind(searcherKinds(d));
+  if (kind === "hybrid" || kind === "semantic" || kind === "keyword") {
+    li.classList.add("result--" + kind);
+  }
 
   // Build /go/ URL so click-logging + server-side redirect work for all click types.
   const originalUrl = d.url_link || d.url || "";
@@ -287,6 +334,11 @@ function buildResultCard(d, queryId, order) {
     li.appendChild(head);
   } else {
     li.appendChild(h3);
+  }
+  // SemanticLens: one-line "Matched by …" microcopy, colored by source. Only when
+  // the hit carries a known searcher kind (textContent only).
+  if (kind === "hybrid" || kind === "semantic" || kind === "keyword") {
+    li.appendChild(el("div", { className: "result-why result-why--" + kind, text: t("searcher.why_" + kind) }));
   }
 
   // --- div.body > (thumbnail)? + div.description ---
@@ -627,7 +679,7 @@ function renderResults(env) {
   const empty = document.getElementById("empty-state");
   list.innerHTML = "";   // empty-string literal — clears children, no untrusted data
   const data = env.data || [];
-  renderSearcherLegend(data); // SemanticLens: show searcher legend when hits carry provenance
+  renderComposition(env); // SemanticLens: show search-composition band when hits carry provenance
   // C.2: always refresh similar-doc banner (hides when state.sdh is cleared)
   renderSimilarDocBanner();
   if (data.length === 0) {
@@ -687,6 +739,40 @@ function showSearchLoading(show) {
   if (el) el.classList.toggle("d-none", !show);
 }
 
+/**
+ * True when the request carries at least one field/range filter — the same merged
+ * filter state runSearch emits (facet query views, advance ex_q clauses, field
+ * filters, label facets). Used to decide whether the free-text query must be
+ * collapsed to a single quoted phrase (see quoteQueryForFilter).
+ */
+function hasActiveFilter() {
+  return (Array.isArray(state.facetQueries) && state.facetQueries.length > 0)
+    || (Array.isArray(state.exQ) && state.exQ.length > 0)
+    || Object.values(state.fields).some(v => v && v.length)
+    || Object.values(state.facets).some(v => v && v.length);
+}
+
+/**
+ * Quote-on-filter transform. When a filter is active, a multi-word free-text query
+ * must be sent as a single quoted phrase so the semantic plugin collapses it to one
+ * neural clause — otherwise the duplicate content_vector inner-hits names trip an
+ * HTTP 400 (`[inner_hits] already contains an entry for key [content_vector]`).
+ * This only replicates what the plugin already does for the unfiltered case, so it
+ * is forward-safe. Left untouched when empty, already a single quoted phrase, a
+ * user-authored advanced query (field:/operators), or a single token.
+ *
+ * @param {string} q
+ * @returns {string}
+ */
+function quoteQueryForFilter(q) {
+  const s = (q || "").trim();
+  if (!s) return q;                                            // empty browse-by-filter
+  if (/^".*"$/.test(s)) return q;                              // already one quoted phrase
+  if (/[:"()]/.test(s) || /\b(AND|OR|NOT)\b/.test(s)) return q; // user advanced query
+  if (!/\s/.test(s)) return q;                                 // single token
+  return '"' + s.replace(/"/g, '\\"') + '"';                   // multi-word + filter
+}
+
 async function runSearch() {
   // Cancel any in-flight request before issuing a new one.
   if (currentSearchAbort) currentSearchAbort.abort();
@@ -704,7 +790,9 @@ async function runSearch() {
   if (prevErr) prevErr.classList.add("d-none");
   showSearchLoading(true);
   try {
-    const params = { q: state.q, start: state.start, num: state.num };
+    // Quote-on-filter: when any filter is active, send a multi-word query as a single
+    // quoted phrase so the semantic branch stays one neural clause (avoids HTTP 400).
+    const params = { q: hasActiveFilter() ? quoteQueryForFilter(state.q) : state.q, start: state.start, num: state.num };
     if (state.sort) params.sort = state.sort;
     // state.lang is string[] — send as repeated lang= params (empty array → omit).
     if (Array.isArray(state.lang) && state.lang.length > 0) {
@@ -745,16 +833,11 @@ async function runSearch() {
       params["geo.location.point"] = state.geo.lat + "," + state.geo.lon;
       params["geo.location.distance"] = state.geo.distance;
     }
-    // Request the same facets the JSP sidebar renders: the "label" field facet plus
-    // every configured facet-query view (timestamp / size / filetype ranges). Without
-    // these the API returns no facet data, so the query-view groups render empty and
-    // the sidebar is effectively dead (JSP parity: query.facet.fields + .queries).
-    const cfgFacet = api.getConfig() || {};
+    // Request only the cheap "label" field facet (still supports a label facet group
+    // when configured). SemanticLens renders a count-free filter sidebar whose options
+    // come from /api/v2/ui/config, so we no longer request facet.query counts — removing
+    // them also drops the "counts exclude semantic results" discomfort.
     params["facet.field"] = ["label"];
-    const facetQueryValues = [];
-    (cfgFacet.facet_views || []).forEach(v =>
-      (v.queries || []).forEach(qy => { if (qy && qy.value) facetQueryValues.push(qy.value); }));
-    if (facetQueryValues.length > 0) params["facet.query"] = facetQueryValues;
     const env = await api.get("/search", params, { signal });
     // Prefer the server-supplied requested_time when available (more accurate).
     if (env.requested_time) state.requestedTime = env.requested_time;
@@ -1524,47 +1607,68 @@ function buildFacetGroup(title, entries, fieldKey) {
 }
 
 /**
- * Render server-driven facet query views (SRCH-4).
- * Consumes cfg.facet_views (group/query definitions) and env.facet_query (counts),
- * zero-suppresses entries with no results, and toggles selections in state.facetQueries.
+ * SemanticLens: build the count-free, always-present filter groups from
+ * /api/v2/ui/config (NOT from result tallies — honors "no client-side facet
+ * computation"). File type options come from cfg.filetype_options; Updated and
+ * Size from the cfg.facet_views timestamp & content_length groups. Every option
+ * toggles its ex_q clause in state.facetQueries and re-queries the server, so the
+ * filter narrows the full fused set (keyword + semantic) in every mode. No counts,
+ * no zero-suppression — the option set is stable for every search.
  *
  * @param {Element} body - the facet-body container element
- * @param {Object} env  - the search response envelope
  */
-function renderFacetQueryViews(body, env) {
+function renderFilterGroups(body) {
   const cfg = api.getConfig() || {};
-  const views = cfg.facet_views || [];
-  const countByValue = {};
-  (env.facet_query || []).forEach(fq => { countByValue[fq.value] = fq.count; });
-  views.forEach(view => {
-    const groupTitleKey = view.group_name || "";
-    const title = groupTitleKey.startsWith("labels.") ? t(groupTitleKey) : groupTitleKey;
-    const queries = (view.queries || []).filter(qy => Number(countByValue[qy.value]) > 0);
-    // ul.list-group.mb-2 > li.list-group-item.text-uppercase(title) + entries.
-    // A group with no matching results still renders its title li (JSP parity:
-    // the sidebar keeps the group header even when empty).
-    const ul = el("ul", { className: "list-group mb-2" });
-    ul.appendChild(el("li", { className: "list-group-item text-uppercase", text: title }));
-    queries.forEach(qy => {
-      const active = (state.facetQueries || []).includes(qy.value);
-      const li = el("li", { className: "list-group-item" + (active ? " active" : "") });
-      const a = el("a", { attrs: { href: "#" } });
-      const label = qy.label_key && qy.label_key.startsWith("labels.") ? t(qy.label_key) : (qy.label_key || qy.value);
-      a.appendChild(document.createTextNode(label + " "));
-      a.appendChild(el("span", { className: "badge rounded-pill text-bg-secondary float-end", text: String(countByValue[qy.value]) }));
-      a.addEventListener("click", ev => {
-        ev.preventDefault();
+
+  const buildGroup = (title, options) => {
+    if (!options.length) return;
+    const group = el("div", { className: "filter-group" });
+    group.appendChild(el("div", { className: "filter-group__title", text: title }));
+    const ul = el("ul", { className: "filter-opts list-unstyled mb-0" });
+    options.forEach(opt => {
+      const active = (state.facetQueries || []).includes(opt.value);
+      const li = el("li", {
+        className: "filter-opt" + (active ? " is-active" : ""),
+        attrs: { role: "button", tabindex: "0", "aria-pressed": active ? "true" : "false" }
+      });
+      li.appendChild(el("span", { className: "filter-chk", attrs: { "aria-hidden": "true" } }));
+      li.appendChild(el("span", { className: "filter-opt__label", text: opt.label }));
+      const toggle = () => {
         const arr = state.facetQueries ? [...state.facetQueries] : [];
-        const i = arr.indexOf(qy.value);
-        if (i >= 0) arr.splice(i, 1); else arr.push(qy.value);
+        const i = arr.indexOf(opt.value);
+        if (i >= 0) arr.splice(i, 1); else arr.push(opt.value);
         state.facetQueries = arr;
         state.start = 0;
         runSearch();
+      };
+      li.addEventListener("click", ev => { ev.preventDefault(); toggle(); });
+      li.addEventListener("keydown", ev => {
+        if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); toggle(); }
       });
-      li.appendChild(a);
       ul.appendChild(li);
     });
-    body.appendChild(ul);
+    group.appendChild(ul);
+    body.appendChild(group);
+  };
+
+  // File type — from filetype_options; each value becomes a `filetype:<value>` ex_q
+  // clause (same format the facet_views filetype group would use).
+  const fileTypeOptions = (cfg.filetype_options || []).map(o => ({
+    value: "filetype:" + o.value,
+    label: o.label_key ? t(o.label_key) : o.value
+  }));
+  buildGroup(t("labels.facet_filetype_title"), fileTypeOptions);
+
+  // Updated + Size — from the facet_views timestamp & content_length groups. Skip the
+  // facet_views filetype group (File type already comes from filetype_options).
+  (cfg.facet_views || []).forEach(view => {
+    const gname = view.group_name || "";
+    if (gname !== "labels.facet_timestamp_title" && gname !== "labels.facet_contentLength_title") return;
+    const options = (view.queries || []).map(qy => ({
+      value: qy.value,
+      label: qy.label_key && qy.label_key.startsWith("labels.") ? t(qy.label_key) : (qy.label_key || qy.value)
+    }));
+    buildGroup(gname.startsWith("labels.") ? t(gname) : gname, options);
   });
 }
 
@@ -1591,6 +1695,18 @@ function renderFacets(env, labels) {
     return;
   }
 
+  // SemanticLens: mode-aware caption from a read-only page tally (display only) —
+  // reassures that filters narrow the full fused set, including semantic matches.
+  // Skipped gracefully when no hit carries searcher provenance.
+  const tally = tallyKinds(env.data || []);
+  if (tally.total > 0) {
+    const semanticDominant = tally.semantic / tally.total >= 0.6;
+    body.appendChild(el("div", {
+      className: "facet-cap " + (semanticDominant ? "cap--semantic" : "cap--mixed"),
+      text: t(semanticDominant ? "sidebar.caption_semantic" : "sidebar.caption_mixed")
+    }));
+  }
+
   // 1. Label facet — built from env.facet_field where name === "label" with per-label counts,
   //    zero-count suppressed, de-duplicated against the /labels list (SRCH-3).
   const facetField = env.facet_field || [];
@@ -1615,12 +1731,11 @@ function renderFacets(env, labels) {
     }
   }
 
-  // 3. Server-driven facet query views (timestamp ranges, size ranges, filetype
-  //    ranges, etc.) (SRCH-4). The filetype group is one of these query views
-  //    (filetype:html, filetype:word, …), matching the JSP sidebar — so there is
-  //    no separate field-based filetype group (that produced a duplicate
-  //    "ファイル種別" with no counts).
-  renderFacetQueryViews(body, env);
+  // 3. Count-free filter groups (File type / Updated / Size) built from
+  //    /api/v2/ui/config — always present and functional in every mode, including
+  //    semantic-only (where the server returns no facet buckets). Clicking a row
+  //    re-queries the server so it narrows the full fused result set.
+  renderFilterGroups(body);
 
   // Show clear button if any filter is active (optional control; may be absent).
   const anyActive =
@@ -1629,19 +1744,30 @@ function renderFacets(env, labels) {
     (Array.isArray(state.facetQueries) && state.facetQueries.length > 0);
   if (clearBtn) clearBtn.classList.toggle("d-none", !anyActive);
 
-  // Mirror the rendered facet groups into the mobile offcanvas (#facet-body-mobile).
-  // The desktop aside (#facet-body) is the source of truth; clone its <ul> groups and
-  // forward clone-anchor clicks to the originals so the offcanvas drives the same
-  // searches. Re-rendered after each search (idempotent).
+  // Mirror the rendered sidebar (caption + label facet + count-free filter groups)
+  // into the mobile offcanvas (#facet-body-mobile). The desktop aside (#facet-body)
+  // is the source of truth; clone each top-level group and forward clone clicks to
+  // the originals so the offcanvas drives the same searches. Rewires both the legacy
+  // list-group anchors and the new .filter-opt rows. Re-rendered after each search.
   const mobile = document.getElementById("facet-body-mobile");
   if (mobile) {
     while (mobile.firstChild) mobile.removeChild(mobile.firstChild);
-    body.querySelectorAll("ul.list-group").forEach(ul => {
-      const clone = ul.cloneNode(true);
-      const srcAnchors = ul.querySelectorAll("li.list-group-item a");
+    Array.from(body.children).forEach(child => {
+      const clone = child.cloneNode(true);
+      const srcAnchors = child.querySelectorAll("li.list-group-item a");
       clone.querySelectorAll("li.list-group-item a").forEach((ca, i) => {
         const src = srcAnchors[i];
         if (src) ca.addEventListener("click", ev => { ev.preventDefault(); src.click(); });
+      });
+      const srcOpts = child.querySelectorAll("li.filter-opt");
+      clone.querySelectorAll("li.filter-opt").forEach((co, i) => {
+        const src = srcOpts[i];
+        if (src) {
+          co.addEventListener("click", ev => { ev.preventDefault(); src.click(); });
+          co.addEventListener("keydown", ev => {
+            if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); src.click(); }
+          });
+        }
       });
       mobile.appendChild(clone);
     });
@@ -1746,6 +1872,16 @@ function renderActiveChips() {
         const qLabel = qy.label_key && qy.label_key.startsWith("labels.") ? t(qy.label_key) : (qy.label_key || qy.value);
         facetQueryLabelByValue.set(qy.value, groupTitle ? groupTitle + ": " + qLabel : qLabel);
       });
+    });
+    // SemanticLens: File type sidebar options come from filetype_options (value
+    // `filetype:<v>`), which may not appear in facet_views — map them too so the
+    // chip reads "File type: PDF" rather than the raw clause.
+    const fileTypeTitle = t("labels.facet_filetype_title");
+    (cfg.filetype_options || []).forEach(o => {
+      const v = "filetype:" + o.value;
+      if (!facetQueryLabelByValue.has(v)) {
+        facetQueryLabelByValue.set(v, fileTypeTitle + ": " + (o.label_key ? t(o.label_key) : o.value));
+      }
     });
     state.facetQueries.forEach(v => chips.push({
       label: facetQueryLabelByValue.get(v) || v,

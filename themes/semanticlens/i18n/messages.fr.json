@@ -346,5 +346,14 @@
   "searcher.legend_title": "Type de recherche :",
   "searcher.legend_semantic": "trouvé par le sens",
   "searcher.legend_keyword": "trouvé par mots-clés",
-  "searcher.legend_hybrid": "trouvé par les deux"
+  "searcher.legend_hybrid": "trouvé par les deux",
+  "searcher.why_hybrid": "Correspondance par mot-clé et sens",
+  "searcher.why_semantic": "Correspondance par sens",
+  "searcher.why_keyword": "Correspondance par mot-clé",
+  "composition.results": "résultats",
+  "composition.balanced": "Un mélange équilibré de mots-clés et de sens",
+  "composition.mostly_semantic": "Principalement par sens",
+  "composition.mostly_keyword": "Principalement des correspondances par mots-clés",
+  "sidebar.caption_semantic": "La plupart des résultats sont basés sur le sens. Les filtres réduisent tous les résultats, y compris les correspondances sémantiques.",
+  "sidebar.caption_mixed": "Les filtres réduisent l'ensemble complet des résultats — mots-clés et sémantique."
 }

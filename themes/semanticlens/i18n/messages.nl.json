@@ -346,5 +346,14 @@
   "searcher.legend_title": "Search type:",
   "searcher.legend_semantic": "matched by meaning",
   "searcher.legend_keyword": "matched by keywords",
-  "searcher.legend_hybrid": "matched by both"
+  "searcher.legend_hybrid": "matched by both",
+  "searcher.why_hybrid": "Gevonden via zowel trefwoord als betekenis",
+  "searcher.why_semantic": "Gevonden op betekenis",
+  "searcher.why_keyword": "Gevonden op trefwoord",
+  "composition.results": "resultaten",
+  "composition.balanced": "Een gebalanceerde mix van trefwoorden en betekenis",
+  "composition.mostly_semantic": "Voornamelijk op betekenis afgestemd",
+  "composition.mostly_keyword": "Voornamelijk overeenkomsten op trefwoorden",
+  "sidebar.caption_semantic": "De meeste resultaten zijn op betekenis afgestemd. Filters beperken alle resultaten, inclusief semantische overeenkomsten.",
+  "sidebar.caption_mixed": "Filters beperken de volledige resultatenset — zowel trefwoord als semantisch."
 }

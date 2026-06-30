@@ -346,5 +346,14 @@
   "searcher.legend_title": "检索方式：",
   "searcher.legend_semantic": "按含义匹配",
   "searcher.legend_keyword": "按关键词匹配",
-  "searcher.legend_hybrid": "按两者匹配"
+  "searcher.legend_hybrid": "按两者匹配",
+  "searcher.why_hybrid": "通过关键词和语义双重匹配",
+  "searcher.why_semantic": "通过语义匹配",
+  "searcher.why_keyword": "通过关键词匹配",
+  "composition.results": "条",
+  "composition.balanced": "关键词与语义的均衡搜索",
+  "composition.mostly_semantic": "主要以语义匹配",
+  "composition.mostly_keyword": "主要以关键词匹配",
+  "sidebar.caption_semantic": "大多数结果通过语义匹配。过滤器缩小所有结果的范围，包括语义匹配。",
+  "sidebar.caption_mixed": "过滤器缩小完整结果集的范围——关键词和语义结果均适用。"
 }

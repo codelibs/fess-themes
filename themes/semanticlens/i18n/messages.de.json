@@ -346,5 +346,14 @@
   "searcher.legend_title": "Suchtyp:",
   "searcher.legend_semantic": "nach Bedeutung gefunden",
   "searcher.legend_keyword": "nach Stichwörtern gefunden",
-  "searcher.legend_hybrid": "durch beide gefunden"
+  "searcher.legend_hybrid": "durch beide gefunden",
+  "searcher.why_hybrid": "Durch Schlüsselwort und Bedeutung gefunden",
+  "searcher.why_semantic": "Durch Bedeutung gefunden",
+  "searcher.why_keyword": "Durch Schlüsselwort gefunden",
+  "composition.results": "Ergebnisse",
+  "composition.balanced": "Eine ausgewogene Mischung aus Schlüsselwörtern und Bedeutung",
+  "composition.mostly_semantic": "Überwiegend bedeutungsbasiert",
+  "composition.mostly_keyword": "Überwiegend Schlüsselwortübereinstimmungen",
+  "sidebar.caption_semantic": "Die meisten Ergebnisse basieren auf Bedeutung. Filter grenzen alle davon ein, einschließlich semantischer Treffer.",
+  "sidebar.caption_mixed": "Filter grenzen alle Ergebnisse ein — sowohl Schlüsselwort- als auch semantische Treffer."
 }

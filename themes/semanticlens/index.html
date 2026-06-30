@@ -31,7 +31,7 @@
   <header>
     <nav class="navbar navbar-expand-md fixed-top df-header d-print-none" role="banner">
       <div id="content" class="container">
-        <a class="navbar-brand d-inline-flex" href="/" id="brand-link" data-spa><img src="/themes/semanticlens/assets/logo-head.png" alt="" data-i18n-alt="labels.header_brand_name" class="align-items-center"></a>
+        <a class="navbar-brand d-inline-flex align-items-center" href="/" id="brand-link" data-spa><span class="sl-lensmark" aria-hidden="true"></span><img src="/themes/semanticlens/assets/logo-head.png" alt="" data-i18n-alt="labels.header_brand_name" class="align-items-center"></a>
         <div class="d-flex col-md-6 col-sm-8 col-7 me-auto p-0" role="search" id="search-form-wrap">
           <form class="input-group" id="search-form" role="search" aria-label="Site search">
             <input
@@ -228,8 +228,8 @@
         <div class="d-none mb-2" id="related-content" aria-live="polite"></div>
         <div class="d-none mb-2" id="active-chips" aria-live="polite" aria-atomic="true" aria-label="Active filters"></div>
         <div id="results-warning" class="alert alert-warning d-none mb-2" role="status" aria-live="polite"></div>
-        <!-- Searcher provenance legend (shown by search.js only when hits carry the `searcher` field). -->
-        <div id="searcher-legend" class="searcher-legend d-none" role="note" aria-live="polite"></div>
+        <!-- Search Composition band (shown by search.js only when hits carry the `searcher` field). -->
+        <div id="search-composition" class="composition d-none" role="note" aria-live="polite"></div>
 
         <!-- Results grid (parity searchResults.jsp div#result.row).
              SemanticLens: facet aside is the LEFT sidebar, results to its right. -->

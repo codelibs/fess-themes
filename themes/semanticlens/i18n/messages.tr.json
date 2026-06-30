@@ -346,5 +346,14 @@
   "searcher.legend_title": "Search type:",
   "searcher.legend_semantic": "matched by meaning",
   "searcher.legend_keyword": "matched by keywords",
-  "searcher.legend_hybrid": "matched by both"
+  "searcher.legend_hybrid": "matched by both",
+  "searcher.why_hybrid": "Hem anahtar kelime hem anlam ile eşleşti",
+  "searcher.why_semantic": "Anlam ile eşleşti",
+  "searcher.why_keyword": "Anahtar kelime ile eşleşti",
+  "composition.results": "sonuç",
+  "composition.balanced": "Anahtar kelime ve anlam dengeli bir karışım",
+  "composition.mostly_semantic": "Çoğunlukla anlam eşleşmesi",
+  "composition.mostly_keyword": "Çoğunlukla anahtar kelime eşleşmeleri",
+  "sidebar.caption_semantic": "Sonuçların çoğu anlam eşleşmesiyle bulundu. Filtreler semantik eşleşmeler dahil tüm sonuçları daraltır.",
+  "sidebar.caption_mixed": "Filtreler tam sonuç kümesini daraltır — anahtar kelime ve semantik dahil."
 }
