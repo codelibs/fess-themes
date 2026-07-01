@@ -75,6 +75,19 @@ function safeHref(url) {
   return "#";
 }
 
+/**
+ * True when `u` can be safely loaded as an <img> src under the theme's CSP
+ * (`img-src 'self' data: https:` — no bare `http:`): https: URLs, or any
+ * scheme/host that resolves to this page's own origin. Used by openLightbox()
+ * to decide between the crawled full-res url_link and the same-origin
+ * thumbnail fallback, since an http:// url_link would otherwise be silently
+ * CSP-blocked and render as a broken image.
+ */
+function isDisplayableImageUrl(u) {
+  try { const url = new URL(u, location.href); return url.protocol === "https:" || url.origin === location.origin; }
+  catch (_) { return false; }
+}
+
 function el(tag, opts) {
   const node = document.createElement(tag);
   if (!opts) return node;
@@ -796,7 +809,7 @@ function openLightbox(rank) {
   const isImage = (doc.mimetype || "").startsWith("image/");
   const rawUrl = doc.url_link || doc.url || "";
   const safeUrl = safeHref(rawUrl);
-  img.src = (isImage && safeUrl !== "#") ? safeUrl : thumbUrl(doc.doc_id, env.query_id);
+  img.src = (isImage && safeUrl !== "#" && isDisplayableImageUrl(safeUrl)) ? safeUrl : thumbUrl(doc.doc_id, env.query_id);
   img.alt = plainTitle(doc);
   lb.querySelector(".lightbox__meta").replaceChildren(buildLightboxMeta(doc));
   // Boundary hint for the nav buttons (styles.css dims + inert-s a disabled
