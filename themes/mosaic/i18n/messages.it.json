@@ -366,8 +366,8 @@
   "searcher.title_blend": "Matched by both keyword and visual similarity",
   "composition.results": "risultati",
   "composition.balanced": "Un equilibrio tra parole chiave e significato",
-  "composition.mostly_semantic": "Principalmente corrispondenza per significato",
+  "composition.mostly_visual": "Principalmente corrispondenza per significato",
   "composition.mostly_keyword": "Principalmente corrispondenze per parole chiave",
-  "sidebar.caption_semantic": "La maggior parte dei risultati è basata sul significato. I filtri restringono tutti i risultati, incluse le corrispondenze semantiche.",
+  "sidebar.caption_visual": "La maggior parte dei risultati è basata sul significato. I filtri restringono tutti i risultati, incluse le corrispondenze semantiche.",
   "sidebar.caption_mixed": "I filtri restringono l'intero set di risultati — sia per parole chiave che per semantica."
 }

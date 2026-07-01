@@ -366,8 +366,8 @@
   "searcher.title_blend": "키워드와 이미지 유사도 모두로 일치",
   "composition.results": "건",
   "composition.balanced": "키워드와 의미의 균형 검색",
-  "composition.mostly_semantic": "주로 의미 검색으로 매치",
+  "composition.mostly_visual": "주로 의미 검색으로 매치",
   "composition.mostly_keyword": "주로 키워드로 매치",
-  "sidebar.caption_semantic": "대부분의 결과는 의미 검색입니다. 필터는 의미 검색을 포함한 모든 결과를 좁힙니다.",
+  "sidebar.caption_visual": "대부분의 결과는 의미 검색입니다. 필터는 의미 검색을 포함한 모든 결과를 좁힙니다.",
   "sidebar.caption_mixed": "필터는 키워드 및 의미 검색을 포함한 전체 결과를 좁힙니다."
 }

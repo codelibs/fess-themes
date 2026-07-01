@@ -366,8 +366,8 @@
   "searcher.title_blend": "Matched by both keyword and visual similarity",
   "composition.results": "resultaten",
   "composition.balanced": "Een gebalanceerde mix van trefwoorden en betekenis",
-  "composition.mostly_semantic": "Voornamelijk op betekenis afgestemd",
+  "composition.mostly_visual": "Voornamelijk op betekenis afgestemd",
   "composition.mostly_keyword": "Voornamelijk overeenkomsten op trefwoorden",
-  "sidebar.caption_semantic": "De meeste resultaten zijn op betekenis afgestemd. Filters beperken alle resultaten, inclusief semantische overeenkomsten.",
+  "sidebar.caption_visual": "De meeste resultaten zijn op betekenis afgestemd. Filters beperken alle resultaten, inclusief semantische overeenkomsten.",
   "sidebar.caption_mixed": "Filters beperken de volledige resultatenset — zowel trefwoord als semantisch."
 }

@@ -1195,15 +1195,15 @@ footer[role="contentinfo"] {
   background: var(--df-stone-200);
 }
 .comp-seg { display: block; height: 100%; }
-.comp-seg--hybrid   { background: var(--sl-hybrid); }
-.comp-seg--semantic { background: var(--sl-semantic); }
-.comp-seg--keyword  { background: var(--sl-keyword); }
+.comp-seg--blend   { background: var(--sl-hybrid); }
+.comp-seg--visual  { background: var(--sl-semantic); }
+.comp-seg--keyword { background: var(--sl-keyword); }
 .comp-legend { display: flex; gap: .25rem 1rem; flex-wrap: wrap; flex: 0 0 auto; }
 .comp-legend__item { display: inline-flex; align-items: center; gap: .4rem; font-size: .78rem; color: var(--df-stone-600); }
 .comp-dot { width: .6rem; height: .6rem; border-radius: 3px; flex: 0 0 auto; }
-.comp-dot--hybrid   { background: var(--sl-hybrid); }
-.comp-dot--semantic { background: var(--sl-semantic); }
-.comp-dot--keyword  { background: var(--sl-keyword); }
+.comp-dot--blend   { background: var(--sl-hybrid); }
+.comp-dot--visual  { background: var(--sl-semantic); }
+.comp-dot--keyword { background: var(--sl-keyword); }
 
 /* ===== Mosaic: provenance-forward result cards ===================== */
 li[id^="result"].result--hybrid,
@@ -1308,7 +1308,7 @@ li[id^="result"].result--keyword {
   border-radius: var(--df-radius-sm);
   padding: .6rem .75rem; margin-bottom: .9rem;
 }
-.facet-cap.cap--semantic {
+.facet-cap.cap--visual {
   border-left-color: var(--sl-semantic);
   background: var(--sl-semantic-subtle);
   color: var(--sl-semantic-text);

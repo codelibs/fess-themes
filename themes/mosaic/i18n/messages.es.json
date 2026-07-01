@@ -366,8 +366,8 @@
   "searcher.title_blend": "Coincidencia por palabras clave y similitud visual",
   "composition.results": "resultados",
   "composition.balanced": "Una mezcla equilibrada de palabras clave y significado",
-  "composition.mostly_semantic": "Principalmente por significado",
+  "composition.mostly_visual": "Principalmente por significado",
   "composition.mostly_keyword": "Principalmente coincidencias por palabras clave",
-  "sidebar.caption_semantic": "La mayoría de los resultados son por significado. Los filtros reducen todos, incluidas las coincidencias semánticas.",
+  "sidebar.caption_visual": "La mayoría de los resultados son por significado. Los filtros reducen todos, incluidas las coincidencias semánticas.",
   "sidebar.caption_mixed": "Los filtros reducen el conjunto completo de resultados — tanto por palabras clave como por semántica."
 }

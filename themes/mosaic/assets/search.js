@@ -180,15 +180,21 @@ function plainTitle(d) {
 // searcherKinds/searcherBadgeKind below are the canonical multimodal mapping
 // (default -> keyword, multi_modal -> visual, both -> blend) and are the
 // producer/consumer contract shared with buildGalleryTile (grid mode, further
-// below) and later tasks (lightbox/toggle). The pre-existing list-mode badge
-// pill / composition band / facet-sidebar caption / card spine / result-why
-// microcopy (inherited from semanticlens) still render under their original
-// "hybrid/semantic/keyword" CSS classes and i18n keys — legacyBadgeKind() bridges
-// the new kind vocabulary onto those unchanged names, so that UI now correctly
-// activates on real multi_modal/default data instead of never matching (the
-// semanticlens code looked for a "semantic" searcher name this deployment never
-// emits). Renaming that legacy UI's own vocabulary/colors to Visual/Blend is
-// cosmetic polish left to a later styling task, not this one.
+// below) and later tasks (lightbox/toggle). The pre-existing LIST-MODE badge
+// pill / card spine / result-why microcopy (inherited from semanticlens) still
+// render under their original "hybrid/semantic/keyword" CSS classes and i18n
+// keys — legacyBadgeKind() bridges the new kind vocabulary onto those unchanged
+// names, so that UI now correctly activates on real multi_modal/default data
+// instead of never matching (the semanticlens code looked for a "semantic"
+// searcher name this deployment never emits). Renaming that legacy list-mode
+// UI's own vocabulary/colors to Visual/Blend is cosmetic polish left to a later
+// styling task, not this one.
+//
+// The search-composition band (renderComposition) and the filter-sidebar
+// caption (renderFacets, "Mosaic: mode-aware caption" below) are RECONCILED by
+// task A6: they read tallyKinds(), which now tallies the canonical
+// keyword/visual/blend kinds directly (no legacyBadgeKind bridge), so their
+// wording/i18n keys/CSS classes speak the multimodal vocabulary.
 const SEARCHER_BADGES = {
   semantic: { label: "searcher.semantic", title: "searcher.title_semantic", icon: "fa fa-magic" },
   keyword:  { label: "searcher.keyword",  title: "searcher.title_keyword",  icon: "fa fa-search" },
@@ -245,27 +251,32 @@ function buildSearcherBadge(d) {
  * Read-only tally of a result page's searcher provenance kinds. Display-only —
  * its result is used solely to drive the composition band's bar/verdict and the
  * sidebar caption. It is NEVER used to build filters (honors the "no client-side
- * facet computation" rule). Returns { hybrid, semantic, keyword, total } (legacy
- * vocabulary — see legacyBadgeKind()).
+ * facet computation" rule). Returns { blend, visual, keyword, total } in the
+ * canonical multimodal vocabulary (searcherBadgeKind() — "other"/null kinds are
+ * excluded from the tally, same as before).
  *
  * @param {Object[]} data - the search response hit array (env.data)
  */
 function tallyKinds(data) {
-  const counts = { hybrid: 0, semantic: 0, keyword: 0 };
+  const counts = { blend: 0, visual: 0, keyword: 0 };
   (data || []).forEach(d => {
-    const kind = legacyBadgeKind(searcherBadgeKind(d));
-    if (kind === "hybrid" || kind === "semantic" || kind === "keyword") counts[kind]++;
+    const kind = searcherBadgeKind(d);
+    if (kind === "blend" || kind === "visual" || kind === "keyword") counts[kind]++;
   });
-  counts.total = counts.hybrid + counts.semantic + counts.keyword;
+  counts.total = counts.blend + counts.visual + counts.keyword;
   return counts;
 }
 
 /**
  * Mosaic Search Composition band. Shows the server's record_count total, a
- * plain-language verdict (balanced / mostly meaning / mostly keyword), a
- * proportional 3-segment bar, and a count-free legend. The proportions/verdict
- * come from a read-only page tally (tallyKinds) — display only, never numbers per
- * source. Hidden gracefully when no hit carries known searcher provenance.
+ * plain-language verdict (balanced / mostly visual / mostly keyword), a
+ * proportional 3-segment bar, and a count-free legend — all in the canonical
+ * multimodal keyword/visual/blend vocabulary (A6 reconciles this off the
+ * legacy semantic/hybrid wording A2 left in place). The proportions/verdict
+ * come from a read-only page tally (tallyKinds) — display only, never numbers
+ * per source, and NEVER fed back into filter queries. Hidden gracefully
+ * (d-none) when no hit on the page carries known searcher provenance, e.g. a
+ * keyword-only deployment that never emits the `searcher` field.
  *
  * @param {Object} env - the search response envelope
  */
@@ -278,7 +289,7 @@ function renderComposition(env) {
 
   // Verdict by 60% thresholds of the visible page.
   let verdictKey = "composition.balanced";
-  if (tally.semantic / tally.total >= 0.6) verdictKey = "composition.mostly_semantic";
+  if (tally.visual / tally.total >= 0.6) verdictKey = "composition.mostly_visual";
   else if (tally.keyword / tally.total >= 0.6) verdictKey = "composition.mostly_keyword";
 
   // Left cluster: server total + "results" label.
@@ -298,15 +309,15 @@ function renderComposition(env) {
     seg.style.width = (n / tally.total * 100) + "%";
     bar.appendChild(seg);
   };
-  addSeg("hybrid", tally.hybrid);
-  addSeg("semantic", tally.semantic);
+  addSeg("blend", tally.blend);
+  addSeg("visual", tally.visual);
   addSeg("keyword", tally.keyword);
   mid.appendChild(bar);
   box.appendChild(mid);
 
   // Legend: count-free dots + labels.
   const legend = el("div", { className: "comp-legend" });
-  [["hybrid", "searcher.hybrid"], ["semantic", "searcher.semantic"], ["keyword", "searcher.keyword"]].forEach(([kind, key]) => {
+  [["blend", "searcher.blend"], ["visual", "searcher.visual"], ["keyword", "searcher.keyword"]].forEach(([kind, key]) => {
     const item = el("span", { className: "comp-legend__item" });
     item.appendChild(el("span", { className: "comp-dot comp-dot--" + kind, attrs: { "aria-hidden": "true" } }));
     item.appendChild(el("span", { text: t(key) }));
@@ -2084,7 +2095,7 @@ function buildFacetGroup(title, entries, fieldKey) {
  * computation"). File type options come from cfg.filetype_options; Updated and
  * Size from the cfg.facet_views timestamp & content_length groups. Every option
  * toggles its ex_q clause in state.facetQueries and re-queries the server, so the
- * filter narrows the full fused set (keyword + semantic) in every mode. No counts,
+ * filter narrows the full fused set (keyword + visual) in every mode. No counts,
  * no zero-suppression — the option set is stable for every search.
  *
  * @param {Element} body - the facet-body container element
@@ -2168,14 +2179,15 @@ function renderFacets(env, labels) {
   }
 
   // Mosaic: mode-aware caption from a read-only page tally (display only) —
-  // reassures that filters narrow the full fused set, including semantic matches.
-  // Skipped gracefully when no hit carries searcher provenance.
+  // reassures that filters narrow the full fused set, including visual matches.
+  // Multimodal vocabulary (A6); never used to build filters. Skipped gracefully
+  // when no hit carries searcher provenance.
   const tally = tallyKinds(env.data || []);
   if (tally.total > 0) {
-    const semanticDominant = tally.semantic / tally.total >= 0.6;
+    const visualDominant = tally.visual / tally.total >= 0.6;
     body.appendChild(el("div", {
-      className: "facet-cap " + (semanticDominant ? "cap--semantic" : "cap--mixed"),
-      text: t(semanticDominant ? "sidebar.caption_semantic" : "sidebar.caption_mixed")
+      className: "facet-cap " + (visualDominant ? "cap--visual" : "cap--mixed"),
+      text: t(visualDominant ? "sidebar.caption_visual" : "sidebar.caption_mixed")
     }));
   }
 
@@ -2205,7 +2217,7 @@ function renderFacets(env, labels) {
 
   // 3. Count-free filter groups (File type / Updated / Size) built from
   //    /api/v2/ui/config — always present and functional in every mode, including
-  //    semantic-only (where the server returns no facet buckets). Clicking a row
+  //    visual-only (where the server returns no facet buckets). Clicking a row
   //    re-queries the server so it narrows the full fused result set.
   renderFilterGroups(body);
 

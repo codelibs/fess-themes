@@ -366,8 +366,8 @@
   "searcher.title_blend": "Matched by both keyword and visual similarity",
   "composition.results": "wyniki",
   "composition.balanced": "Zrównoważone połączenie słów kluczowych i znaczenia",
-  "composition.mostly_semantic": "Głównie dopasowane znaczeniowo",
+  "composition.mostly_visual": "Głównie dopasowane znaczeniowo",
   "composition.mostly_keyword": "Głównie dopasowania słów kluczowych",
-  "sidebar.caption_semantic": "Większość wyników jest dopasowana znaczeniowo. Filtry zawężają wszystkie wyniki, w tym dopasowania semantyczne.",
+  "sidebar.caption_visual": "Większość wyników jest dopasowana znaczeniowo. Filtry zawężają wszystkie wyniki, w tym dopasowania semantyczne.",
   "sidebar.caption_mixed": "Filtry zawężają pełny zestaw wyników — zarówno słowa kluczowe, jak i semantyczne."
 }

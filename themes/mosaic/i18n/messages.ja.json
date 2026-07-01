@@ -365,9 +365,9 @@
   "searcher.blend": "ブレンド",
   "searcher.title_blend": "キーワードと画像類似度の両方でマッチ",
   "composition.results": "件",
-  "composition.balanced": "キーワードと意味のバランス検索",
-  "composition.mostly_semantic": "主に意味検索でマッチ",
+  "composition.balanced": "キーワードとビジュアルのバランス検索",
+  "composition.mostly_visual": "主にビジュアル検索でマッチ",
   "composition.mostly_keyword": "主にキーワードでマッチ",
-  "sidebar.caption_semantic": "多くは意味検索の結果です。フィルターは意味検索を含むすべての結果を絞り込みます。",
-  "sidebar.caption_mixed": "フィルターはキーワード・意味検索を含む全結果を絞り込みます。"
+  "sidebar.caption_visual": "多くはビジュアル検索の結果です。フィルターはビジュアル検索を含むすべての結果を絞り込みます。",
+  "sidebar.caption_mixed": "フィルターはキーワード・ビジュアル検索を含む全結果を絞り込みます。"
 }

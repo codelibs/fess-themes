@@ -366,8 +366,8 @@
   "searcher.title_blend": "Durch Stichwort- und visuelle Suche gefunden",
   "composition.results": "Ergebnisse",
   "composition.balanced": "Eine ausgewogene Mischung aus Schlüsselwörtern und Bedeutung",
-  "composition.mostly_semantic": "Überwiegend bedeutungsbasiert",
+  "composition.mostly_visual": "Überwiegend bedeutungsbasiert",
   "composition.mostly_keyword": "Überwiegend Schlüsselwortübereinstimmungen",
-  "sidebar.caption_semantic": "Die meisten Ergebnisse basieren auf Bedeutung. Filter grenzen alle davon ein, einschließlich semantischer Treffer.",
+  "sidebar.caption_visual": "Die meisten Ergebnisse basieren auf Bedeutung. Filter grenzen alle davon ein, einschließlich semantischer Treffer.",
   "sidebar.caption_mixed": "Filter grenzen alle Ergebnisse ein — sowohl Schlüsselwort- als auch semantische Treffer."
 }

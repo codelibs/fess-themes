@@ -365,9 +365,9 @@
   "searcher.blend": "Blend",
   "searcher.title_blend": "Matched by both keyword and visual similarity",
   "composition.results": "results",
-  "composition.balanced": "A balanced blend of keyword and meaning",
-  "composition.mostly_semantic": "Mostly meaning-matched",
+  "composition.balanced": "A balanced blend of keyword and visual matches",
+  "composition.mostly_visual": "Mostly visual matches",
   "composition.mostly_keyword": "Mostly keyword matches",
-  "sidebar.caption_semantic": "Most results are meaning-matched. Filters narrow all of them, including semantic matches.",
-  "sidebar.caption_mixed": "Filters narrow the full result set — keyword and semantic alike."
+  "sidebar.caption_visual": "Most results are visually matched. Filters narrow all of them, including visual matches.",
+  "sidebar.caption_mixed": "Filters narrow the full result set — keyword and visual alike."
 }

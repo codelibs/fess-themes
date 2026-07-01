@@ -366,8 +366,8 @@
   "searcher.title_blend": "Matched by both keyword and visual similarity",
   "composition.results": "hasil",
   "composition.balanced": "Perpaduan seimbang antara kata kunci dan makna",
-  "composition.mostly_semantic": "Sebagian besar dicocokkan berdasarkan makna",
+  "composition.mostly_visual": "Sebagian besar dicocokkan berdasarkan makna",
   "composition.mostly_keyword": "Sebagian besar cocok berdasarkan kata kunci",
-  "sidebar.caption_semantic": "Sebagian besar hasil dicocokkan berdasarkan makna. Filter mempersempit semuanya, termasuk kecocokan semantik.",
+  "sidebar.caption_visual": "Sebagian besar hasil dicocokkan berdasarkan makna. Filter mempersempit semuanya, termasuk kecocokan semantik.",
   "sidebar.caption_mixed": "Filter mempersempit set hasil penuh — baik kata kunci maupun semantik."
 }
