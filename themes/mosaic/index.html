@@ -253,10 +253,23 @@
         <ul class="list-inline" id="options-bar"></ul>
 
         <!-- Status line (parity searchResults.jsp div#subheader.row). -->
-        <div id="subheader" class="row">
+        <div id="subheader" class="row align-items-center">
           <div class="col">
             <p id="results-status" aria-live="polite" aria-atomic="true"></p>
             <div id="results-popular-words" class="d-none text-muted small" aria-live="polite"></div>
+          </div>
+          <!-- Grid/list view toggle (A4, theme extra — no JSP parity). Buttons carry
+               data-view + aria-pressed; both are kept in sync with state.viewMode by
+               search.js's setViewMode()/updateViewToggleButtons() (initial values here
+               are the "grid is default" fallback, overridden on load from the
+               localStorage("mosaic.view") restore). No inline handlers — click
+               listeners are wired via addEventListener in search.js (CSP: script-src
+               'self'). -->
+          <div class="col-auto">
+            <div class="view-toggle" id="view-toggle" role="group" aria-label="Result view">
+              <button type="button" class="view-toggle__btn" data-view="grid" aria-pressed="true" aria-label="Grid view"><i class="fa fa-th" aria-hidden="true"></i></button>
+              <button type="button" class="view-toggle__btn" data-view="list" aria-pressed="false" aria-label="List view"><i class="fa fa-list" aria-hidden="true"></i></button>
+            </div>
           </div>
         </div>
 
@@ -292,10 +305,11 @@
           <input type="hidden" id="queryId" value="">
           <input type="hidden" id="rt" value="">
           <aside class="col-md-4 d-none d-md-block" id="facet-body"></aside>
-          <!-- <ul>: search.js toggles className between "gallery" (grid, default) and
-               "list-unstyled" (list, A4) and repopulates children on every render;
+          <!-- <ul>: search.js toggles className between "gallery results--grid" (grid,
+               default) and "list-unstyled results--list" (list, A4 — driven by the
+               #view-toggle buttons above) and repopulates children on every render;
                the static tag/attrs here just need valid initial list semantics. -->
-          <ul class="gallery col-md-8" id="results" role="list"></ul>
+          <ul class="gallery results--grid col-md-8" id="results" role="list"></ul>
         </div>
 
         <!-- Pagination (parity searchResults.jsp div.row > nav#subfooter). -->

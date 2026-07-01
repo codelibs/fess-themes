@@ -41,6 +41,16 @@ const state = {
   lbPrevFocus: null      // A3: element focused before openLightbox(), restored by closeLightbox()
 };
 
+// A4: restore the persisted grid/list view mode (if any) before the first render —
+// module-top-level code runs once at import time, ahead of attach()/runFromUrl().
+// Invalid/missing storage silently keeps the "grid" default set above.
+try {
+  const storedViewMode = localStorage.getItem("mosaic.view");
+  if (storedViewMode === "grid" || storedViewMode === "list") state.viewMode = storedViewMode;
+} catch (e) {
+  // localStorage unavailable (privacy mode / disabled storage) — keep the "grid" default.
+}
+
 // XSS-safety: this module builds every result-card DOM node with
 // document.createElement + textContent. No untrusted string is ever
 // passed to innerHTML.
@@ -978,16 +988,32 @@ function renderOptionsBar() {
   }
 }
 
+/**
+ * Recompute #results' className from state.viewMode. Shared by renderResults (which
+ * calls it on every (re)populate) and setViewMode (which calls it immediately, even
+ * when there is no state.currentEnv yet to re-render — e.g. on startup before the
+ * first search). #results keeps its "col-md-8" sizing in both modes so it still sits
+ * correctly next to the facet sidebar; ".gallery"/".list-unstyled" establish the tile
+ * grid vs plain list layout (styles.css), and the "results--grid"/"results--list"
+ * companions are the A4 toggle-control + list-row-spacing CSS hook.
+ */
+function applyResultsClassName() {
+  const list = document.getElementById("results");
+  if (!list) return;
+  list.className = (state.viewMode === "grid")
+    ? "gallery results--grid col-md-8"
+    : "list-unstyled results--list col-md-8";
+}
+
 function renderResults(env) {
   const list = document.getElementById("results");
   const meta = document.getElementById("results-meta");
   const empty = document.getElementById("empty-state");
   list.innerHTML = "";   // empty-string literal — clears children, no untrusted data
-  // Grid (gallery tiles) vs list (semanticlens result cards) — A4 wires the toggle
-  // UI; state.viewMode defaults to "grid" (see state declaration). #results keeps
-  // its Bootstrap "col-md-8" sizing in both modes so it still sits correctly next
-  // to the facet sidebar; ".gallery" alone establishes the tile grid (styles.css).
-  list.className = (state.viewMode === "grid") ? "gallery col-md-8" : "list-unstyled col-md-8";
+  // Grid (gallery tiles) vs list (semanticlens result cards) — driven by the #view-toggle
+  // buttons via setViewMode() (A4); state.viewMode defaults to "grid" (see state
+  // declaration), restored from localStorage("mosaic.view") at module load.
+  applyResultsClassName();
   const data = env.data || [];
   // A3's lightbox reads the last full envelope (hits, query_id, etc.) off state
   // rather than being threaded through as a parameter.
@@ -1055,6 +1081,43 @@ function renderResults(env) {
   // the solid icon for the signed-in user.
   const favEnabled = !!(api.getConfig()?.features?.user_favorite) && api.isAuthenticated();
   if (favEnabled && env.query_id) syncFavorites(env.query_id);
+}
+
+/**
+ * Sync the #view-toggle buttons' aria-pressed with state.viewMode. Selector is scoped
+ * to [data-view] rather than a hardcoded pair of ids so it degrades gracefully if a
+ * later task (A7) adds more view modes/buttons.
+ */
+function updateViewToggleButtons() {
+  document.querySelectorAll("#view-toggle [data-view]").forEach(btn => {
+    btn.setAttribute("aria-pressed", btn.dataset.view === state.viewMode ? "true" : "false");
+  });
+}
+
+/**
+ * Switch between the grid (gallery tiles) and list (semanticlens result-card) result
+ * views (A4). Persists the choice to localStorage so it survives reloads/navigation,
+ * and — unlike a plain re-render — updates the toggle buttons and #results' class
+ * immediately even when there is nothing to re-render yet (e.g. called during startup
+ * restore, before the first search has populated state.currentEnv).
+ *
+ * @param {("grid"|"list")} mode
+ */
+export function setViewMode(mode) {
+  if (mode !== "grid" && mode !== "list") return;
+  state.viewMode = mode;
+  applyResultsClassName();
+  updateViewToggleButtons();
+  try {
+    localStorage.setItem("mosaic.view", mode);
+  } catch (e) {
+    // localStorage unavailable (privacy mode / disabled storage) — the in-memory
+    // state.viewMode still switches for the rest of this session.
+  }
+  // Re-render the last results in the new mode. No-op before the first search
+  // (state.currentEnv is null) — applyResultsClassName()/updateViewToggleButtons()
+  // above already put the (still-empty) container and buttons in the right state.
+  if (state.currentEnv) renderResults(state.currentEnv);
 }
 
 /**
@@ -1953,6 +2016,18 @@ export function attach() {
       trapLightboxTab(ev, lb);
     }
   });
+
+  // A4: grid/list view-toggle buttons (#view-toggle [data-view], static markup in
+  // index.html). No inline handlers (CSP) — wired here via addEventListener, same
+  // convention as the rest of attach(). Sync the buttons + #results class with the
+  // already-restored state.viewMode (see the localStorage restore at module load)
+  // right away, since the HTML's own aria-pressed defaults only cover the "grid"
+  // default and may not match a restored "list" mode.
+  document.querySelectorAll("#view-toggle [data-view]").forEach(btn => {
+    btn.addEventListener("click", () => setViewMode(btn.dataset.view));
+  });
+  updateViewToggleButtons();
+  applyResultsClassName();
 }
 
 /**

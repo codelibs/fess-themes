@@ -1085,8 +1085,11 @@ footer[role="contentinfo"] {
 
 /* ---- Search results (JSP-parity DOM produced by search.js) ---- */
 #result .title { font-size: 1.125rem; line-height: 1.4; }
-#result ol li { margin: 1.25em 0; }
-#result ol li:first-child { margin-top: 0; }
+/* A4: list-mode row spacing. #results is always a <ul> (never <ol> — mosaic reuses
+   one element for both grid and list, see search.js applyResultsClassName()), so this
+   keys off the "results--list" class the toggle applies rather than an "ol" tag. */
+#result .results--list li { margin: 1.25em 0; }
+#result .results--list li:first-child { margin-top: 0; }
 #result .title a { color: var(--df-secondary-strong); }
 #result .title a:visited { color: var(--df-stone-600); }
 #result .body { display: flex; align-items: flex-start; gap: 1rem; }
@@ -1103,6 +1106,33 @@ footer[role="contentinfo"] {
   #result .more { display: block; }
   #result .description { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
+
+/* ---- A4: grid/list view toggle (minimal — full polish is a later styling task) ---- */
+.view-toggle {
+  display: inline-flex;
+  border: 1px solid var(--df-stone-200);
+  border-radius: var(--df-radius);
+  overflow: hidden;
+}
+.view-toggle__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 0;
+  background: var(--df-surface);
+  color: var(--df-stone-500);
+  cursor: pointer;
+}
+.view-toggle__btn + .view-toggle__btn { border-left: 1px solid var(--df-stone-200); }
+.view-toggle__btn:hover { background: var(--df-stone-100); color: var(--df-stone-700); }
+.view-toggle__btn[aria-pressed="true"] {
+  background: var(--df-primary-subtle);
+  color: var(--df-primary-text);
+}
+.view-toggle__btn:focus-visible { outline: 2px solid var(--df-secondary); outline-offset: -2px; }
 
 /* ---- Focus management (showView focuses each view root) ---- */
 #page-root *:focus-visible { outline: 2px solid var(--df-secondary); outline-offset: 2px; }
