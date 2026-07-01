@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Help page renderer for the NomadKit SPA.
+// Help page renderer for the SemanticLens SPA.
 // Section titles use textContent; section HTML is sanitized through a
 // whitelist sanitizer before being appended — no raw innerHTML on live DOM nodes.
 

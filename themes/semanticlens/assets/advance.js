@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Advanced Search view for the NomadKit SPA.
+// Advanced Search view for the SemanticLens SPA.
 // All DOM construction uses createElement/textContent/setAttribute — no innerHTML.
 
 import { getConfig } from "./api.js";

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Chat module for the NomadKit SPA.
+// Chat module for the SemanticLens SPA.
 // Provides attachInline() for the results-page sidebar panel and
 // attachStandalone() for the full-width /chat route.
 

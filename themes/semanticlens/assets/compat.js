@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 /*
- * NomadKit theme — Bootstrap JavaScript compatibility shim.
+ * SemanticLens theme — Bootstrap JavaScript compatibility shim.
  *
- * The NomadKit theme ships no Bootstrap/Popper. The SPA modules (app.js,
+ * The SemanticLens theme ships no Bootstrap/Popper. The SPA modules (app.js,
  * auth.js, search.js, chat.js) however still drive a handful of interactive
  * widgets through the Bootstrap 5 JS API (`window.bootstrap.{Modal,Collapse,
  * Tooltip}`) and through declarative `data-bs-*` attributes (dropdown, modal,

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Profile / password-change view for the NomadKit SPA.
+// Profile / password-change view for the SemanticLens SPA.
 // All DOM construction uses createElement/textContent/setAttribute — no innerHTML.
 
 import * as api from "./api.js";

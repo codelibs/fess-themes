@@ -13,6 +13,14 @@ let currentSearchAbort = null;
 /** AbortController for in-flight related-queries/content requests; null when idle. */
 let currentRelatedAbort = null;
 
+/**
+ * Sticky flag: records whether this deployment has ever returned the `searcher`
+ * provenance field, i.e. semantic/hybrid search is active. Once true it stays true.
+ * Used to gate the quote-on-filter workaround so keyword-only deployments (which
+ * never emit `searcher`) are left untouched — see runSearch / quoteQueryForFilter.
+ */
+let semanticSeen = false;
+
 const state = {
   q: "",
   start: 0,
@@ -679,6 +687,10 @@ function renderResults(env) {
   const empty = document.getElementById("empty-state");
   list.innerHTML = "";   // empty-string literal — clears children, no untrusted data
   const data = env.data || [];
+  // Sticky: mark semantic/hybrid search active once any hit carries searcher provenance.
+  // Filters are only clickable after a search has rendered, so by the time a filter can be
+  // active this flag is already known — no first-request edge case (see runSearch gating).
+  if (!semanticSeen && data.some(d => searcherKinds(d) !== null)) semanticSeen = true;
   renderComposition(env); // SemanticLens: show search-composition band when hits carry provenance
   // C.2: always refresh similar-doc banner (hides when state.sdh is cleared)
   renderSimilarDocBanner();
@@ -742,8 +754,9 @@ function showSearchLoading(show) {
 /**
  * True when the request carries at least one field/range filter — the same merged
  * filter state runSearch emits (facet query views, advance ex_q clauses, field
- * filters, label facets). Used to decide whether the free-text query must be
- * collapsed to a single quoted phrase (see quoteQueryForFilter).
+ * filters, label facets). Used (only when semanticSeen, i.e. semantic search is
+ * active) to decide whether the free-text query must be collapsed to a single
+ * quoted phrase (see quoteQueryForFilter).
  */
 function hasActiveFilter() {
   return (Array.isArray(state.facetQueries) && state.facetQueries.length > 0)
@@ -753,13 +766,16 @@ function hasActiveFilter() {
 }
 
 /**
- * Quote-on-filter transform. When a filter is active, a multi-word free-text query
- * must be sent as a single quoted phrase so the semantic plugin collapses it to one
- * neural clause — otherwise the duplicate content_vector inner-hits names trip an
- * HTTP 400 (`[inner_hits] already contains an entry for key [content_vector]`).
- * This only replicates what the plugin already does for the unfiltered case, so it
- * is forward-safe. Left untouched when empty, already a single quoted phrase, a
- * user-authored advanced query (field:/operators), or a single token.
+ * Quote-on-filter transform. Applied only when semanticSeen (semantic/hybrid search
+ * is active) and a filter is active: a multi-word free-text query must then be sent as
+ * a single quoted phrase so the semantic plugin collapses it to one neural clause —
+ * otherwise the duplicate content_vector inner-hits names trip an HTTP 400
+ * (`[inner_hits] already contains an entry for key [content_vector]`). This only
+ * replicates what the plugin already does for the unfiltered case, so it is
+ * forward-safe. Keyword-only deployments never reach here (semanticSeen stays false),
+ * so their multi-word + filter queries are unchanged — parity with other themes.
+ * Left untouched when empty, already a single quoted phrase, a user-authored advanced
+ * query (field:/operators), or a single token.
  *
  * @param {string} q
  * @returns {string}
@@ -790,9 +806,11 @@ async function runSearch() {
   if (prevErr) prevErr.classList.add("d-none");
   showSearchLoading(true);
   try {
-    // Quote-on-filter: when any filter is active, send a multi-word query as a single
-    // quoted phrase so the semantic branch stays one neural clause (avoids HTTP 400).
-    const params = { q: hasActiveFilter() ? quoteQueryForFilter(state.q) : state.q, start: state.start, num: state.num };
+    // Quote-on-filter: when semantic/hybrid search is active AND any filter is active,
+    // send a multi-word query as a single quoted phrase so the semantic branch stays one
+    // neural clause (avoids HTTP 400). Gated on semanticSeen so keyword-only deployments
+    // are unaffected (no exact-phrase collapse) — parity with other themes.
+    const params = { q: (semanticSeen && hasActiveFilter()) ? quoteQueryForFilter(state.q) : state.q, start: state.start, num: state.num };
     if (state.sort) params.sort = state.sort;
     // state.lang is string[] — send as repeated lang= params (empty array → omit).
     if (Array.isArray(state.lang) && state.lang.length > 0) {

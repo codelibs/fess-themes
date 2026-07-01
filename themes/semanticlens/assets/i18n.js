@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// NomadKit theme i18n loader. Resolves the runtime locale once at boot
+// SemanticLens theme i18n loader. Resolves the runtime locale once at boot
 // using navigator.language with primary-subtag and English fallbacks per spec §4.6.
 
 const SUPPORTED = ["de", "en", "es", "fr", "hi", "id", "it", "ja", "ko", "nl", "pl", "pt-BR", "ru", "tr", "zh-CN", "zh-TW"];

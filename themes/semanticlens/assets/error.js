@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Error page renderer for the NomadKit SPA.
+// Error page renderer for the SemanticLens SPA.
 // All DOM construction uses createElement/textContent — no innerHTML.
 
 import { t } from "./i18n.js";
