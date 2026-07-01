@@ -179,34 +179,20 @@ function plainTitle(d) {
 //
 // searcherKinds/searcherBadgeKind below are the canonical multimodal mapping
 // (default -> keyword, multi_modal -> visual, both -> blend) and are the
-// producer/consumer contract shared with buildGalleryTile (grid mode, further
-// below) and later tasks (lightbox/toggle). The pre-existing LIST-MODE badge
-// pill / card spine / result-why microcopy (inherited from semanticlens) still
-// render under their original "hybrid/semantic/keyword" CSS classes and i18n
-// keys — legacyBadgeKind() bridges the new kind vocabulary onto those unchanged
-// names, so that UI now correctly activates on real multi_modal/default data
-// instead of never matching (the semanticlens code looked for a "semantic"
-// searcher name this deployment never emits). Renaming that legacy list-mode
-// UI's own vocabulary/colors to Visual/Blend is cosmetic polish left to a later
-// styling task, not this one.
-//
-// The search-composition band (renderComposition) and the filter-sidebar
-// caption (renderFacets, "Mosaic: mode-aware caption" below) are RECONCILED by
-// task A6: they read tallyKinds(), which now tallies the canonical
-// keyword/visual/blend kinds directly (no legacyBadgeKind bridge), so their
-// wording/i18n keys/CSS classes speak the multimodal vocabulary.
+// single producer/consumer contract for every consumer of searcher provenance
+// in this theme: buildGalleryTile/buildGallerySearcherBadge (grid mode +
+// lightbox meta), buildSearcherBadge/buildResultCard (list mode badge +
+// card spine + result-why microcopy), renderComposition (composition band),
+// and renderFacets' mode-aware sidebar caption. All of these speak the same
+// keyword/visual/blend vocabulary and the matching --mm-*/i18n keys — task A6
+// reconciled the composition band + sidebar caption, and task A7 reconciled
+// the last holdout (list mode's badge pill + card spine), which used to
+// bridge onto older CSS classes and i18n keys inherited from semanticlens.
 const SEARCHER_BADGES = {
-  semantic: { label: "searcher.semantic", title: "searcher.title_semantic", icon: "fa fa-magic" },
-  keyword:  { label: "searcher.keyword",  title: "searcher.title_keyword",  icon: "fa fa-search" },
-  hybrid:   { label: "searcher.hybrid",   title: "searcher.title_hybrid",   icon: "fa fa-bolt" }
+  keyword: { label: "searcher.keyword", title: "searcher.title_keyword", icon: "fa fa-search" },
+  visual:  { label: "searcher.visual",  title: "searcher.title_visual",  icon: "fa fa-image" },
+  blend:   { label: "searcher.blend",   title: "searcher.title_blend",   icon: "fa fa-bolt" }
 };
-
-/** Map a new multimodal kind (keyword|visual|blend|other|null) to the legacy CSS/i18n suffix. */
-function legacyBadgeKind(kind) {
-  if (kind === "visual") return "semantic";
-  if (kind === "blend") return "hybrid";
-  return kind; // "keyword" | "other" | null unchanged
-}
 
 /** searcher may be an array or comma-string of searcher names. */
 function searcherKinds(doc) {
@@ -228,7 +214,7 @@ function searcherBadgeKind(doc) {
 
 /** Build the list-mode searcher badge pill for a hit, or null when no searcher data. */
 function buildSearcherBadge(d) {
-  const kind = legacyBadgeKind(searcherBadgeKind(d));
+  const kind = searcherBadgeKind(d);
   if (!kind) return null;
   const badge = el("span", { className: "searcher-badge searcher-badge--" + kind });
   if (kind === "other") {
@@ -347,8 +333,8 @@ function buildResultCard(d, queryId, order) {
 
   // Mosaic: source-of-match kind drives the colored left spine + microcopy.
   // Absent searcher field → no kind → card renders unchanged (graceful degradation).
-  const kind = legacyBadgeKind(searcherBadgeKind(d));
-  if (kind === "hybrid" || kind === "semantic" || kind === "keyword") {
+  const kind = searcherBadgeKind(d);
+  if (kind === "blend" || kind === "visual" || kind === "keyword") {
     li.classList.add("result--" + kind);
   }
 
@@ -388,7 +374,7 @@ function buildResultCard(d, queryId, order) {
   }
   // Mosaic: one-line "Matched by …" microcopy, colored by source. Only when
   // the hit carries a known searcher kind (textContent only).
-  if (kind === "hybrid" || kind === "semantic" || kind === "keyword") {
+  if (kind === "blend" || kind === "visual" || kind === "keyword") {
     li.appendChild(el("div", { className: "result-why result-why--" + kind, text: t("searcher.why_" + kind) }));
   }
 
@@ -541,17 +527,34 @@ function thumbUrl(docId, queryId) {
 /**
  * Wire a gallery tile's <img> to lazy-load (IntersectionObserver) and retry on
  * error with the THUMB_RETRY_MS backoff. Falls back to eager load when
- * IntersectionObserver is unavailable.
+ * IntersectionObserver is unavailable. Native `loading="lazy"` is deliberately
+ * NOT set here (or by the caller) — the IntersectionObserver below already
+ * gates when loading starts, so the native attribute would be redundant.
+ *
+ * When every retry is exhausted (the thumbnail never loads), the broken <img>
+ * is removed rather than left showing the browser's broken-image glyph, and
+ * the tile converges onto the exact same no-thumbnail fallback markup
+ * buildGalleryTile() itself uses (buildTileIcon() below) — same ".tile--noimg"
+ * class + ".tile__icon" element, styles.css only has to style one visual case.
  *
  * @param {HTMLImageElement} imgEl
  * @param {string} docId
  * @param {string} queryId
+ * @param {string} [filetype] - doc.filetype, used to pick the exhausted-retry fallback icon
  */
-function attachThumb(imgEl, docId, queryId) {
+function attachThumb(imgEl, docId, queryId, filetype) {
   let attempt = 0;
   const load = () => { imgEl.src = thumbUrl(docId, queryId) + (attempt ? `&_r=${attempt}` : ""); };
   imgEl.addEventListener("error", () => {
-    if (attempt >= THUMB_RETRY_MS.length) { imgEl.closest(".tile")?.classList.add("tile--noimg"); return; }
+    if (attempt >= THUMB_RETRY_MS.length) {
+      const tile = imgEl.closest(".tile");
+      imgEl.remove();
+      if (tile) {
+        tile.classList.add("tile--noimg");
+        tile.insertBefore(buildTileIcon(filetype), tile.firstChild);
+      }
+      return;
+    }
     const delay = THUMB_RETRY_MS[attempt++];
     setTimeout(load, delay);
   });
@@ -569,6 +572,22 @@ const FILETYPE_ICON = {
   html: "fa-globe", pdf: "fa-file-pdf-o", word: "fa-file-word-o", excel: "fa-file-excel-o",
   powerpoint: "fa-file-powerpoint-o", image: "fa-file-image-o", txt: "fa-file-text-o", others: "fa-file-o"
 };
+
+/**
+ * Build the no-thumbnail fallback icon element — shared by buildGalleryTile()
+ * (thumbnails disabled/unavailable for the hit) and attachThumb()'s
+ * exhausted-retry fallback (thumbnail never loaded), so both paths converge
+ * on identical markup/styling instead of two near-duplicate fallback looks.
+ *
+ * @param {string} [filetype] - doc.filetype
+ * @returns {HTMLElement}
+ */
+function buildTileIcon(filetype) {
+  return el("i", {
+    className: "fa " + (FILETYPE_ICON[filetype] || FILETYPE_ICON.others) + " tile__icon",
+    attrs: { "aria-hidden": "true" }
+  });
+}
 
 /** Icon for the gallery-tile searcher badge (multimodal vocabulary). */
 const TILE_BADGE_ICON = { keyword: "fa fa-search", visual: "fa fa-image", blend: "fa fa-bolt" };
@@ -618,17 +637,14 @@ function buildGalleryTile(doc, queryId, rank) {
   if (thumbOk) {
     const img = document.createElement("img");
     img.className = "tile__img";
-    img.loading = "lazy";
+    // No loading="lazy" here — attachThumb()'s IntersectionObserver already
+    // gates when the request starts, so the native attribute is redundant.
     img.alt = titleText;
     li.appendChild(img);
-    attachThumb(img, doc.doc_id, queryId);
+    attachThumb(img, doc.doc_id, queryId, doc.filetype);
   } else {
     li.classList.add("tile--noimg");
-    const icon = el("i", {
-      className: "fa " + (FILETYPE_ICON[doc.filetype] || FILETYPE_ICON.others) + " tile__icon",
-      attrs: { "aria-hidden": "true" }
-    });
-    li.appendChild(icon);
+    li.appendChild(buildTileIcon(doc.filetype));
   }
 
   // Caption (title) — always present, XSS-safe (textContent via el()).
@@ -641,6 +657,8 @@ function buildGalleryTile(doc, queryId, rank) {
   }
   li.appendChild(cap);
   li.tabIndex = 0; // keyboard focusable → opens lightbox (A3)
+  li.setAttribute("role", "button");
+  li.setAttribute("aria-label", titleText);
   return li;
 }
 
@@ -755,8 +773,14 @@ function buildLightboxMeta(doc) {
  * note above). Loads the full-resolution image (via safeHref) for
  * image-mimetype hits; falls back to the same thumbnail endpoint the gallery
  * tile uses (thumbUrl()) for every other hit, or when the URL scheme is
- * unsafe. Captures the previously-focused element so closeLightbox() can
- * restore it, and moves focus to the close button (WCAG 2.4.3 focus order).
+ * unsafe. Also used for in-place Next/Prev navigation while already open
+ * (lightboxNext/lightboxPrev both call this), so the previously-focused
+ * element is captured ONLY on the closed -> open transition (lb.hidden is
+ * still true at that point) — otherwise a Next/Prev call would overwrite
+ * state.lbPrevFocus with a lightbox-internal element (e.g. the close
+ * button), and closeLightbox() would restore focus to <body>/nothing useful
+ * instead of the gallery tile that originally opened the lightbox. Moves
+ * focus to the close button on every open/navigate (WCAG 2.4.3 focus order).
  *
  * @param {number} rank - 0-based index into state.currentEnv.data[]
  */
@@ -775,7 +799,14 @@ function openLightbox(rank) {
   img.src = (isImage && safeUrl !== "#") ? safeUrl : thumbUrl(doc.doc_id, env.query_id);
   img.alt = plainTitle(doc);
   lb.querySelector(".lightbox__meta").replaceChildren(buildLightboxMeta(doc));
-  state.lbPrevFocus = document.activeElement;
+  // Boundary hint for the nav buttons (styles.css dims + inert-s a disabled
+  // edge button); Next/Prev themselves already no-op at the boundary
+  // (see lightboxNext/lightboxPrev), so this is a pure a11y/visual affordance.
+  const prevBtn = lb.querySelector(".lightbox__prev");
+  const nextBtn = lb.querySelector(".lightbox__next");
+  if (prevBtn) prevBtn.setAttribute("aria-disabled", rank <= 0 ? "true" : "false");
+  if (nextBtn) nextBtn.setAttribute("aria-disabled", rank >= env.data.length - 1 ? "true" : "false");
+  if (lb.hidden) state.lbPrevFocus = document.activeElement;
   lb.hidden = false;
   lb.querySelector(".lightbox__close").focus();
 }

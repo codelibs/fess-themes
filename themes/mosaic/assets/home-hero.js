@@ -11,8 +11,8 @@
 //      drifting toward a central glowing "shared embedding" node — visualizing
 //      text and images living together in one CLIP-style embedding space.
 //      Colors are read from the theme's existing source-of-match custom
-//      properties (--sl-keyword for text, --sl-semantic for images,
-//      --sl-hybrid for the shared node) so the hero stays visually consistent
+//      properties (--mm-keyword for text, --mm-visual for images,
+//      --mm-blend for the shared node) so the hero stays visually consistent
 //      with the keyword/visual/blend badges used elsewhere in the theme.
 //      requestAnimationFrame loop; a single static frame under
 //      prefers-reduced-motion (no RAF loop at all).
@@ -43,8 +43,8 @@ let active = false; // true while #home-view is the visible route
 /* Multimodal-convergence canvas                                       */
 /* ------------------------------------------------------------------ */
 
-// Fallback hues mirror the theme's default --sl-keyword / --sl-semantic /
-// --sl-hybrid custom properties (amber / violet / teal) in case they can't
+// Fallback hues mirror the theme's default --mm-keyword / --mm-visual /
+// --mm-blend custom properties (amber / violet / teal) in case they can't
 // be resolved from computed style.
 const FALLBACK_TEXT_COLOR = "#D97706";  // text tokens   (keyword hue)
 const FALLBACK_IMAGE_COLOR = "#7C3AED"; // image tiles   (visual hue)
@@ -71,9 +71,9 @@ function readColors() {
       const v = cs.getPropertyValue(name).trim();
       return v || fb;
     };
-    textColor = pick("--sl-keyword", FALLBACK_TEXT_COLOR);
-    imageColor = pick("--sl-semantic", FALLBACK_IMAGE_COLOR);
-    nodeColor = pick("--sl-hybrid", FALLBACK_NODE_COLOR);
+    textColor = pick("--mm-keyword", FALLBACK_TEXT_COLOR);
+    imageColor = pick("--mm-visual", FALLBACK_IMAGE_COLOR);
+    nodeColor = pick("--mm-blend", FALLBACK_NODE_COLOR);
   } catch {
     textColor = FALLBACK_TEXT_COLOR;
     imageColor = FALLBACK_IMAGE_COLOR;
