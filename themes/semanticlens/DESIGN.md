@@ -81,6 +81,32 @@ The theme-side fix: whenever `hasActiveFilter()` is true, `quoteQueryForFilter(q
 
 **Known tradeoff:** with a filter active, the BM25 branch evaluates the query as a phrase match rather than OR-of-terms, which may shift lexical ranking slightly. The semantic branch is unaffected. This is documented and acceptable.
 
+## Home / semantic-space hero
+
+### Concept
+
+The home/top view (`#home-view`) is the user's first encounter with SemanticLens. Instead of a static logo-plus-search-box, it opens on a dark "semantic-space" band that makes the theme's core idea — that keyword and semantic retrieval are two overlapping dimensions of meaning — immediately legible as a visual metaphor.
+
+The background visualises a high-dimensional embedding space: nodes (documents) drift at random through the field, and edges (proximity lines) connect them when they draw near in that space. The amber and violet beams converging from opposite sides represent the keyword and semantic retrieval signals merging at the search box — a literal depiction of rank fusion. The pulsing lens mark at the centre echoes the brand motif and marks the point of synthesis.
+
+### Animation approach
+
+**Constellation canvas (`#sl-hero-canvas`)**: implemented in `assets/home-hero.js` as a `requestAnimationFrame` loop. Approximately 30–70 nodes are seeded with random positions and velocities, each assigned one of the three source-of-match colors (`--sl-keyword` amber, `--sl-semantic` violet, `--sl-hybrid` teal, resolved from CSS custom properties at init time with a hardcoded fallback). On each frame, positions are updated and a proximity check (128 px threshold) draws connecting lines at proportional opacity. The loop is intentionally low-cost: no WebGL, no image assets, no external libraries.
+
+**Converging beams (`.sl-beam--kw`, `.sl-beam--se`)**: pure CSS — two `div` elements in `.sl-hero-bg`, styled as soft radial/conic gradient blobs that drift toward the centre using a CSS `@keyframes` animation. Amber from the left (keyword), violet from the right (semantic).
+
+**Spectral lens mark (`.sl-hero-lens`)**: a CSS-only pulsing ring, `@keyframes` scale + opacity, using the brand violet.
+
+**Typewriter placeholder**: `home-hero.js` animates the `placeholder` attribute of `#contentQuery` (never `.value`) cycling through four localized example queries. The typewriter respects user intent: it yields as soon as the input is focused or non-empty, and restores the plain placeholder. Under `prefers-reduced-motion` it sets the first example as a static placeholder and never animates.
+
+### Accessibility and performance
+
+- All decorative elements (`canvas`, beams, lens mark) carry `aria-hidden="true"`.
+- The `requestAnimationFrame` loop is paused via `cancelAnimationFrame` whenever `setActive(false)` is called (user navigates away from the home view) or the `document.visibilitychange` event fires (tab backgrounded). No animation CPU is consumed while the user is on the results, help, or profile view.
+- CSS animations on the beams and lens use `animation-play-state: paused` under `(prefers-reduced-motion: reduce)`. The canvas draw loop similarly skips to a single static frame and does not schedule further rAF calls.
+- The module is a standard ES import (`import { homeHero } from "./home-hero.js"`), driven by `app.js`. No inline scripts; CSP `script-src 'self'` is unaffected.
+- System fonts are used throughout the hero (consistent with the rest of the theme); no web-font requests are issued.
+
 ## Lens identity: brand mark (header gradient skipped)
 
 The plan specified a header gradient (`linear-gradient(115deg,#1b1e3c,#3b2a78,#0d6b66)`) scoped to the search view. This was skipped in implementation: `.df-header` is a `position:fixed` global navbar rendered outside the per-view `<section>` elements, and `showView()` only toggles `hidden` on sections. There is no CSS hook to scope the gradient to the search view without editing `app.js` (out of scope).

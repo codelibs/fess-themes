@@ -67,6 +67,36 @@ When at least one filter is active, SemanticLens wraps the free-text query as a 
 
 **Tradeoff:** with a filter active, the BM25 branch becomes phrase-match rather than OR-of-terms, so lexical ranking may shift slightly. The semantic branch is unaffected and preserves recall. This behavior is documented and acceptable; it replicates what the plugin already does for unfiltered multi-word queries, so it remains correct if the plugin later fixes the underlying bug.
 
+## Home / landing hero
+
+The `#home-view` opens with a full-bleed dark "semantic-space" hero band (`div.sl-hero`) that replaces the plain logo+search box from NomadKit. All other views (results, help, profile) are unchanged.
+
+### What the user sees
+
+- An animated **vector-constellation** (`#sl-hero-canvas`): ~30–70 nodes drift across the dark background and connect with proximity lines when they draw near. Nodes and lines cycle through the three source-of-match colors (`--sl-keyword` amber / `--sl-semantic` violet / `--sl-hybrid` teal).
+- Two soft **converging beams** (`.sl-beam--kw` amber from the left, `.sl-beam--se` violet from the right) that visually represent keyword and semantic signals meeting at the search box.
+- A **pulsing spectral lens mark** (`.sl-hero-lens`) centred above the headline.
+- A **headline** (`home.hero_title`), a **subline** (`home.hero_sub`), and a **hint** (`home.hero_hint`) in white/translucent text.
+- The real `#contentQuery` search input restyled as a **glowing pill** (`.sl-hero-pill`) with the submit button inside and an options ghost-button (`.sl-hero-options`) below.
+- Three **match-type cards** (`.sl-match--kw`, `.sl-match--se`, `.sl-match--hy`) that straddle the hero/light boundary, previewing the Keyword / Semantic / Hybrid badges users will see in results.
+- `#home-popular-words` is intentionally hidden in this design.
+
+### Typewriter placeholder
+
+`home-hero.js` animates the `placeholder` attribute of `#contentQuery`, cycling through four example queries (`home.example_1` … `home.example_4`). Behavior:
+
+- The cycle runs while the home view is active and the input is empty — **including while the empty box is focused**, so the effect is visible on load.
+- As soon as the user **types** (the box becomes non-empty), the typewriter stops and the placeholder is restored to the plain default.
+- When the input is cleared and blurred, the cycle resumes.
+- Under `prefers-reduced-motion` the first example is shown as a static placeholder; no animation runs.
+
+### Performance and accessibility
+
+- The `requestAnimationFrame` loop in `home-hero.js` is **paused** whenever the home view is hidden (`setActive(false)`, called by `showView()` in `app.js`) and also whenever the browser tab is backgrounded (`document.visibilitychange`). This keeps CPU and battery impact negligible when the user is on the results view.
+- The canvas and beam/lens elements carry `aria-hidden="true"`; they are purely decorative.
+- All motion (canvas drift, beam pulse, typewriter) is disabled or frozen under `(prefers-reduced-motion: reduce)` in both CSS and JS.
+- No inline scripts are used; `home-hero.js` is a standard ES module imported by `app.js`. The theme's CSP (`script-src 'self'`) is satisfied without changes.
+
 ## Graceful degradation
 
 When the `searcher` field is absent (standard Fess deployments without hybrid search), **no badges are rendered and the Search Composition band, card spines, microcopy, and sidebar caption are all hidden**. SemanticLens functions as a valid general-purpose search theme with zero visual regressions.
@@ -108,6 +138,7 @@ semanticlens/
 │   ├── styles.css        # self-contained SemanticLens stylesheet
 │   ├── app.js            # entry point
 │   ├── search.js         # search + searcher badge/composition/filter logic
+│   ├── home-hero.js      # semantic-space hero: constellation canvas + typewriter placeholder
 │   ├── logo.png          # home hero logo (nomadkit placeholder)
 │   └── logo-head.png     # header brand logo (nomadkit placeholder)
 ├── i18n/
@@ -129,6 +160,16 @@ Key DOM landmarks added by the redesign:
 | `.filter-chk` | Checkbox indicator inside each filter row |
 | `.facet-cap` / `.cap--semantic` / `.cap--mixed` | Mode-aware sidebar caption |
 | `.sl-lensmark` | CSS lens-mark brand element in the header (gradient mark, no image) |
+| `.sl-hero` | Home hero container (full-bleed dark band, scoped to `#home-view`) |
+| `.sl-hero-bg` | Background layer holding the canvas and beam divs (`aria-hidden`) |
+| `#sl-hero-canvas` / `.sl-hero-canvas` | Constellation canvas (`aria-hidden`); `requestAnimationFrame` loop pauses when hidden or tab is backgrounded |
+| `.sl-beam--kw` / `.sl-beam--se` | Converging amber (keyword) and violet (semantic) beam divs |
+| `.sl-hero-lens` | Pulsing spectral lens mark (`aria-hidden`) |
+| `.sl-hero-title` / `.sl-hero-sub` / `.sl-hero-hint` | Hero headline, subline, and hint paragraphs (i18n keys `home.hero_title`, `home.hero_sub`, `home.hero_hint`) |
+| `.sl-hero-pill` | Glowing pill wrapper around the real `#contentQuery` search input and submit button |
+| `.sl-hero-options` | Ghost-button that opens the search-options drawer from the home view |
+| `.sl-match-cards` | Container for the three match-type preview cards below the hero |
+| `.sl-match--kw` / `.sl-match--se` / `.sl-match--hy` | Individual Keyword / Semantic / Hybrid match-type cards |
 
 > **Note:** `#searcher-legend` / `.searcher-legend` from the initial badge pass have been removed. `thumbnail.png` is a screenshot of the redesigned search view. `logo.png` and `logo-head.png` remain nomadkit placeholders; custom SemanticLens branding art is a follow-up task.
 

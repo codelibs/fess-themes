@@ -12,6 +12,7 @@ import * as profile from "./profile.js";
 import * as help from "./help.js";
 import * as advance from "./advance.js";
 import * as cache from "./cache.js";
+import * as homeHero from "./home-hero.js";
 
 /** Show one SPA view section and hide the rest. H.2: focus management on route change. */
 function showView(id) {
@@ -34,6 +35,9 @@ function showView(id) {
   }
   // JSP parity: home (index.jsp) shows an empty navbar-brand; other views show the logo.
   setBrandVisible(id !== "home-view");
+  // Start the decorative hero canvas + placeholder typewriter only while the
+  // home view is on screen; pause (and stop the RAF loop) on every other view.
+  homeHero.setActive(id === "home-view");
   // JSP parity (REFERENCE §HEADER): the shared header (header.jsp) is identical on
   // every view including home — brand logo + search box are always shown. The only
   // exception is the chat page, where setSearchFormVisible(false) hides the search
@@ -546,6 +550,9 @@ async function main() {
     console.error("Fess /ui/config failed:", e);
   }
   await i18n.init();
+  // Wire the home hero (canvas + placeholder typewriter) once i18n is ready so
+  // t() resolves its example strings. It stays idle until showView() activates it.
+  homeHero.init();
   // Render warning indicators after config is loaded.
   renderWarnings();
   // Render notification banners from config.notifications.

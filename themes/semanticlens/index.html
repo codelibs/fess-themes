@@ -129,47 +129,102 @@
        =================================================================== -->
   <main id="page-root" role="main">
     <section id="home-view" hidden>
-      <form id="home-search-form" class="container" role="search" aria-label="Home search">
-        <div class="row">
-          <div class="col text-center searchFormBox">
-            <h1 class="mainLogo">
-              <img src="/themes/semanticlens/assets/logo.png" alt="" data-i18n-alt="page.heading" class="home-logo">
-            </h1>
-            <!-- Notification banner (parity index.jsp .notification) — rendered by
-                 app.js renderNotifications() from config.notifications.search_top. -->
-            <div class="notification" id="home-notification" role="status" aria-live="polite"></div>
-            <!-- Flash / message region (parity index.jsp la:info / la:errors). -->
-            <div id="home-flash" class="d-none" role="alert" aria-live="assertive" aria-atomic="true"></div>
-            <fieldset>
-              <!-- Legend hidden via CSS (legend{display:none}); kept for semantics. -->
-              <legend data-i18n="nav.search">Search</legend>
-              <div class="clearfix">
-                <div class="mx-auto col-10 col-sm-8 col-md-8 col-lg-6 position-relative">
-                  <input id="contentQuery" type="search" class="query form-control"
-                         name="q" maxlength="1000" autocomplete="off"
-                         data-i18n-placeholder="search.placeholder"
-                         role="combobox" aria-expanded="false" aria-controls="home-suggest-dropdown"
-                         aria-autocomplete="list" aria-haspopup="listbox" aria-label="Search query">
-                  <ul class="list-group suggest-dropdown position-absolute top-100 start-0 end-0 mt-1 d-none shadow-sm"
-                      id="home-suggest-dropdown" role="listbox" aria-label="Search suggestions"></ul>
-                </div>
-              </div>
-              <!-- Popular words (parity index.jsp:140-156). -->
-              <div class="clearfix">
-                <p class="text-truncate" id="home-popular-words"></p>
-              </div>
-              <div class="clearfix searchButtonBox btn-group">
-                <button type="submit" name="search" id="home-search-submit" class="btn btn-primary"><i class="fa fa-search" aria-hidden="true"></i> <span data-i18n="search.button">Search</span></button>
-                <button type="button" class="btn btn-outline-secondary" id="home-options-toggle"
-                        data-bs-toggle="collapse" data-bs-target="#searchOptions"
-                        aria-expanded="false" aria-controls="searchOptions">
-                  <i class="fa fa-cog" aria-hidden="true"></i> <span data-i18n="search.options">Options</span>
-                </button>
-              </div>
-            </fieldset>
-          </div>
+      <!-- ===============================================================
+           SemanticLens "semantic-space" hero. A full-bleed dark band with
+           a decorative vector-constellation <canvas> (drifting nodes +
+           proximity lines) behind two converging beams, a pulsing spectral
+           lens mark, headline/subline, the real search box restyled as a
+           glowing pill, and a hint. Canvas + placeholder typewriter live in
+           assets/home-hero.js and pause when this view is hidden and honor
+           prefers-reduced-motion. All original home IDs/elements are kept.
+           =============================================================== -->
+      <div class="sl-hero">
+        <!-- Decorative background layer (clipped) — the constellation canvas +
+             two converging beams. Isolated so #home-view .sl-hero can keep a
+             non-clipping overflow, letting the suggest dropdown escape below. -->
+        <div class="sl-hero-bg" aria-hidden="true">
+          <canvas id="sl-hero-canvas" class="sl-hero-canvas" aria-hidden="true"></canvas>
+          <div class="sl-beam sl-beam--kw"></div>
+          <div class="sl-beam sl-beam--se"></div>
         </div>
-      </form>
+        <div class="sl-hero-inner">
+          <form id="home-search-form" role="search" aria-label="Home search">
+            <div class="col text-center searchFormBox">
+              <h1 class="mainLogo">
+                <span class="sl-hero-lens" aria-hidden="true"></span>
+                <!-- The nomadkit logo is hidden in the hero (CSS); the lens mark
+                     is the brand here. Kept in the DOM for parity / non-hero use. -->
+                <img src="/themes/semanticlens/assets/logo.png" alt="" data-i18n-alt="page.heading" class="home-logo">
+                <span class="sl-hero-title" data-i18n="home.hero_title">Search by meaning or by keyword.</span>
+              </h1>
+              <p class="sl-hero-sub" data-i18n="home.hero_sub">Search by keywords or ask in full sentences — SemanticLens matches by both keyword and meaning, and shows how each result was found.</p>
+              <!-- Notification banner (parity index.jsp .notification) — rendered by
+                   app.js renderNotifications() from config.notifications.search_top. -->
+              <div class="notification" id="home-notification" role="status" aria-live="polite"></div>
+              <!-- Flash / message region (parity index.jsp la:info / la:errors). -->
+              <div id="home-flash" class="d-none" role="alert" aria-live="assertive" aria-atomic="true"></div>
+              <fieldset>
+                <!-- Legend hidden via CSS (legend{display:none}); kept for semantics. -->
+                <legend data-i18n="nav.search">Search</legend>
+                <div class="clearfix">
+                  <div class="sl-hero-pill position-relative">
+                    <span class="sl-hero-pill__icon" aria-hidden="true">
+                      <svg viewBox="0 0 24 24" fill="none" focusable="false"><circle cx="11" cy="11" r="7" stroke="#7c3aed" stroke-width="2"/><path d="M20 20l-3.2-3.2" stroke="#0d9488" stroke-width="2" stroke-linecap="round"/></svg>
+                    </span>
+                    <input id="contentQuery" type="search" class="query form-control sl-hero-input"
+                           name="q" maxlength="1000" autocomplete="off"
+                           data-i18n-placeholder="search.placeholder"
+                           role="combobox" aria-expanded="false" aria-controls="home-suggest-dropdown"
+                           aria-autocomplete="list" aria-haspopup="listbox" aria-label="Search query">
+                    <button type="submit" name="search" id="home-search-submit" class="btn btn-primary sl-hero-go"><i class="fa fa-search" aria-hidden="true"></i> <span data-i18n="search.button">Search</span></button>
+                    <ul class="list-group suggest-dropdown position-absolute top-100 start-0 end-0 mt-1 d-none shadow-sm"
+                        id="home-suggest-dropdown" role="listbox" aria-label="Search suggestions"></ul>
+                  </div>
+                </div>
+                <p class="sl-hero-hint" data-i18n="home.hero_hint">Ask a question, or search by keywords.</p>
+                <!-- Popular words (parity index.jsp:140-156). Hidden in this theme's
+                     hero via CSS; element kept so app.js renderer never breaks. -->
+                <div class="clearfix">
+                  <p class="text-truncate" id="home-popular-words"></p>
+                </div>
+                <div class="clearfix searchButtonBox">
+                  <button type="button" class="btn sl-hero-options" id="home-options-toggle"
+                          data-bs-toggle="collapse" data-bs-target="#searchOptions"
+                          aria-expanded="false" aria-controls="searchOptions">
+                    <i class="fa fa-cog" aria-hidden="true"></i> <span data-i18n="search.options">Options</span>
+                  </button>
+                </div>
+              </fieldset>
+            </div>
+          </form>
+        </div>
+      </div>
+      <!-- Match-type legend — 3 educational cards straddling the hero → light
+           boundary (source-colored icon tiles). Purely educational; renders
+           regardless of whether the `searcher` field is exposed by the backend. -->
+      <div class="sl-match-cards">
+        <div class="sl-match sl-match--kw">
+          <div class="sl-match__head">
+            <span class="sl-match__icon" aria-hidden="true"><i class="fa fa-search"></i></span>
+            <span class="sl-match__title" data-i18n="searcher.keyword">Keyword</span>
+          </div>
+          <p class="sl-match__desc" data-i18n="home.match_keyword_desc">Matches your exact words (full-text / BM25). Best for precise terms.</p>
+        </div>
+        <div class="sl-match sl-match--se">
+          <div class="sl-match__head">
+            <span class="sl-match__icon" aria-hidden="true"><i class="fa fa-brain"></i></span>
+            <span class="sl-match__title" data-i18n="searcher.semantic">Semantic</span>
+          </div>
+          <p class="sl-match__desc" data-i18n="home.match_semantic_desc">Finds documents close in meaning even with different words (vector search). Best for natural-language questions.</p>
+        </div>
+        <div class="sl-match sl-match--hy">
+          <div class="sl-match__head">
+            <span class="sl-match__icon" aria-hidden="true"><i class="fa fa-bolt"></i></span>
+            <span class="sl-match__title" data-i18n="searcher.hybrid">Hybrid</span>
+          </div>
+          <p class="sl-match__desc" data-i18n="home.match_hybrid_desc">Matched by both — keyword and meaning fused for the most relevant results.</p>
+        </div>
+      </div>
     </section>
 
     <!-- ===================================================================
