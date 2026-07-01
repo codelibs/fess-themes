@@ -955,8 +955,13 @@ legend { display: none; }
 #home-view .sl-beam--se { right: -6%; background: radial-gradient(60% 40% at 10% 46%, rgba(124, 58, 237, .6), transparent 70%); animation-delay: -3.5s; }
 @keyframes sl-beam-breathe { 0%, 100% { opacity: .45; } 50% { opacity: .62; } }
 
+/* z-index 10 keeps the interactive hero content — crucially the suggest
+   dropdown, which drops down over the match cards — ABOVE .sl-match-cards
+   (z-index 5). Both share #home-view's stacking context because .sl-hero is
+   not itself a stacking context, so the dropdown's own z-index alone can't
+   escape; the content layer must outrank the cards here. */
 #home-view .sl-hero-inner {
-  position: relative; z-index: 2;
+  position: relative; z-index: 10;
   max-width: 820px; margin: 0 auto; padding: 84px 22px 104px;
 }
 /* Neutralise the light-theme home margins inside the hero. */
