@@ -922,156 +922,138 @@ legend { display: none; }
 }
 
 /* ===================================================================
-   Mosaic home "semantic-space" hero.
+   Mosaic home "shared embedding space" hero.
    A full-bleed dark band (scoped to #home-view ONLY so results / help /
-   profile / chat views are untouched) with a decorative constellation
-   <canvas>, two converging beams, a pulsing spectral lens mark, headline
-   + subline, a glowing search pill, a hint, and — straddling the hero →
-   light boundary — three match-type legend cards. Motion (lens pulse,
-   beam breathing, canvas loop, placeholder typewriter) is disabled/frozen
-   under prefers-reduced-motion; the canvas + typewriter are driven by
-   assets/home-hero.js and pause while the view is hidden.
+   profile / chat views are untouched) with a decorative multimodal-
+   convergence <canvas> — text-token chips streaming in from the left and
+   image tiles streaming in from the right, both drifting toward a central
+   glowing "shared embedding" node — headline + subline, a glowing search
+   pill, a hint, and — straddling the hero → light boundary — three
+   search-mode preview cards. Motion (pill glow, canvas streams, placeholder
+   typewriter) is disabled/frozen under prefers-reduced-motion; the canvas +
+   typewriter are driven by assets/home-hero.js and pause while the view is
+   hidden.
    =================================================================== */
 
 /* Full-bleed dark band. overflow is NOT clipped here so the suggest dropdown can
-   drop below the pill; the canvas + beams are clipped by .sl-hero-bg instead. */
-#home-view .sl-hero {
+   drop below the pill; the canvas is clipped by .mosaic-hero-bg instead. */
+#home-view .mosaic-hero {
   position: relative;
   color: #eef0ff;
   background: radial-gradient(1200px 520px at 50% -10%, #241a55 0%, #14123a 40%, #0b0d1f 78%);
 }
-#home-view .sl-hero-bg {
+#home-view .mosaic-hero-bg {
   position: absolute; inset: 0; overflow: hidden; z-index: 0; pointer-events: none;
 }
-#home-view .sl-hero-canvas {
+#home-view .mosaic-hero-canvas {
   position: absolute; inset: 0; width: 100%; height: 100%; display: block;
 }
-#home-view .sl-beam {
-  position: absolute; top: 0; bottom: 0; width: 52%;
-  mix-blend-mode: screen; opacity: .55;
-  animation: sl-beam-breathe 7s ease-in-out infinite;
-}
-#home-view .sl-beam--kw { left: -6%; background: radial-gradient(60% 40% at 90% 46%, rgba(217, 119, 6, .55), transparent 70%); }
-#home-view .sl-beam--se { right: -6%; background: radial-gradient(60% 40% at 10% 46%, rgba(124, 58, 237, .6), transparent 70%); animation-delay: -3.5s; }
-@keyframes sl-beam-breathe { 0%, 100% { opacity: .45; } 50% { opacity: .62; } }
 
 /* z-index 10 keeps the interactive hero content — crucially the suggest
-   dropdown, which drops down over the match cards — ABOVE .sl-match-cards
-   (z-index 5). Both share #home-view's stacking context because .sl-hero is
+   dropdown, which drops down over the preview cards — ABOVE .mosaic-preview-cards
+   (z-index 5). Both share #home-view's stacking context because .mosaic-hero is
    not itself a stacking context, so the dropdown's own z-index alone can't
    escape; the content layer must outrank the cards here. */
-#home-view .sl-hero-inner {
+#home-view .mosaic-hero-inner {
   position: relative; z-index: 10;
   max-width: 820px; margin: 0 auto; padding: 84px 22px 104px;
 }
 /* Neutralise the light-theme home margins inside the hero. */
-#home-view .sl-hero .searchFormBox { margin: 0; }
-#home-view .sl-hero .mainLogo { margin: 0; }
-
-/* Pulsing spectral lens mark (the hero brand; the logo image is hidden here). */
-#home-view .sl-hero-lens {
-  display: block; width: 64px; height: 64px; border-radius: 50%;
-  margin: 0 auto 26px; position: relative;
-  background:
-    radial-gradient(circle at 36% 33%, #fff 0 10%, transparent 12%),
-    conic-gradient(from 200deg, var(--sl-keyword), var(--sl-semantic), var(--sl-hybrid), var(--sl-keyword));
-  box-shadow: 0 0 0 6px rgba(124, 58, 237, .12), 0 0 40px 6px rgba(124, 58, 237, .45), inset 0 0 12px rgba(0, 0, 0, .4);
-  animation: sl-lens-pulse 3.4s ease-in-out infinite;
-}
-#home-view .sl-hero-lens::after {
-  content: ""; position: absolute; inset: 36% 0 0 40%;
-  width: 11px; height: 11px; border-radius: 50%;
-  background: #0b0d1f; box-shadow: 0 0 0 4px rgba(255, 255, 255, .3);
-}
-@keyframes sl-lens-pulse {
-  0%, 100% { box-shadow: 0 0 0 6px rgba(124, 58, 237, .10), 0 0 40px 6px rgba(124, 58, 237, .40), inset 0 0 12px rgba(0, 0, 0, .4); }
-  50%      { box-shadow: 0 0 0 10px rgba(13, 148, 136, .10), 0 0 58px 10px rgba(124, 58, 237, .60), inset 0 0 12px rgba(0, 0, 0, .4); }
-}
-#home-view .sl-hero .home-logo { display: none; } /* lens mark replaces the logo in the hero */
+#home-view .mosaic-hero .searchFormBox { margin: 0; }
+#home-view .mosaic-hero .mainLogo { margin: 0; }
+#home-view .mosaic-hero .home-logo { display: none; } /* the convergence canvas is the brand mark in the hero */
 
 /* Headline + subline. */
-#home-view .sl-hero-title {
+#home-view .mosaic-hero-title {
   display: block; font-size: 2.35rem; line-height: 1.25;
   margin: 0 0 .5rem; letter-spacing: .3px; font-weight: 800; color: #f4f2ff;
 }
-#home-view .sl-hero-sub {
+#home-view .mosaic-hero-sub {
   color: #b9bee0; font-size: 1.03rem; line-height: 1.65; margin: 0 auto 1.9rem; max-width: 600px;
 }
 
-/* Glowing search pill (wraps the real #contentQuery + submit). */
-#home-view .sl-hero-pill {
+/* Glowing search pill (wraps the real #contentQuery + submit). The glow
+   breathes gently between the keyword (amber) and blend (teal) hues, echoing
+   the canvas's text/image streams converging into the shared node. */
+#home-view .mosaic-hero-pill {
   max-width: 660px; margin: 0 auto; display: flex; align-items: center; gap: 12px;
   background: rgba(255, 255, 255, .97); border-radius: 16px; padding: 8px 10px 8px 18px;
   box-shadow: 0 0 0 1px rgba(124, 58, 237, .5), 0 0 44px rgba(124, 58, 237, .45), 0 18px 50px rgba(5, 6, 20, .5);
+  animation: mosaic-pill-glow 6s ease-in-out infinite;
 }
-#home-view .sl-hero-pill:focus-within {
+#home-view .mosaic-hero-pill:focus-within {
   box-shadow: 0 0 0 2px rgba(124, 58, 237, .85), 0 0 44px rgba(124, 58, 237, .55), 0 18px 50px rgba(5, 6, 20, .5);
 }
-#home-view .sl-hero-pill__icon { display: inline-flex; flex: 0 0 auto; align-items: center; }
-#home-view .sl-hero-pill__icon svg { width: 21px; height: 21px; }
-#home-view .sl-hero-input.form-control {
+@keyframes mosaic-pill-glow {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(217, 119, 6, .45), 0 0 44px rgba(217, 119, 6, .4), 0 18px 50px rgba(5, 6, 20, .5); }
+  50%      { box-shadow: 0 0 0 1px rgba(13, 148, 136, .5), 0 0 54px rgba(13, 148, 136, .5), 0 18px 50px rgba(5, 6, 20, .5); }
+}
+#home-view .mosaic-hero-pill__icon { display: inline-flex; flex: 0 0 auto; align-items: center; }
+#home-view .mosaic-hero-pill__icon svg { width: 21px; height: 21px; }
+#home-view .mosaic-hero-input.form-control {
   border: 0; outline: 0; box-shadow: none; flex: 1 1 auto; min-width: 0;
   font-size: 1.06rem; background: transparent; color: var(--df-stone-900);
   padding: 8px 0; height: auto;
 }
-#home-view .sl-hero-input.form-control:focus { border: 0; outline: 0; box-shadow: none; }
-#home-view .sl-hero-go.btn {
+#home-view .mosaic-hero-input.form-control:focus { border: 0; outline: 0; box-shadow: none; }
+#home-view .mosaic-hero-go.btn {
   flex: 0 0 auto; border: 0; border-radius: 12px; padding: 10px 20px;
   font-weight: 700; font-size: .95rem; white-space: nowrap; color: #fff;
   background: linear-gradient(135deg, var(--sl-semantic), var(--sl-hybrid));
 }
-#home-view .sl-hero-go.btn:hover { filter: brightness(1.06); color: #fff; }
-/* Suggest dropdown anchors under the pill (dark-on-light, above cards/beams). */
-#home-view .sl-hero-pill .suggest-dropdown { text-align: left; z-index: 30; }
+#home-view .mosaic-hero-go.btn:hover { filter: brightness(1.06); color: #fff; }
+/* Suggest dropdown anchors under the pill (dark-on-light, above the preview cards). */
+#home-view .mosaic-hero-pill .suggest-dropdown { text-align: left; z-index: 30; }
 
 /* Hint line. */
-#home-view .sl-hero-hint { margin: 1rem 0 0; color: #9aa0cf; font-size: .86rem; }
+#home-view .mosaic-hero-hint { margin: 1rem 0 0; color: #9aa0cf; font-size: .86rem; }
 
 /* Options toggle — subtle ghost button on the dark band. */
-#home-view .sl-hero .searchButtonBox { display: flex; justify-content: center; margin-top: .9rem; }
-#home-view .sl-hero-options.btn {
+#home-view .mosaic-hero .searchButtonBox { display: flex; justify-content: center; margin-top: .9rem; }
+#home-view .mosaic-hero-options.btn {
   color: #b9bee0; background: transparent; border: 1px solid rgba(255, 255, 255, .18);
   border-radius: 10px; font-size: .85rem; padding: 6px 14px;
 }
-#home-view .sl-hero-options.btn:hover { color: #fff; border-color: rgba(255, 255, 255, .4); background: rgba(255, 255, 255, .06); }
+#home-view .mosaic-hero-options.btn:hover { color: #fff; border-color: rgba(255, 255, 255, .4); background: rgba(255, 255, 255, .06); }
 
 /* Popular words are intentionally omitted from this theme's hero (element kept). */
-#home-view .sl-hero #home-popular-words { display: none; }
+#home-view .mosaic-hero #home-popular-words { display: none; }
 /* Keep the notification / flash readable on the dark band. */
-#home-view .sl-hero .notification { color: #c9cdf0; }
+#home-view .mosaic-hero .notification { color: #c9cdf0; }
 
-/* Match-type legend — three cards straddling the hero → light boundary. */
-#home-view .sl-match-cards {
+/* Search-mode preview cards — three cards straddling the hero → light boundary,
+   previewing the Keyword / Visual / Blend badges shown on results. */
+#home-view .mosaic-preview-cards {
   max-width: 900px; margin: -44px auto 0; position: relative; z-index: 5;
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 0 22px;
 }
-#home-view .sl-match {
+#home-view .mosaic-preview {
   background: var(--df-surface); border: 1px solid var(--df-stone-200); border-radius: 16px;
   padding: 18px; box-shadow: 0 12px 34px rgba(20, 24, 60, .08); text-align: left;
 }
-#home-view .sl-match__head { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: .95rem; margin-bottom: 6px; }
-#home-view .sl-match__icon {
+#home-view .mosaic-preview__head { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: .95rem; margin-bottom: 6px; }
+#home-view .mosaic-preview__icon {
   width: 26px; height: 26px; border-radius: 8px; display: inline-grid; place-items: center;
   flex: 0 0 auto; color: #fff;
 }
-#home-view .sl-match__icon .fa { font-size: .8rem; }
-#home-view .sl-match--kw .sl-match__icon { background: var(--sl-keyword); }
-#home-view .sl-match--se .sl-match__icon { background: var(--sl-semantic); }
-#home-view .sl-match--hy .sl-match__icon { background: var(--sl-hybrid); }
-#home-view .sl-match__title { color: var(--df-stone-900); }
-#home-view .sl-match__desc { margin: 0; font-size: .82rem; color: var(--df-stone-500); line-height: 1.55; }
+#home-view .mosaic-preview__icon .fa { font-size: .8rem; }
+#home-view .mosaic-preview--kw .mosaic-preview__icon { background: var(--sl-keyword); }
+#home-view .mosaic-preview--vi .mosaic-preview__icon { background: var(--sl-semantic); }
+#home-view .mosaic-preview--bl .mosaic-preview__icon { background: var(--sl-hybrid); }
+#home-view .mosaic-preview__title { color: var(--df-stone-900); }
+#home-view .mosaic-preview__desc { margin: 0; font-size: .82rem; color: var(--df-stone-500); line-height: 1.55; }
 
 @media (max-width: 767.98px) {
-  #home-view .sl-hero-inner { padding: 64px 18px 84px; }
-  #home-view .sl-hero-title { font-size: 1.9rem; }
-  #home-view .sl-match-cards { grid-template-columns: 1fr; margin-top: -28px; }
+  #home-view .mosaic-hero-inner { padding: 64px 18px 84px; }
+  #home-view .mosaic-hero-title { font-size: 1.9rem; }
+  #home-view .mosaic-preview-cards { grid-template-columns: 1fr; margin-top: -28px; }
 }
 
-/* Reduced motion: freeze the lens pulse + beam breathing (the JS also renders a
-   single static constellation frame instead of running the RAF loop). */
+/* Reduced motion: freeze the search-pill glow breathing (the JS also renders a
+   single static convergence frame instead of running the RAF loop, and shows a
+   static example string in the placeholder instead of typing it out). */
 @media (prefers-reduced-motion: reduce) {
-  #home-view .sl-hero-lens { animation: none; }
-  #home-view .sl-beam { animation: none; }
+  #home-view .mosaic-hero-pill { animation: none; }
 }
 
 /* ---- Sticky footer ---- */
