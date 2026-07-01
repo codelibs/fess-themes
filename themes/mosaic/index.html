@@ -319,6 +319,21 @@
         <aside class="col-lg-3 d-none" id="chat-column" role="complementary" aria-label="Chat"></aside>
         <!-- results-meta retained as a hidden status sink for error paths. -->
         <div id="results-meta" class="visually-hidden" aria-live="polite"></div>
+
+        <!-- Lightbox overlay (A3): opened via search.js when a gallery tile is
+             activated (click or Enter/Space). Hidden by default; markup for the
+             figcaption metadata panel is populated dynamically by
+             buildLightboxMeta() on open. No inline handlers — everything is
+             wired via addEventListener in search.js (CSP: script-src 'self'). -->
+        <div id="lightbox" class="lightbox" hidden role="dialog" aria-modal="true" aria-label="Result preview">
+          <button class="lightbox__close" data-lb="close" aria-label="Close">&times;</button>
+          <button class="lightbox__nav lightbox__prev" data-lb="prev" aria-label="Previous">&#8249;</button>
+          <figure class="lightbox__figure">
+            <img class="lightbox__img" alt="">
+            <figcaption class="lightbox__meta"></figcaption>
+          </figure>
+          <button class="lightbox__nav lightbox__next" data-lb="next" aria-label="Next">&#8250;</button>
+        </div>
       </div>
     </section>
 

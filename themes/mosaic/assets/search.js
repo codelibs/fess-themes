@@ -36,7 +36,9 @@ const state = {
   requestedTime: 0,     // epoch ms of the most-recent search; used in /go/ click-log URL
   highlightParams: "",  // server-supplied highlight_params string (e.g. "&hl.q=...&hl.fragsize=...")
   viewMode: "grid",     // "grid" | "list" — grid (gallery tiles) is the mosaic default; A4 wires the toggle UI
-  currentEnv: null      // last search response envelope; consumed by the lightbox (A3)
+  currentEnv: null,     // last search response envelope; consumed by the lightbox (A3)
+  lbRank: -1,           // A3: 0-based index into currentEnv.data[] of the open lightbox doc (-1 = closed)
+  lbPrevFocus: null      // A3: element focused before openLightbox(), restored by closeLightbox()
 };
 
 // XSS-safety: this module builds every result-card DOM node with
@@ -619,6 +621,163 @@ function buildGalleryTile(doc, queryId, rank) {
   li.appendChild(cap);
   li.tabIndex = 0; // keyboard focusable → opens lightbox (A3)
   return li;
+}
+
+// --- Lightbox (A3: full-size preview overlay for a gallery tile) --------------
+//
+// `rank` in openLightbox()/state.lbRank is the 0-based index into
+// state.currentEnv.data[] — NOT the 1-based `data-rank` tile attribute
+// buildGalleryTile() sets above (that value feeds buildGoUrl's 1-based
+// `order` param, an unrelated contract). The tile click/keydown wiring in
+// attach() converts data-rank -> 0-based index before calling openLightbox().
+
+/**
+ * Focusable elements within the lightbox, recomputed on every Tab keydown
+ * (rather than cached) because the meta panel — and therefore its cache/
+ * original-URL links — is rebuilt by buildLightboxMeta() on every open.
+ */
+function lightboxFocusables(lb) {
+  return Array.from(lb.querySelectorAll('button, a[href], [tabindex]:not([tabindex="-1"])'))
+    .filter(node => !node.disabled && node.offsetParent !== null);
+}
+
+/**
+ * Tab/Shift+Tab focus trap: while the lightbox is open, wrap focus at the
+ * first/last focusable element inside #lightbox so it never escapes to the
+ * page behind. Called from the document keydown listener in attach(), which
+ * already gates on the lightbox being open.
+ */
+function trapLightboxTab(ev, lb) {
+  const focusables = lightboxFocusables(lb);
+  if (focusables.length === 0) return;
+  const first = focusables[0];
+  const last = focusables[focusables.length - 1];
+  const active = document.activeElement;
+  if (ev.shiftKey) {
+    if (active === first || !lb.contains(active)) {
+      ev.preventDefault();
+      last.focus();
+    }
+  } else if (active === last || !lb.contains(active)) {
+    ev.preventDefault();
+    first.focus();
+  }
+}
+
+/**
+ * Build the lightbox metadata panel (figcaption content) for one document:
+ * title, the original URL as a safeHref-gated link (target=_blank,
+ * rel=noopener — this link doubles as the "open original" action), mimetype/
+ * filetype, size, last-modified date, score, the searcher badge (reusing
+ * searcherBadgeKind()/buildGallerySearcherBadge() from the gallery tile
+ * above), and a Cache action when doc.has_cache — same /cache/?docId=&hq=
+ * URL convention buildResultCard's own cache link already uses. XSS-safe:
+ * every string is set via textContent (via the el() helper) or a
+ * safeHref()-validated href — never innerHTML with doc data.
+ *
+ * @param {Object} doc - result document (env.data[i])
+ * @returns {HTMLDivElement}
+ */
+function buildLightboxMeta(doc) {
+  const meta = el("div", { className: "lightbox__meta-body" });
+
+  meta.appendChild(el("h2", { className: "lightbox__title", text: plainTitle(doc) }));
+
+  const originalUrl = doc.url_link || doc.url || "";
+  const href = safeHref(originalUrl);
+  if (originalUrl && href !== "#") {
+    meta.appendChild(el("a", {
+      className: "lightbox__link",
+      text: originalUrl,
+      attrs: { href, target: "_blank", rel: "noopener" }
+    }));
+  }
+
+  // Unlabeled fact row (mimetype/filetype, size, date, score) — mirrors the
+  // unlabeled-values convention buildResultCard's own .info row already uses
+  // for date/size (no "Size:"/"Updated:" captions there either).
+  const facts = el("div", { className: "lightbox__facts" });
+  const addFact = (className, text) => {
+    if (!text) return;
+    if (facts.childNodes.length) facts.appendChild(el("span", { className: "lightbox__sep", attrs: { "aria-hidden": "true" }, text: "·" }));
+    facts.appendChild(el("span", { className: "lightbox__fact " + className, text }));
+  };
+  addFact("lightbox__fact--type", doc.mimetype || doc.filetype || "");
+  addFact("lightbox__fact--size", formatFileSize(doc.content_length));
+  addFact("lightbox__fact--date", formatDate(doc.last_modified || doc.created));
+  const scoreNum = Number(doc.score);
+  addFact("lightbox__fact--score", Number.isFinite(scoreNum) ? scoreNum.toFixed(3) : "");
+  if (facts.childNodes.length) meta.appendChild(facts);
+
+  const kind = searcherBadgeKind(doc);
+  if (kind) {
+    const badge = buildGallerySearcherBadge(kind);
+    if (badge) meta.appendChild(badge);
+  }
+
+  const actions = el("div", { className: "lightbox__actions" });
+  if (doc.has_cache === true || doc.has_cache === "true") {
+    const hlParam = state.highlightParams || ("&hq=" + encodeURIComponent(state.q || ""));
+    actions.appendChild(el("a", {
+      className: "lightbox__action cache",
+      text: t("result.cache"),
+      attrs: { href: `/cache/?docId=${encodeURIComponent(doc.doc_id || "")}${hlParam}`, target: "_blank", rel: "noopener" }
+    }));
+  }
+  if (actions.childNodes.length) meta.appendChild(actions);
+
+  return meta;
+}
+
+/**
+ * Open the lightbox on state.currentEnv.data[rank] (0-based index — see the
+ * note above). Loads the full-resolution image (via safeHref) for
+ * image-mimetype hits; falls back to the same thumbnail endpoint the gallery
+ * tile uses (thumbUrl()) for every other hit, or when the URL scheme is
+ * unsafe. Captures the previously-focused element so closeLightbox() can
+ * restore it, and moves focus to the close button (WCAG 2.4.3 focus order).
+ *
+ * @param {number} rank - 0-based index into state.currentEnv.data[]
+ */
+function openLightbox(rank) {
+  const env = state.currentEnv;
+  if (!env) return;
+  const doc = env.data && env.data[rank];
+  if (!doc) return;
+  state.lbRank = rank;
+  const lb = document.getElementById("lightbox");
+  if (!lb) return;
+  const img = lb.querySelector(".lightbox__img");
+  const isImage = (doc.mimetype || "").startsWith("image/");
+  const rawUrl = doc.url_link || doc.url || "";
+  const safeUrl = safeHref(rawUrl);
+  img.src = (isImage && safeUrl !== "#") ? safeUrl : thumbUrl(doc.doc_id, env.query_id);
+  img.alt = plainTitle(doc);
+  lb.querySelector(".lightbox__meta").replaceChildren(buildLightboxMeta(doc));
+  state.lbPrevFocus = document.activeElement;
+  lb.hidden = false;
+  lb.querySelector(".lightbox__close").focus();
+}
+
+/** Close the lightbox and restore focus to whatever was focused before it opened. */
+function closeLightbox() {
+  const lb = document.getElementById("lightbox");
+  if (!lb) return;
+  lb.hidden = true;
+  state.lbPrevFocus?.focus?.();
+  state.lbPrevFocus = null;
+}
+
+/** Advance to the next hit, if any; no-op (stays open) at the last hit. */
+function lightboxNext() {
+  const n = state.lbRank + 1;
+  if (state.currentEnv && state.currentEnv.data && state.currentEnv.data[n]) openLightbox(n);
+}
+
+/** Go back to the previous hit, if any; no-op (stays open) at the first hit. */
+function lightboxPrev() {
+  const n = state.lbRank - 1;
+  if (n >= 0) openLightbox(n);
 }
 
 /**
@@ -1731,6 +1890,69 @@ export function attach() {
   const urlQ = new URLSearchParams(location.search).get("q");
   if (urlQ && input) { input.value = urlQ; state.q = urlQ; }
   if (!urlQ) loadPopularWords();
+
+  // A3: open the lightbox when a gallery tile is activated. Delegated on
+  // #results (a persistent container across renderResults' innerHTML-based
+  // re-renders) rather than per-tile, since tiles are torn down and rebuilt
+  // on every search/page/facet change. tile.dataset.rank is the 1-based rank
+  // buildGalleryTile() set (shared with buildGoUrl's `order` param) — convert
+  // to the 0-based env.data[] index openLightbox() expects.
+  const resultsList = document.getElementById("results");
+  if (resultsList) {
+    resultsList.addEventListener("click", ev => {
+      const tile = ev.target.closest(".tile");
+      if (!tile || !resultsList.contains(tile)) return;
+      openLightbox(Number(tile.dataset.rank) - 1);
+    });
+    resultsList.addEventListener("keydown", ev => {
+      if (ev.key !== "Enter" && ev.key !== " ") return;
+      const tile = ev.target.closest(".tile");
+      if (!tile || !resultsList.contains(tile)) return;
+      ev.preventDefault(); // Space must not also scroll the page
+      openLightbox(Number(tile.dataset.rank) - 1);
+    });
+  }
+
+  // A3: lightbox close/prev/next buttons ([data-lb] inside #lightbox). The
+  // buttons themselves are static markup (index.html), so this could be three
+  // direct listeners instead of delegation, but delegating on the container
+  // keeps this one listener even if A7 adds more [data-lb] controls later.
+  const lightbox = document.getElementById("lightbox");
+  if (lightbox) {
+    lightbox.addEventListener("click", ev => {
+      const btn = ev.target.closest("[data-lb]");
+      if (btn && lightbox.contains(btn)) {
+        if (btn.dataset.lb === "close") closeLightbox();
+        else if (btn.dataset.lb === "prev") lightboxPrev();
+        else if (btn.dataset.lb === "next") lightboxNext();
+        return;
+      }
+      // A click directly on the backdrop (not the figure/image/meta/nav
+      // buttons, which all stopPropagation-free bubble here as a *descendant*
+      // target, never as ev.target itself) closes the lightbox too.
+      if (ev.target === lightbox) closeLightbox();
+    });
+  }
+
+  // A3: Esc/ArrowLeft/ArrowRight navigation + Tab focus-trap — active only
+  // while the lightbox is open (lb.hidden false); a no-op otherwise, so this
+  // single document-level listener never interferes with normal page/typing
+  // keydowns (e.g. the query input's own suggest-dropdown ArrowUp/Down/Esc
+  // handling above, which in any case can't receive focus while the
+  // lightbox's focus trap holds focus inside #lightbox).
+  document.addEventListener("keydown", ev => {
+    const lb = document.getElementById("lightbox");
+    if (!lb || lb.hidden) return;
+    if (ev.key === "Escape") {
+      closeLightbox();
+    } else if (ev.key === "ArrowRight") {
+      lightboxNext();
+    } else if (ev.key === "ArrowLeft") {
+      lightboxPrev();
+    } else if (ev.key === "Tab") {
+      trapLightboxTab(ev, lb);
+    }
+  });
 }
 
 /**
