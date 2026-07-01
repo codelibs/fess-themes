@@ -292,7 +292,10 @@
           <input type="hidden" id="queryId" value="">
           <input type="hidden" id="rt" value="">
           <aside class="col-md-4 d-none d-md-block" id="facet-body"></aside>
-          <ol class="list-unstyled col-md-8" id="results" role="list"></ol>
+          <!-- <ul>: search.js toggles className between "gallery" (grid, default) and
+               "list-unstyled" (list, A4) and repopulates children on every render;
+               the static tag/attrs here just need valid initial list semantics. -->
+          <ul class="gallery col-md-8" id="results" role="list"></ul>
         </div>
 
         <!-- Pagination (parity searchResults.jsp div.row > nav#subfooter). -->

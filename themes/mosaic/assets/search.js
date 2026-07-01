@@ -34,7 +34,9 @@ const state = {
   exQ: [],             // string[] — extra ex_q clauses forwarded from advance search (ADV-2)
   geo: { lat: "", lon: "", distance: "" }, // GEO-1: geo search state
   requestedTime: 0,     // epoch ms of the most-recent search; used in /go/ click-log URL
-  highlightParams: ""   // server-supplied highlight_params string (e.g. "&hl.q=...&hl.fragsize=...")
+  highlightParams: "",  // server-supplied highlight_params string (e.g. "&hl.q=...&hl.fragsize=...")
+  viewMode: "grid",     // "grid" | "list" — grid (gallery tiles) is the mosaic default; A4 wires the toggle UI
+  currentEnv: null      // last search response envelope; consumed by the lightbox (A3)
 };
 
 // XSS-safety: this module builds every result-card DOM node with
@@ -155,47 +157,64 @@ function plainTitle(d) {
   return String(raw).replace(/<\/?(?:strong|em)>/g, "");
 }
 
-// --- Searcher provenance (semantic vs keyword vs hybrid) ----------------------
+// --- Searcher provenance (keyword vs visual vs blend) --------------------------
 // d.searcher is the rank-fusion provenance field Fess exposes when
-// query.additional.api.response.fields=searcher is set (docker-semanticsearch).
+// query.additional.api.response.fields=searcher is set (docker-multimodalsearch).
 // Value is an array (or comma string) of searcher names: "default" (BM25/keyword)
-// and/or "semantic" (kNN/vector). Absent on deployments that don't expose it →
-// no badge is rendered (graceful degradation: stays a valid general-purpose theme).
+// and/or "multi_modal" (CLIP image-vector kNN). Absent on deployments that don't
+// expose it → no badge is rendered (graceful degradation: stays a valid
+// general-purpose theme).
+//
+// searcherKinds/searcherBadgeKind below are the canonical multimodal mapping
+// (default -> keyword, multi_modal -> visual, both -> blend) and are the
+// producer/consumer contract shared with buildGalleryTile (grid mode, further
+// below) and later tasks (lightbox/toggle). The pre-existing list-mode badge
+// pill / composition band / facet-sidebar caption / card spine / result-why
+// microcopy (inherited from semanticlens) still render under their original
+// "hybrid/semantic/keyword" CSS classes and i18n keys — legacyBadgeKind() bridges
+// the new kind vocabulary onto those unchanged names, so that UI now correctly
+// activates on real multi_modal/default data instead of never matching (the
+// semanticlens code looked for a "semantic" searcher name this deployment never
+// emits). Renaming that legacy UI's own vocabulary/colors to Visual/Blend is
+// cosmetic polish left to a later styling task, not this one.
 const SEARCHER_BADGES = {
   semantic: { label: "searcher.semantic", title: "searcher.title_semantic", icon: "fa fa-magic" },
   keyword:  { label: "searcher.keyword",  title: "searcher.title_keyword",  icon: "fa fa-search" },
   hybrid:   { label: "searcher.hybrid",   title: "searcher.title_hybrid",   icon: "fa fa-bolt" }
 };
 
-/** Normalize d.searcher to a lowercased array of searcher names, or null. */
-function searcherKinds(d) {
-  let s = d.searcher;
-  if (s == null) return null;
-  if (typeof s === "string") s = s.split(",");
-  if (!Array.isArray(s)) return null;
-  const set = s.map(x => String(x).trim().toLowerCase()).filter(Boolean);
-  return set.length ? set : null;
+/** Map a new multimodal kind (keyword|visual|blend|other|null) to the legacy CSS/i18n suffix. */
+function legacyBadgeKind(kind) {
+  if (kind === "visual") return "semantic";
+  if (kind === "blend") return "hybrid";
+  return kind; // "keyword" | "other" | null unchanged
 }
 
-/** Map a searcher-name set to a single badge kind: hybrid | semantic | keyword | other | null. */
-function searcherBadgeKind(kinds) {
-  if (!kinds) return null;
-  const hasDefault = kinds.includes("default");
-  const hasSemantic = kinds.includes("semantic");
-  if (hasDefault && hasSemantic) return "hybrid";
-  if (hasSemantic) return "semantic";
-  if (hasDefault) return "keyword";
+/** searcher may be an array or comma-string of searcher names. */
+function searcherKinds(doc) {
+  const raw = doc && doc.searcher;
+  const list = Array.isArray(raw) ? raw : (typeof raw === "string" ? raw.split(",") : []);
+  return new Set(list.map(s => String(s).trim().toLowerCase()).filter(Boolean));
+}
+
+/** Map a doc's searcher field to a single badge kind: keyword | visual | blend | other | null. */
+function searcherBadgeKind(doc) {
+  const k = searcherKinds(doc);
+  if (k.size === 0) return null;                 // field absent → no badge (graceful degradation)
+  const kw = k.has("default"), vi = k.has("multi_modal");
+  if (kw && vi) return "blend";
+  if (vi) return "visual";
+  if (kw) return "keyword";
   return "other"; // unknown searcher name(s) — neutral badge with the raw name(s)
 }
 
-/** Build the searcher badge span for a hit, or null when no searcher data. */
+/** Build the list-mode searcher badge pill for a hit, or null when no searcher data. */
 function buildSearcherBadge(d) {
-  const kinds = searcherKinds(d);
-  const kind = searcherBadgeKind(kinds);
+  const kind = legacyBadgeKind(searcherBadgeKind(d));
   if (!kind) return null;
   const badge = el("span", { className: "searcher-badge searcher-badge--" + kind });
   if (kind === "other") {
-    const raw = kinds.join(", ");
+    const raw = Array.from(searcherKinds(d)).join(", ");
     badge.setAttribute("title", raw);
     badge.setAttribute("aria-label", raw);
     badge.appendChild(el("i", { className: "fa fa-tag", attrs: { "aria-hidden": "true" } }));
@@ -214,14 +233,15 @@ function buildSearcherBadge(d) {
  * Read-only tally of a result page's searcher provenance kinds. Display-only —
  * its result is used solely to drive the composition band's bar/verdict and the
  * sidebar caption. It is NEVER used to build filters (honors the "no client-side
- * facet computation" rule). Returns { hybrid, semantic, keyword, total }.
+ * facet computation" rule). Returns { hybrid, semantic, keyword, total } (legacy
+ * vocabulary — see legacyBadgeKind()).
  *
  * @param {Object[]} data - the search response hit array (env.data)
  */
 function tallyKinds(data) {
   const counts = { hybrid: 0, semantic: 0, keyword: 0 };
   (data || []).forEach(d => {
-    const kind = searcherBadgeKind(searcherKinds(d));
+    const kind = legacyBadgeKind(searcherBadgeKind(d));
     if (kind === "hybrid" || kind === "semantic" || kind === "keyword") counts[kind]++;
   });
   counts.total = counts.hybrid + counts.semantic + counts.keyword;
@@ -304,7 +324,7 @@ function buildResultCard(d, queryId, order) {
 
   // Mosaic: source-of-match kind drives the colored left spine + microcopy.
   // Absent searcher field → no kind → card renders unchanged (graceful degradation).
-  const kind = searcherBadgeKind(searcherKinds(d));
+  const kind = legacyBadgeKind(searcherBadgeKind(d));
   if (kind === "hybrid" || kind === "semantic" || kind === "keyword") {
     li.classList.add("result--" + kind);
   }
@@ -480,6 +500,124 @@ function buildResultCard(d, queryId, order) {
   }
 
   li.appendChild(info);
+  return li;
+}
+
+// --- Gallery tile (grid-mode result rendering) ---------------------------------
+// Thumbnail-first tile for grid mode; falls back to a typed file-icon card when
+// thumbnails are disabled or unavailable for a hit. Backoff retry accounts for
+// thumbnail generation being asynchronous server-side.
+
+/** Backoff schedule (ms) for thumbnail 404 retry — ~1 async-job cycle cap. */
+const THUMB_RETRY_MS = [2000, 5000, 15000, 30000];
+
+function thumbUrl(docId, queryId) {
+  return `/thumbnail/?docId=${encodeURIComponent(docId)}&queryId=${encodeURIComponent(queryId)}`;
+}
+
+/**
+ * Wire a gallery tile's <img> to lazy-load (IntersectionObserver) and retry on
+ * error with the THUMB_RETRY_MS backoff. Falls back to eager load when
+ * IntersectionObserver is unavailable.
+ *
+ * @param {HTMLImageElement} imgEl
+ * @param {string} docId
+ * @param {string} queryId
+ */
+function attachThumb(imgEl, docId, queryId) {
+  let attempt = 0;
+  const load = () => { imgEl.src = thumbUrl(docId, queryId) + (attempt ? `&_r=${attempt}` : ""); };
+  imgEl.addEventListener("error", () => {
+    if (attempt >= THUMB_RETRY_MS.length) { imgEl.closest(".tile")?.classList.add("tile--noimg"); return; }
+    const delay = THUMB_RETRY_MS[attempt++];
+    setTimeout(load, delay);
+  });
+  // lazy: only start loading when near viewport
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver((es, obs) => es.forEach(e => { if (e.isIntersecting) { load(); obs.disconnect(); } }));
+    io.observe(imgEl);
+  } else {
+    load();
+  }
+}
+
+/** File-type -> Font Awesome icon for the no-thumbnail fallback tile. */
+const FILETYPE_ICON = {
+  html: "fa-globe", pdf: "fa-file-pdf-o", word: "fa-file-word-o", excel: "fa-file-excel-o",
+  powerpoint: "fa-file-powerpoint-o", image: "fa-file-image-o", txt: "fa-file-text-o", others: "fa-file-o"
+};
+
+/** Icon for the gallery-tile searcher badge (multimodal vocabulary). */
+const TILE_BADGE_ICON = { keyword: "fa fa-search", visual: "fa fa-image", blend: "fa fa-bolt" };
+
+/**
+ * Build the gallery-tile searcher badge: icon + i18n text, never color alone
+ * (WCAG 1.4.1). Distinct markup/CSS namespace ("badge badge--{kind}") from the
+ * list-mode pill (buildSearcherBadge() above -> "searcher-badge searcher-badge--{kind}")
+ * so grid and list views can be styled independently.
+ *
+ * @param {string} kind - "keyword" | "visual" | "blend" | "other"
+ * @returns {HTMLSpanElement|null} null for "other"/unmapped kinds (no i18n text defined)
+ */
+function buildGallerySearcherBadge(kind) {
+  const icon = TILE_BADGE_ICON[kind];
+  if (!icon) return null;
+  const label = t("searcher." + kind);
+  const badge = el("span", { className: "badge badge--" + kind, attrs: { "aria-label": label } });
+  badge.appendChild(el("i", { className: icon, attrs: { "aria-hidden": "true" } }));
+  badge.appendChild(el("span", { text: label }));
+  return badge;
+}
+
+/**
+ * Build one grid-mode result tile: a thumbnail (gated on
+ * window.__mosaicThumbEnabled && doc.thumbnail) or a typed fallback card, plus a
+ * text caption and searcher badge. XSS-safe: every string is set via textContent
+ * (via the el() helper or direct assignment) — never innerHTML.
+ *
+ * @param {Object} doc - result document (env.data[i])
+ * @param {string} queryId - env.query_id from the search response
+ * @param {number} rank - 1-based result rank
+ * @returns {HTMLLIElement}
+ */
+function buildGalleryTile(doc, queryId, rank) {
+  const li = el("li", { className: "tile", dataset: { docId: doc.doc_id || "", rank: String(rank) } });
+  const kind = searcherBadgeKind(doc);
+  if (kind) li.classList.add("tile--" + kind);
+
+  // Title fallback chain shared by the thumbnail's alt text and the caption
+  // below; highlight markup (<strong>/<em>) is stripped so it never leaks as
+  // literal text (textContent/alt do not parse HTML, but the tags would still
+  // be visible to the user/screen reader verbatim otherwise).
+  const titleText = String(doc.content_title || doc.filename || doc.url_link || "").replace(/<\/?(?:strong|em)>/g, "");
+
+  const thumbOk = window.__mosaicThumbEnabled === true && !!doc.thumbnail;
+  if (thumbOk) {
+    const img = document.createElement("img");
+    img.className = "tile__img";
+    img.loading = "lazy";
+    img.alt = titleText;
+    li.appendChild(img);
+    attachThumb(img, doc.doc_id, queryId);
+  } else {
+    li.classList.add("tile--noimg");
+    const icon = el("i", {
+      className: "fa " + (FILETYPE_ICON[doc.filetype] || FILETYPE_ICON.others) + " tile__icon",
+      attrs: { "aria-hidden": "true" }
+    });
+    li.appendChild(icon);
+  }
+
+  // Caption (title) — always present, XSS-safe (textContent via el()).
+  const cap = el("div", { className: "tile__cap" });
+  cap.appendChild(el("span", { className: "tile__title", text: titleText }));
+
+  if (kind) {
+    const badge = buildGallerySearcherBadge(kind);
+    if (badge) li.appendChild(badge);
+  }
+  li.appendChild(cap);
+  li.tabIndex = 0; // keyboard focusable → opens lightbox (A3)
   return li;
 }
 
@@ -686,11 +824,25 @@ function renderResults(env) {
   const meta = document.getElementById("results-meta");
   const empty = document.getElementById("empty-state");
   list.innerHTML = "";   // empty-string literal — clears children, no untrusted data
+  // Grid (gallery tiles) vs list (semanticlens result cards) — A4 wires the toggle
+  // UI; state.viewMode defaults to "grid" (see state declaration). #results keeps
+  // its Bootstrap "col-md-8" sizing in both modes so it still sits correctly next
+  // to the facet sidebar; ".gallery" alone establishes the tile grid (styles.css).
+  list.className = (state.viewMode === "grid") ? "gallery col-md-8" : "list-unstyled col-md-8";
   const data = env.data || [];
+  // A3's lightbox reads the last full envelope (hits, query_id, etc.) off state
+  // rather than being threaded through as a parameter.
+  state.currentEnv = env;
+  // Gate gallery-tile thumbnail rendering on the boot config's feature flag. Read
+  // lazily here (rather than at app boot) because search.js never calls
+  // api.init() itself — see buildResultCard's own `api.getConfig()` read above
+  // for the same lazy-config-read convention already used in this file.
+  const cfg = api.getConfig() || {};
+  window.__mosaicThumbEnabled = !!(cfg.features && cfg.features.thumbnail_enabled);
   // Sticky: mark semantic/hybrid search active once any hit carries searcher provenance.
   // Filters are only clickable after a search has rendered, so by the time a filter can be
   // active this flag is already known — no first-request edge case (see runSearch gating).
-  if (!semanticSeen && data.some(d => searcherKinds(d) !== null)) semanticSeen = true;
+  if (!semanticSeen && data.some(d => searcherBadgeKind(d) !== null)) semanticSeen = true;
   renderComposition(env); // Mosaic: show search-composition band when hits carry provenance
   // C.2: always refresh similar-doc banner (hides when state.sdh is cleared)
   renderSimilarDocBanner();
@@ -724,8 +876,13 @@ function renderResults(env) {
   if (queryIdEl) queryIdEl.value = env.query_id || "";
   const rtEl = document.getElementById("rt");
   if (rtEl) rtEl.value = String(state.requestedTime || "");
-  // Pass 1-based order so buildResultCard can embed it in the /go/ URL.
-  data.forEach((d, idx) => list.appendChild(buildResultCard(d, env.query_id, idx + 1)));
+  // Pass 1-based order/rank so buildResultCard/buildGalleryTile can embed it in
+  // the /go/ URL and the data-rank attribute respectively.
+  if (state.viewMode === "grid") {
+    data.forEach((d, idx) => list.appendChild(buildGalleryTile(d, env.query_id, idx + 1)));
+  } else {
+    data.forEach((d, idx) => list.appendChild(buildResultCard(d, env.query_id, idx + 1)));
+  }
   list.querySelectorAll("li[data-doc-id]").forEach(li => {
     const btn = li.querySelector(".favorite-btn");
     const docId = li.dataset.docId;
