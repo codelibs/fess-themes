@@ -1,6 +1,11 @@
 {
   "sections": [
     {
+      "id": "gallery",
+      "title": "Vista de galería",
+      "html": "<p>Los resultados de búsqueda se muestran de forma predeterminada como una galería de miniaturas. Haga clic en una miniatura (o presione Intro/Espacio cuando esté enfocada) para abrir la imagen a tamaño completo en el visor, y use los botones de flecha o las teclas de flecha izquierda/derecha para navegar. Use el botón de cuadrícula/lista sobre los resultados para cambiar a la vista de lista tradicional en cualquier momento.</p><p>Cuando este despliegue de Fess está configurado para búsqueda multimodal, algunos resultados pueden mostrar una pequeña insignia — <strong>Palabra clave</strong> (encontrado por texto), <strong>Visual</strong> (encontrado por similitud de imagen) o <strong>Combinado</strong> (encontrado por ambos) — que indica cómo se encontró cada resultado. Si no se muestran insignias, la búsqueda funciona igualmente con normalidad.</p>"
+    },
+    {
       "id": "basic",
       "title": "Búsqueda básica",
       "html": "<p>Para buscar, escriba su consulta en el cuadro de búsqueda y presione Intro (o haga clic en el botón Buscar).</p><p>De forma predeterminada, varias palabras se combinan con AND. Por ejemplo, <code>open source</code> encuentra documentos que contienen tanto \"open\" como \"source\".</p>"

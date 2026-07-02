@@ -1,6 +1,11 @@
 {
   "sections": [
     {
+      "id": "gallery",
+      "title": "Gallery View",
+      "html": "<p>Search results are shown as a thumbnail gallery by default. Click a tile (or press Enter/Space when it is focused) to open the full-size image in the preview viewer, and use the arrow buttons or Left/Right arrow keys to browse. Use the grid/list button above the results to switch to a traditional list view at any time.</p><p>When this Fess deployment is configured for multimodal search, some results may show a small badge — <strong>Keyword</strong> (matched by text), <strong>Visual</strong> (matched by image similarity), or <strong>Blend</strong> (matched by both) — showing how each result was found. If badges are not shown, search still works normally.</p>"
+    },
+    {
       "id": "basic",
       "title": "Basic Search",
       "html": "<p>To search, type your query into the search box and press Enter (or click the Search button).</p><p>Multiple words are combined with AND by default. For example, <code>open source</code> finds documents containing both \"open\" and \"source\".</p>"

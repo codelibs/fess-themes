@@ -1,6 +1,11 @@
 {
   "sections": [
     {
+      "id": "gallery",
+      "title": "Vue galerie",
+      "html": "<p>Les résultats de recherche s'affichent par défaut sous forme de galerie de vignettes. Cliquez sur une vignette (ou appuyez sur Entrée/Espace lorsqu'elle est sélectionnée) pour ouvrir l'image en pleine taille dans la visionneuse, puis utilisez les boutons flèches ou les touches flèche gauche/droite pour naviguer. Utilisez le bouton grille/liste au-dessus des résultats pour revenir à tout moment à la vue en liste classique.</p><p>Lorsque cette installation de Fess est configurée pour la recherche multimodale, certains résultats peuvent afficher un petit badge — <strong>Mot-clé</strong> (trouvé par le texte), <strong>Visuel</strong> (trouvé par similarité d'image) ou <strong>Mixte</strong> (trouvé par les deux) — indiquant comment chaque résultat a été trouvé. Si aucun badge ne s'affiche, la recherche fonctionne normalement.</p>"
+    },
+    {
       "id": "basic",
       "title": "Recherche de base",
       "html": "<p>Pour effectuer une recherche, saisissez votre requête dans le champ de recherche et appuyez sur Entrée (ou cliquez sur le bouton Rechercher).</p><p>Plusieurs mots sont combinés avec AND par défaut. Par exemple, <code>open source</code> trouve les documents contenant à la fois « open » et « source ».</p>"

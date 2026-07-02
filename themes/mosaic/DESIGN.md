@@ -2,173 +2,112 @@
 
 ## Concept
 
-Mosaic is "a lens that reveals meaning" — it surfaces the **search provenance** (how each result was found) alongside the result itself. In a hybrid search deployment, results may be retrieved by keyword (BM25), by semantic vector similarity, or by both. Mosaic makes this visible without cluttering the interface.
+Mosaic's core idea is **"see your whole corpus at a glance."** Where a conventional search theme answers a query with a scrollable list of links, Mosaic answers with a thumbnail gallery — a mosaic of tiles the eye can scan the way it scans a photo grid or a contact sheet. This framing fits its target use case: multimodal search over a mixed corpus, where a meaningful fraction of results are images (or documents best recognized by their preview) and where a query can be matched by what it *looks like* (CLIP-style visual similarity) as much as by what it *says* (keyword/BM25).
 
-The name reflects the dual nature: a lens for semantic depth, combined with the precision of keyword retrieval.
+The name reflects that duality: individual tiles (keyword hits, visual hits, blended hits) assembling into one coherent picture of "what this deployment knows," with each tile's border/badge honestly labeling how it got there.
 
 ## Palette
 
 | Token | Hex | Role |
 |---|---|---|
-| Brand primary | `#6D28D9` | Buttons, active fills, key accents |
-| Brand hover | `#5B21B6` | Hover state, darker accent |
-| Secondary / links | `#0369A1` | Link text, secondary actions, focus indicators |
-| Page background | `#FAFBFF` | Body background — cool near-white |
-| Card surface | `#FFFFFF` | Result cards, panels, modals |
-| Secondary surface | `#F4F6FB` | Sidebar, facet panel, legend background |
-| Border | `#E2E8F0` | Card and panel borders |
-| Muted text | `#475569` | Secondary labels, descriptions, metadata |
+| Brand primary (`--df-primary`) | `#6D28D9` | Buttons, active fills, key accents |
+| Brand hover (`--df-primary-hover`) | `#5B21B6` | Hover state, darker accent |
+| Secondary / links (`--df-secondary`) | `#0369A1` | Link text, secondary actions, focus indicators |
+| Page background (`--df-bg`) | `#FAFBFF` | Body background — cool near-white |
+| Card surface (`--df-surface`) | `#FFFFFF` | Result cards, panels, modals, tiles |
+| Neutral stone-100 (`--df-stone-100`) | `#F4F6FB` | Sidebar, tile caption border, skeleton background |
+| Neutral stone-200 (`--df-stone-200`) | `#E2E8F0` | Card and panel borders |
+| Neutral stone-500 (`--df-stone-500`) | `#64748B` | Muted icons/secondary text |
+| Neutral stone-900 (`--df-stone-900`) | `#0F172A` | Headings, dark header background |
 
-The palette is cool-slate rather than the warm-sand of NomadKit, signalling precision and analytical depth.
+The neutral palette is a cool slate, deliberately kept out of the badges/tiles/spines themselves — the gallery grid and its provenance colors are what carry visual interest; the surrounding chrome (header, sidebar, cards) stays quiet so the thumbnails read as a real media gallery rather than a colorful dashboard.
 
-## Source-color system
+## Source-of-match color system
 
-The redesign replaced the original per-badge hardcoded hex with a unified three-color provenance system surfaced consistently across badges, card spines, the composition bar, and sidebar captions. The colors are declared as CSS custom properties in `:root` (prefix `--sl-`), each with a base, a subtle background tint, and an accessible dark text variant:
+Every place Mosaic surfaces *how* a result was found — gallery tile corner badge, lightbox metadata badge, list-mode badge pill, list-mode card left spine, the composition bar, and the filter-sidebar caption — draws from the same three CSS custom properties, defined once in `assets/styles.css`'s `:root`. Each is a base/subtle-background/accessible-text triple:
 
-| Kind | CSS variable | Base | Subtle bg | Text | Semantic meaning |
+| Kind | CSS variable | Base | Subtle bg | Text | Meaning |
 |---|---|---|---|---|---|
-| Hybrid | `--sl-hybrid` | `#0D9488` | `#DCF5F1` | `#0B6B62` | Matched by both keyword and meaning — teal |
-| Semantic | `--sl-semantic` | `#7C3AED` | `#F1E9FE` | `#5B21B6` | Matched by meaning / vector only — violet |
-| Keyword | `--sl-keyword` | `#D97706` | `#FEF3E2` | `#9A5A05` | Matched by BM25 / keyword only — amber |
+| Keyword | `--mm-keyword` | `#D97706` | `#FEF3E2` | `#9A5A05` | Matched by BM25/keyword search only — amber |
+| Visual | `--mm-visual` | `#7C3AED` | `#F1E9FE` | `#5B21B6` | Matched by image similarity (CLIP-style vector search) only — violet |
+| Blend | `--mm-blend` | `#0D9488` | `#DCF5F1` | `#0B6B62` | Matched by both keyword and visual similarity — teal |
 
-Teal was chosen for Hybrid (a synthesis of the two modes), violet for Semantic (evocative of meaning-space / embedding depth), and amber for Keyword (warm, concrete, familiar). Each hue family is perceptually distinct across the most common forms of color-vision deficiency.
+Amber for Keyword (warm, concrete, familiar — "found the words"), violet for Visual (evocative of vision/perception), and teal for Blend (a synthesis of the other two, reused as the hero's central "shared embedding" node color). The three hues remain visually distinct across the most common forms of color-vision deficiency, and are never the *only* signal — see Accessibility below.
 
-## Accessibility rule: icon + text label, never color alone
+## Structure: gallery / tile / lightbox / hero
 
-Every badge renders an icon (`aria-hidden="true"`) **and** a visible text label. Color is a secondary reinforcement only. Screen readers receive the `aria-label` attribute on the badge span, which carries the full description (e.g. "Matched by meaning (vector search)"). The composition bar legend uses both color dots and text labels; the result microcopy is text-only.
+Mosaic's result-facing UI is built from four layered components:
 
-This satisfies WCAG 1.4.1 (Use of Color) and ensures comprehension for users with color vision deficiency.
+1. **Gallery** (`ul.gallery`) — a responsive CSS grid (`repeat(auto-fill, minmax(160px, 1fr))`) of tiles; this is the default result view (`state.viewMode = "grid"`), backed by the same `<ul id="results">` element the traditional list view (`ul.list-unstyled.results--list`) reuses when the user toggles to list mode.
+2. **Tile** (`li.tile`) — a square thumbnail (`aspect-ratio: 1/1`, `object-fit: cover`) with a caption strip below it and an optional searcher badge pinned to the top-left corner. Tiles lift and their image scales up slightly on hover/focus; a `.tile--noimg` variant substitutes a typed file icon when there is no usable thumbnail.
+3. **Lightbox** (`#lightbox`) — a fixed, full-viewport dark overlay opened by activating a tile. It shows the largest available image, a metadata panel (title, source link, facts, searcher badge, cache action), and Prev/Next buttons that step through the current result page. It is a proper modal dialog: focus-trapped, restores focus to the originating tile on close, and fades/pops in on open.
+4. **Hero** (`.mosaic-hero`, home view only) — see below.
 
-## Search Composition band
-
-A frosted band (`#search-composition`) sits immediately above the result list and summarizes the retrieval mix for the current page:
-
-- **Total** — the server's `record_count` localized with a "results" label.
-- **Proportional bar** — three `<i>` segments (`comp-seg--hybrid/semantic/keyword`) whose `style.width` values are set from a read-only tally of the current page's `searcher` values. This tally is display-only; it is never used to build filter clauses (honors the no-client-side-facet-computation constraint).
-- **Verdict** — a plain-language sentence chosen by thresholding: semantic share ≥ 60% → "Mostly meaning-matched"; keyword share ≥ 60% → "Mostly keyword matches"; otherwise → "A balanced blend". Intended to give users immediate intuition about the query's character.
-- **Legend** — three color dots + labels (Hybrid / Semantic / Keyword), no per-source numbers (per explicit user decision).
-
-The band is hidden (`d-none`) when `searcher` is absent on all current-page results, so non-hybrid deployments see nothing. It uses `aria-live="polite"` so assistive technologies announce updates after each search without interrupting.
-
-The `tallyKinds(data)` helper that drives the bar is also reused by the sidebar caption, ensuring the two are always consistent.
-
-## Count-free filter sidebar
-
-### Rationale for no counts
-
-In a hybrid deployment, the server's facet counts come exclusively from the BM25 (`default`) searcher's aggregation response. The semantic searcher's matches are fused into the result list by `RankFusionProcessor` after the fact; their contribution is not reflected in any facet bucket. Showing these counts would be actively misleading — users would see "PDF (12)" while the result list contains 30 PDFs found semantically. Removing counts entirely avoids the discomfort, is honest, and is consistent with the count-free composition band. The new `record_count` after each filter click provides immediate real feedback.
-
-### Option sourcing from `/api/v2/ui/config`
-
-Filter options are built at render time from `api.getConfig()` — a query-independent endpoint that is always populated regardless of whether the current query has BM25 matches. This solves the "empty sidebar for semantic-only results" problem: the three groups (File type from `filetype_options`, Updated and Size from `facet_views`) are structurally stable across every search.
-
-### Mode-aware caption
-
-A caption (`.facet-cap`) derived from `tallyKinds` sits at the top of the sidebar. It reassures users that clicking a filter narrows the full fused set, not just the BM25 branch:
-
-- Semantic-dominant (semantic ≥ 60%): violet border, explains that filters include semantic matches.
-- Otherwise: teal border, explains that filters cover keyword and semantic alike.
-
-The caption is absent when `searcher` is not in the response.
-
-## Quote-on-filter rationale and forward-safety
-
-A multi-word free-text query combined with any field filter currently causes an HTTP 400 from the semantic-search plugin. The root cause: the plugin auto-quotes an unfiltered whitespace query (collapsing it to one `neural` clause), but the presence of a `field:` token in the query string suppresses that quoting, causing each word to become a separate `neural` clause with duplicate `content_vector` inner-hits names, which OpenSearch rejects.
-
-The theme-side fix: whenever `hasActiveFilter()` is true, `quoteQueryForFilter(q)` wraps the raw free-text query in double quotes before sending. This replicates what the plugin already does in the unfiltered case. It is skipped when the query is empty, already quoted, contains `field:` or boolean operators (user-authored advanced queries are left untouched), or is a single token (no crash risk, no need).
-
-**Forward-safety:** if the plugin is later fixed (see Out of scope), quoting a phrase that would have been quoted anyway produces the same result. If the plugin begins quoting even filter-bearing queries, the double-quoting path becomes a no-op. Either way the theme behavior degrades gracefully.
-
-**Known tradeoff:** with a filter active, the BM25 branch evaluates the query as a phrase match rather than OR-of-terms, which may shift lexical ranking slightly. The semantic branch is unaffected. This is documented and acceptable.
-
-## Home / semantic-space hero
+## The multimodal hero
 
 ### Concept
 
-The home/top view (`#home-view`) is the user's first encounter with Mosaic. Instead of a static logo-plus-search-box, it opens on a dark "semantic-space" band that makes the theme's core idea — that keyword and semantic retrieval are two overlapping dimensions of meaning — immediately legible as a visual metaphor.
+The home view's full-bleed dark band visualizes Mosaic's core mechanism directly: a **shared embedding space** where short text tokens and small image tiles are two representations of the same kind of thing, converging on one point.
 
-The background visualises a high-dimensional embedding space: nodes (documents) drift at random through the field, and edges (proximity lines) connect them when they draw near in that space. The amber and violet beams converging from opposite sides represent the keyword and semantic retrieval signals merging at the search box — a literal depiction of rank fusion. The pulsing lens mark at the centre echoes the brand motif and marks the point of synthesis.
+### Implementation (what the code actually does)
 
-### Animation approach
+`assets/home-hero.js` drives a `<canvas>` (`#mosaic-hero-canvas`) with two independent particle streams, driven by `requestAnimationFrame`:
 
-**Constellation canvas (`#sl-hero-canvas`)**: implemented in `assets/home-hero.js` as a `requestAnimationFrame` loop. Approximately 30–70 nodes are seeded with random positions and velocities, each assigned one of the three source-of-match colors (`--sl-keyword` amber, `--sl-semantic` violet, `--sl-hybrid` teal, resolved from CSS custom properties at init time with a hardcoded fallback). On each frame, positions are updated and a proximity check (128 px threshold) draws connecting lines at proportional opacity. The loop is intentionally low-cost: no WebGL, no image assets, no external libraries.
+- **Text tokens** — small pill shapes — spawn off-screen on the **left** edge and drift toward the canvas center with an ease-out curve, colored with `--mm-keyword`.
+- **Image tiles** — small rounded squares with a corner highlight dot (evoking a lens/aperture glint) — spawn off-screen on the **right** edge and drift toward the center, colored with `--mm-visual`.
+- Both streams fade in on spawn, wobble slightly as they travel, shrink slightly as they approach, and fade out as they merge into a **central pulsing node**, colored with `--mm-blend` and rendered with a soft radial glow.
 
-**Converging beams (`.sl-beam--kw`, `.sl-beam--se`)**: pure CSS — two `div` elements in `.sl-hero-bg`, styled as soft radial/conic gradient blobs that drift toward the centre using a CSS `@keyframes` animation. Amber from the left (keyword), violet from the right (semantic).
+Colors are read live from the theme's `--mm-keyword` / `--mm-visual` / `--mm-blend` custom properties via `getComputedStyle`, with hardcoded hex fallbacks, so the hero always matches the badge/tile/spine palette even if the tokens are customized. There is no WebGL, no image assets, and no external library — it is a small hand-rolled particle system (~20–64 particles, scaled to the hero's area) using canvas primitives only.
 
-**Spectral lens mark (`.sl-hero-lens`)**: a CSS-only pulsing ring, `@keyframes` scale + opacity, using the brand violet.
+Layered over the canvas, the real `#contentQuery` search input is restyled as a glowing pill whose box-shadow gently breathes between the keyword (amber) and blend (teal) hues via a CSS `@keyframes` animation — a second, purely-CSS echo of the same "signals converging" idea.
 
-**Typewriter placeholder**: `home-hero.js` animates the `placeholder` attribute of `#contentQuery` (never `.value`) cycling through four localized example queries. The typewriter respects user intent: it yields as soon as the input is focused or non-empty, and restores the plain placeholder. Under `prefers-reduced-motion` it sets the first example as a static placeholder and never animates.
+### Typewriter placeholder
 
-### Accessibility and performance
+`home-hero.js` also animates the `placeholder` attribute of `#contentQuery` (never its `.value`, so it can never corrupt real user input), cycling through four localized example queries (`home.example_1..4`, e.g. *"a red sports car at sunset"*, *"snow-capped mountains"*). It types and deletes each phrase with a small per-character delay and a hold at full length. It yields to the user the instant they type a non-empty value into the box — but **mere focus does not stop it**, so an empty, focused input keeps showing the animated example, which is what makes the effect visible on first load. It resumes when the input is blurred while still empty.
 
-- All decorative elements (`canvas`, beams, lens mark) carry `aria-hidden="true"`.
-- The `requestAnimationFrame` loop is paused via `cancelAnimationFrame` whenever `setActive(false)` is called (user navigates away from the home view) or the `document.visibilitychange` event fires (tab backgrounded). No animation CPU is consumed while the user is on the results, help, or profile view.
-- CSS animations on the beams and lens use `animation-play-state: paused` under `(prefers-reduced-motion: reduce)`. The canvas draw loop similarly skips to a single static frame and does not schedule further rAF calls.
-- The module is a standard ES import (`import { homeHero } from "./home-hero.js"`), driven by `app.js`. No inline scripts; CSP `script-src 'self'` is unaffected.
-- System fonts are used throughout the hero (consistent with the rest of the theme); no web-font requests are issued.
+### Performance and accessibility
 
-## Lens identity: brand mark (header gradient skipped)
+- The canvas's `requestAnimationFrame` loop is started only in `setActive(true)` (called by `app.js`'s `showView()` when the home route is active) and is stopped via `cancelAnimationFrame` both when the home view is hidden and whenever `document.visibilitychange` reports the tab is backgrounded — zero CPU/battery cost while the user is anywhere else in the app.
+- Under `prefers-reduced-motion: reduce`, the canvas renders exactly one static frame (no `requestAnimationFrame` loop is ever scheduled), the typewriter is replaced with a single static example string, and the search-pill glow animation is disabled in CSS.
+- The canvas is `aria-hidden="true"`; it is purely decorative, and the real, always-present `#contentQuery` input carries the actual accessible search semantics.
+- No inline scripts are used anywhere; `home-hero.js` is a standard ES module imported by `app.js`, satisfying the theme's `script-src 'self'` CSP with no relaxation.
 
-The plan specified a header gradient (`linear-gradient(115deg,#1b1e3c,#3b2a78,#0d6b66)`) scoped to the search view. This was skipped in implementation: `.df-header` is a `position:fixed` global navbar rendered outside the per-view `<section>` elements, and `showView()` only toggles `hidden` on sections. There is no CSS hook to scope the gradient to the search view without editing `app.js` (out of scope).
+## Accessibility
 
-What was added instead: a `<span class="sl-lensmark" aria-hidden="true">` inside the header brand `<a>`, styled with a CSP-safe `radial-gradient` + `conic-gradient` focus-ring mark in the three source colors. This marks Mosaic visually in the header without touching any other view.
+- **Icon + text, never color alone (WCAG 1.4.1).** Every searcher badge — gallery tile corner badge, lightbox meta badge, and list-mode pill — renders a Font Awesome icon (`aria-hidden="true"`) together with a visible, localized text label, and carries a matching `aria-label`/`title` for assistive technology. The list-mode "Matched by …" microcopy line is text-only by construction.
+- **`aria-live` for compositional/dynamic updates.** The Search Composition band (`role="note" aria-live="polite"`) and the results-status line (`aria-live="polite"`) announce their content after each search without interrupting the user; the lightbox is `role="dialog" aria-modal="true"` with a maintained tab order and focus restored to the triggering tile on close.
+- **`prefers-reduced-motion` handling.** Every animated element in the theme — the hero canvas and search-pill glow, tile hover lift/image zoom, lightbox fade/pop, skeleton-loading shimmer, and the search-options drawer/offcanvas/modal transitions — is disabled or collapsed to a static equivalent under `(prefers-reduced-motion: reduce)`. This is handled independently in both `styles.css` (`@media (prefers-reduced-motion: reduce)` blocks) and `home-hero.js` (checks `window.matchMedia` directly and reacts live to runtime changes via the media query's `change` event).
 
-## Out of scope / future
+## Graceful degradation
 
-The following were explicitly excluded to keep the implementation theme-only and low-risk:
+The `searcher` field is only present on a hit when the backend has both `query.additional.api.response.fields=searcher` set **and** hybrid rank fusion actually active (e.g. a multimodal plugin blending keyword and CLIP-vector search). Every provenance-driven element in the theme is written to check for this field's presence and silently omit itself when absent:
 
-- **Accurate per-bucket counts via server fan-out.** Each filter option would need its own `GET /api/v2/search?ex_q=…&num=0` request to get a real `record_count`. This adds N parallel requests per render; count-free was chosen instead.
-- **Interactive server-side mode switch.** `rank.fusion.searchers` is read once at Fess boot; switching between hybrid, keyword-only, and semantic-only modes requires a Fess or plugin change and is outside the theme's scope.
-- **Upstream plugin fix: wire filters into `NeuralQueryBuilder.filter` and use unique inner-hits names per neural clause.** This would eliminate the HTTP 400 bug at source and make the quote-on-filter workaround unnecessary. The fix lives in `repos/fess-webapp-semantic-search/…/helper/SemanticSearchHelper.java` (~lines 330-380). Until that fix lands, the theme workaround remains the correct behavior.
+- `searcherBadgeKind()` returns `null` for a hit with no `searcher` data → no corner badge, no list-mode badge, no colored card spine, no "Matched by …" microcopy for that hit.
+- `renderComposition()` hides the Search Composition band entirely (`d-none`) when **no** hit on the page carries a known searcher kind.
+- The filter-sidebar's mode-aware caption (`.facet-cap`) is only rendered when the page tally has at least one classified hit.
+- The quote-on-filter query rewrite is gated on `semanticSeen` (a sticky flag set the first time any hit ever carries a `searcher` value in the current session), so a keyword-only deployment's queries are never rewritten.
 
-## System font stack rationale
+The gallery grid, lightbox, and grid/list toggle are **not** gated on `searcher` at all — they work identically with or without multimodal search configured, using the plain thumbnail endpoint and standard result fields. This means Mosaic is a fully valid, visually coherent theme on a stock Fess install with no multimodal plugin at all; the searcher badges are a progressive enhancement, not a hard dependency.
 
-The Mosaic CSP blocks external font sources including Google Fonts:
+## Component inventory
 
-```
-font-src 'self'
-```
+- **`.gallery` / `.tile` / `.tile--noimg`** — the grid-mode result list and its tiles, with the no-thumbnail fallback variant
+- **`.view-toggle` / `.view-toggle__btn`** — the persistent grid/list toggle above the results, synced to `localStorage("mosaic.view")`
+- **`#lightbox` / `.lightbox__*`** — the full-screen preview overlay and its close/prev/next controls and metadata panel
+- **`.mosaic-hero` / `.mosaic-hero-canvas` / `.mosaic-hero-pill`** — the home view's multimodal-convergence hero band
+- **`.mosaic-preview-cards` / `.mosaic-preview--{kw,vi,bl}`** — the three educational Keyword/Visual/Blend cards below the hero
+- **`.mm-brandmark`** — a small four-quadrant conic-gradient "mosaic tile" glyph in the header brand link (pure CSS, no image request), combining the three source-of-match hues with the secondary accent
+- **`.searcher-badge` / `.searcher-badge--{keyword,visual,blend}`** — list-mode badge pill
+- **`.badge.badge--{keyword,visual,blend}`** — gallery-tile / lightbox-meta badge (distinct markup/CSS namespace from the list-mode pill, styled independently)
+- **`li.result--{keyword,visual,blend}`** — list-mode result root, drives the 3px colored left spine
+- **`.result-why` / `.result-why--{keyword,visual,blend}`** — per-card "Matched by …" microcopy line
+- **`#search-composition` / `.comp-*`** — the Search Composition band (lead count, verdict, proportional bar, legend)
+- **`.filter-opt` / `.filter-chk`** — count-free clickable filter rows and their checkbox indicators in the sidebar
+- **`.facet-cap` / `.cap--visual` / `.cap--mixed`** — the mode-aware sidebar caption
+- **`.skeleton` / `.skeleton-*`** — shimmering loading-placeholder blocks (offline-first design, reused across views)
 
-No `fonts.googleapis.com` or `fonts.gstatic.com` is permitted. Using system fonts:
+## Out of scope / follow-ups
 
-- eliminates the external network request (faster first paint)
-- removes the potential for layout shift (FOIT/FOUT)
-- avoids the need to relax the CSP for font sources
-- works offline and in air-gapped deployments
-
-System fonts on modern operating systems (San Francisco on macOS/iOS, Segoe UI on Windows, Roboto on Android/Chrome OS) are high-quality and render well for both Latin and CJK scripts.
-
-Font stack used:
-
-```css
-system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif
-```
-
-## Component inventory (inherited from NomadKit)
-
-Mosaic inherits all NomadKit components without functional changes:
-
-- Slim dark top-bar header (`.df-header`)
-- Persistent left facet sidebar (desktop) + offcanvas (mobile)
-- Result cards with title, snippet, site line, info row
-- Pagination
-- Search options drawer (sort, count, language, label, geo)
-- Login modal
-- RAG chat column (when `rag_chat_enabled`)
-- Cache viewer (sandboxed iframe)
-- Profile page (password change)
-- Help page
-- Advanced search
-- Suggest dropdown
-
-### Mosaic additions
-
-- **`.result-head`** — flex container wrapping the result `h3.title` and the badge so the badge sits to the right of the (text-truncating) title
-- **`.searcher-badge`** + **`.searcher-badge--{kind}`** — pill badge attached to each result card when the `searcher` field is present; colors driven by `--sl-*` vars (old hardcoded hex removed)
-- **`li.result--{kind}`** — source class on the result card root, drives the 3 px colored `border-left` spine
-- **`div.result-why`** — one-line "Matched by …" microcopy below the title, per-card, text-only
-- **`#search-composition`** — Search Composition band above results; replaces the former `#searcher-legend` / `.searcher-legend` (removed)
-- **`.comp-seg--{hybrid,semantic,keyword}`** — proportional bar segments inside the band
-- **`.filter-opt`** / **`.filter-chk`** — count-free clickable filter rows and their checkbox indicators
-- **`.facet-cap`** / **`.cap--semantic`** / **`.cap--mixed`** — mode-aware sidebar caption
-- **`.sl-lensmark`** — CSS lens-mark brand element in the header brand link
+- **Real Mosaic branding art.** `logo.png`, `logo-head.png`, and `thumbnail.png` are placeholder graphics; a genuine logo and a real product screenshot are a follow-up task.
+- **Accurate per-bucket filter counts.** As with the count-free rationale above, showing true per-option counts would require a separate fan-out request per filter option; count-free was chosen to avoid the N-parallel-requests cost and the "counts exclude visual matches" confusion a keyword-only aggregation would otherwise cause.
+- **Interactive server-side mode switch.** Whether hybrid rank fusion is active is a server/plugin-level configuration decision, not something the theme can toggle at request time.

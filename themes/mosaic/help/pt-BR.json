@@ -1,6 +1,11 @@
 {
   "sections": [
     {
+      "id": "gallery",
+      "title": "Visualização em galeria",
+      "html": "<p>Os resultados da pesquisa são exibidos por padrão como uma galeria de miniaturas. Clique em um bloco (ou pressione Enter/Espaço quando estiver focado) para abrir a imagem em tamanho real no visualizador e use os botões de seta ou as teclas de seta esquerda/direita para navegar. Use o botão de grade/lista acima dos resultados para alternar para a visualização em lista tradicional a qualquer momento.</p><p>Quando esta instalação do Fess está configurada para pesquisa multimodal, alguns resultados podem exibir um pequeno selo — <strong>Palavra-chave</strong> (encontrado pelo texto), <strong>Visual</strong> (encontrado pela similaridade de imagem) ou <strong>Combinado</strong> (encontrado por ambos) — mostrando como cada resultado foi encontrado. Se os selos não forem exibidos, a pesquisa continua funcionando normalmente.</p>"
+    },
+    {
       "id": "basic",
       "title": "Pesquisa básica",
       "html": "<p>Para pesquisar, digite sua consulta na caixa de pesquisa e pressione Enter (ou clique no botão Pesquisar).</p><p>Várias palavras são combinadas com AND por padrão. Por exemplo, <code>open source</code> encontra documentos que contêm tanto \"open\" quanto \"source\".</p>"
