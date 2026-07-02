@@ -909,6 +909,21 @@ function renderSimilarDocBanner() {
 }
 
 /**
+ * The results-per-page the server actually defaults to. `page_size_default`
+ * (from /api/v2/ui/config, backed by the configurable paging.search.page.size)
+ * is the real default; `num_options` is a fixed [10,20,30,40,50,100] list
+ * hardcoded server-side, so num_options[0] (always 10) must NOT be treated as
+ * "the default" -- callers needing the default page size go through this
+ * helper rather than reading num_options[0] directly. Safe when config hasn't
+ * loaded yet or omits page_size_default.
+ */
+function defaultNum() {
+  const cfg = api.getConfig() || {};
+  if (Number(cfg.page_size_default) > 0) return Number(cfg.page_size_default);
+  return cfg.num_options && cfg.num_options.length > 0 ? Number(cfg.num_options[0]) : 10;
+}
+
+/**
  * C.3: Render current-selection badge row (sort / num / lang / label).
  */
 function renderCurrentFilters() {
@@ -927,8 +942,7 @@ function renderCurrentFilters() {
   }
 
   // Num (only show when non-default)
-  const defaultNum = cfg.num_options && cfg.num_options.length > 0 ? cfg.num_options[0] : 10;
-  if (state.num !== Number(defaultNum)) {
+  if (state.num !== defaultNum()) {
     badges.push({ name: t("search.num_format", { num: state.num }), targetId: "numSearchOption" });
   }
 
@@ -1667,8 +1681,12 @@ export function runFromUrl() {
   const q = params.get("q");
   state.q = q || "";
   state.start = Number(params.get("start")) || 0;
+  // URL num= always wins when present (e.g. carried over from the drawer's num select
+  // on a header-form submit). Otherwise (first visit, a bookmarked/external link, or the
+  // reset-to-home redirect below) fall back to the server's configured default page size
+  // rather than the fixed num_options[0] -- see defaultNum().
   const numVal = Number(params.get("num"));
-  if (numVal > 0) state.num = numVal;
+  state.num = numVal > 0 ? numVal : defaultNum();
   state.sort = params.get("sort") || "";
   // C.16: sync both inputs to reflect the URL query.
   syncSearchInputs(state.q);
@@ -1748,7 +1766,7 @@ export function runFromUrl() {
 export function resetSearchState() {
   state.q = "";
   state.start = 0;
-  state.num = 10;
+  state.num = defaultNum();
   state.sort = "";
   state.lang = [];
   state.sdh = "";
@@ -1773,11 +1791,18 @@ export function resetSearchState() {
       sel.selectedIndex = 0;
     }
   });
-  // Keep state.num / state.sort in sync with the default option now selected: the
-  // count list is config-driven (num_options[0] may not be 10), so read it back from
-  // the drawer instead of assuming, leaving state and the visible control in agreement.
+  // The num select's default is config-driven (page_size_default, which may not be
+  // in num_options at all) rather than a fixed first option, so select the option
+  // matching the just-computed default instead of leaving the generic
+  // selectedIndex = 0 the loop above set. If the default isn't one of the options
+  // (server misconfiguration), fall back to whatever ended up selected so state and
+  // the visible control stay in agreement.
   const numSel = document.getElementById("numSearchOption");
-  if (numSel && numSel.value) state.num = Number(numSel.value) || state.num;
+  if (numSel) {
+    const idx = Array.from(numSel.options).findIndex(o => Number(o.value) === state.num);
+    if (idx >= 0) numSel.selectedIndex = idx;
+    else if (numSel.value) state.num = Number(numSel.value) || state.num;
+  }
   const sortSel = document.getElementById("sortSearchOption");
   state.sort = (sortSel && sortSel.value) || "";
 }
@@ -1971,12 +1996,19 @@ export function attach() {
     // GEO-1: reset geo state and inputs
     state.geo = { lat: "", lon: "", distance: "" };
     ["geo-lat", "geo-lon", "geo-distance"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
-    // Reset selects: label multi-select deselects all (selectedIndex = -1);
-    // sort and num return to their "all / default" first option (selectedIndex = 0).
+    // Reset selects: label multi-select deselects all (selectedIndex = -1); sort
+    // returns to its "all / default" first option (selectedIndex = 0); num returns
+    // to the config-driven default (page_size_default, not necessarily num_options[0]),
+    // selecting whichever option matches it.
     const sortSel = document.getElementById("sortSearchOption");
     if (sortSel) { sortSel.selectedIndex = 0; state.sort = sortSel.value || ""; }
     const numSel = document.getElementById("numSearchOption");
-    if (numSel) { numSel.selectedIndex = 0; state.num = Number(numSel.value) || 10; }
+    if (numSel) {
+      state.num = defaultNum();
+      const idx = Array.from(numSel.options).findIndex(o => Number(o.value) === state.num);
+      numSel.selectedIndex = idx >= 0 ? idx : 0;
+      if (idx < 0) state.num = Number(numSel.value) || state.num;
+    }
     const langSel = document.getElementById("langSearchOption");
     if (langSel) { langSel.selectedIndex = -1; state.lang = []; }
     const labelSel = document.getElementById("labelSearchOption");
