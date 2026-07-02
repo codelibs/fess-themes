@@ -1,0 +1,15 @@
+apiVersion: fess.codelibs.org/v1
+kind: StaticTheme
+name: mosaic
+displayName: "Mosaic"
+version: "1.0.0"
+author: "CodeLibs Project"
+description: "Thumbnail-first gallery theme for multimodal search. Blends text->image (CLIP-style) visual matching with keyword/BM25 search and labels each result Keyword, Visual, or Blend over /api/v2/*. Built for the docker-multimodalsearch stack."
+license: "Apache-2.0"
+homepage: "https://fess.codelibs.org/"
+minFessVersion: "15.7"
+supportedLocales: [en, ja, de, es, fr, ko, pt-BR, zh-CN]
+entry: index.html
+spaFallback: true
+type: static
+thumbnail: thumbnail.png
