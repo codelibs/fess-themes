@@ -97,6 +97,17 @@ const ALLOWED_TAGS = new Set([
 ]);
 
 /**
+ * Elements whose children are code or markup, not prose. Unwrapping these and
+ * keeping their text — the default for a disallowed tag — would surface the
+ * element's own source as visible content (a <script> body becomes the literal
+ * string "alert(1)"). They are dropped whole, children included.
+ */
+const DROP_WITH_CONTENT = new Set([
+  "SCRIPT", "STYLE", "TEXTAREA", "TITLE", "NOSCRIPT",
+  "IFRAME", "OBJECT", "EMBED", "TEMPLATE", "XMP"
+]);
+
+/**
  * Allowed attributes per tag (lowercase tag name → Set of lowercase attr names).
  * Attributes not listed here are stripped.
  */
@@ -155,6 +166,14 @@ function sanitizeNode(node) {
 
   if (node.nodeType === Node.ELEMENT_NODE) {
     const tag = node.tagName.toUpperCase();
+
+    if (DROP_WITH_CONTENT.has(tag)) {
+      // Raw-text / non-content element: the "child text" is the element's own
+      // code or markup, not prose. Drop the whole subtree instead of unwrapping
+      // it, or that source would resurface as visible text (e.g. a <script>
+      // body sanitizes down to the bare, harmless-but-visible string "alert(1)").
+      return null;
+    }
 
     if (!ALLOWED_TAGS.has(tag)) {
       // Disallowed tag: unwrap — keep its sanitized children in a fragment.
