@@ -67,19 +67,23 @@ helpdesk/
 
 The shared SPA core (`api.js`, `auth.js`, `router.js`,
 `markdown.js`, `profile.js`, `error.js`, `cache.js`, `advance.js`, `chat.js`,
-`compat.js`, `i18n.js`) is **byte-for-byte identical** to the `docuforge`
-theme this one was built from, except for the hard-coded `/themes/<name>/…`
-asset paths and in-file theme-name mentions. `format.js` is **not** on that
-list: it diverges (`sanitizeNode()`'s `DROP_WITH_CONTENT` set, added in
-`c28df7d`) so raw-text elements like `<script>`/`<style>`/`<textarea>` are
-dropped whole instead of unwrapped — a deliberate security fix, not drift;
-do not re-sync it from docuforge. `search.js` and `app.js` carry this
-theme's real deltas (the accordion render path, best-bet card, home
-category tiles), and `assets/helpdesk.js` is new — a small, DOM-free module
-of FAQ-specific helpers (`answerHtml`, `titleHtml`, `plainTitle`, `cacheHref`,
-`bestBets`), kept separate from `search.js` specifically so it can be unit
-tested under plain Node (`scripts/test-helpdesk-helpers.mjs`) with no
-browser or DOM shim required.
+`compat.js`, `i18n.js`, `format.js`) is **byte-for-byte identical** to the
+`docuforge` theme this one was built from, except for the hard-coded
+`/themes/<name>/…` asset paths and in-file theme-name mentions. `format.js`
+carries the `DROP_WITH_CONTENT` guard in `sanitizeNode()` — the rule that
+raw-text elements like `<script>`/`<style>`/`<textarea>` are dropped whole
+instead of unwrapped, fixing a rendering defect where their source
+resurfaced as visible text. Every theme in this repository shares that same
+`sanitizeNode()` copy and carries the identical guard, so keep them in sync
+by **porting** any future change to it into every theme's `format.js`, never
+by overwriting one theme's file with another's — an overwrite would clobber
+whichever theme happens to pick up a change first. `search.js` and `app.js`
+carry this theme's real deltas (the accordion render path, best-bet card,
+home category tiles), and `assets/helpdesk.js` is new — a small, DOM-free
+module of FAQ-specific helpers (`answerHtml`, `titleHtml`, `plainTitle`,
+`cacheHref`, `bestBets`), kept separate from `search.js` specifically so it
+can be unit tested under plain Node (`scripts/test-helpdesk-helpers.mjs`)
+with no browser or DOM shim required.
 
 ## Bootstrap compatibility shim (`assets/compat.js`)
 
