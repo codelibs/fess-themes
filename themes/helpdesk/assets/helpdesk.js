@@ -14,9 +14,10 @@
  *
  * Deliberately NOT routed through format.js renderHighlightedSnippet(): that
  * escapes again, so a server-sent &amp; becomes &amp;amp; and renders as a
- * literal "&amp;". The theme this was forked from has that exact bug at
- * assets/search.js:218; this theme shows far more of the field, so it would
- * be far more visible.
+ * literal "&amp;". The baseline theme this was forked from has that exact
+ * bug — in ITS OWN assets/search.js (not this theme's, and not this file),
+ * around line 218 there; this theme shows far more of the field, so the same
+ * bug would be far more visible here.
  *
  * There is no digest fallback: getContentDescription() iterates hl_content AND
  * digest and only returns "" when both are blank, so `|| hit.digest` is dead code.
@@ -32,6 +33,30 @@
 export function answerHtml(hit) {
   if (!hit) return "";
   return hit.content_description || "";
+}
+
+/**
+ * The result-card title, as an HTML string safe to assign to innerHTML.
+ *
+ * Returned VERBATIM, symmetric with answerHtml() above. content_title is
+ * innerHTML-safe for exactly the same reason content_description is: the v2
+ * path (SearchHandler -> SearchHelper -> DefaultSearcher:245 -> ViewHelper
+ * .getContentTitle -> escapeHighlight) runs the identical LaFunctions.h() +
+ * <strong>-splice logic that DefaultSearcher:246 runs for the description.
+ *
+ * Deliberately NOT routed through format.js renderHighlightedSnippet() for the
+ * same reason as answerHtml(): re-escaping turns a server-sent &#039; (or
+ * &amp;/&#034;) into a doubled entity, which renders literally in the H3
+ * heading. In a FAQ theme the title IS the question, so this is the
+ * most-read string on the page — and apostrophes ("What's", "Don't") make it
+ * the common case, not an edge case.
+ *
+ * @param {object|null} hit - one entry of the /api/v2/search `data` array
+ * @returns {string} HTML string (safe for innerHTML), or "" when unavailable
+ */
+export function titleHtml(hit) {
+  if (!hit) return "";
+  return hit.content_title || "";
 }
 
 /**

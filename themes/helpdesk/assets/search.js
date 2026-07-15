@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import * as api from "./api.js";
 import { t, languageLabel } from "./i18n.js";
-import { formatFileSize, formatDate, renderHighlightedSnippet, sanitizeHtml } from "./format.js";
+import { formatFileSize, formatDate, sanitizeHtml } from "./format.js";
 import { navigate } from "./router.js";
-import { answerHtml, cacheHref } from "./helpdesk.js";
+import { answerHtml, titleHtml, cacheHref } from "./helpdesk.js";
 
 /** Guard: prevent duplicate event-listener registration on hot-reload. */
 let attached = false;
@@ -158,7 +158,7 @@ function buildResultCard(d, queryId, order) {
   // Tag-parity with searchResults.jsp result item:
   //   li#result{n}
   //     h3.title.text-truncate > a.link[data-uri,data-id,data-order]
-  //     div.body > (div.me-3 > a.link.d-none.d-sm-flex > img.thumbnail)? + div.description
+  //     div.body > (div.me-3 > a.link.d-none.d-sm-flex > img.thumbnail)? + div.hd-answer-wrap
   //     div.site.text-truncate > (i.far.fa-copy.url-copy)? + cite
   //     div.more > a
   //     div.info > date + (size) + (cache)
@@ -188,14 +188,14 @@ function buildResultCard(d, queryId, order) {
     }
   });
   if (d.content_title) {
-    a.innerHTML = renderHighlightedSnippet(d.content_title);
+    a.innerHTML = titleHtml(d);
   } else {
     a.textContent = d.title || d.url || "";
   }
   h3.appendChild(a);
   li.appendChild(h3);
 
-  // --- div.body > (thumbnail)? + div.description ---
+  // --- div.body > (thumbnail)? + div.hd-answer-wrap ---
   const body = el("div", { className: "body" });
   if (d.thumbnail && features.thumbnail_enabled) {
     const thumbWrap = el("div", { className: "me-3" });
@@ -223,31 +223,51 @@ function buildResultCard(d, queryId, order) {
   const html = answerHtml(d);
 
   const wrap = el("div", { className: "hd-answer-wrap" });
-  const answer = el("div", { className: "hd-answer", attrs: { id: answerId } });
-  answer.innerHTML = html; // safe: escaped server-side, <strong> only
-  wrap.appendChild(answer);
 
   // A doc with no extractable text yields "". Render neither an empty answer box
-  // nor a toggle that expands to nothing.
+  // nor a toggle that expands to nothing — but that rationale applies to the
+  // TOGGLE only. The "View original page" cache link below is independent of
+  // there being a teaser: an image-only PDF or a near-empty page can have a
+  // cache with no extractable text, and the link is its only path to the
+  // original, so it must not disappear along with the (absent) teaser.
+  let answer = null;
+  let toggle = null;
   if (html !== "") {
-    const actions = el("div", { className: "hd-answer-actions" });
+    answer = el("div", { className: "hd-answer", attrs: { id: answerId } });
+    answer.innerHTML = html; // safe: escaped server-side, <strong> only
+    wrap.appendChild(answer);
 
-    const toggle = el("button", {
+    // aria-label suffixes the title (JSP parity with the "more" link below, and
+    // with labels.search_result_more usage) so a screen-reader user tabbing
+    // through N cards' toggles hears distinct names instead of N copies of
+    // "Show answer". Visible text stays the plain label.
+    toggle = el("button", {
       className: "hd-answer-toggle d-none",
       text: t("faq.expand_answer"),
-      attrs: { type: "button", "aria-expanded": "false", "aria-controls": answerId }
+      attrs: {
+        type: "button", "aria-expanded": "false", "aria-controls": answerId,
+        "aria-label": t("faq.expand_answer") + " - " + plainTitle(d)
+      }
     });
     toggle.addEventListener("click", () => {
       const expanded = toggle.getAttribute("aria-expanded") === "true";
+      const nowLabel = expanded ? "faq.expand_answer" : "faq.collapse_answer";
       toggle.setAttribute("aria-expanded", expanded ? "false" : "true");
-      toggle.textContent = expanded ? t("faq.expand_answer") : t("faq.collapse_answer");
+      toggle.textContent = t(nowLabel);
+      toggle.setAttribute("aria-label", t(nowLabel) + " - " + plainTitle(d));
       answer.classList.toggle("hd-answer--clamped", expanded);
     });
-    actions.appendChild(toggle);
+  }
 
-    // Full-fidelity fallback. Absent when the page has no cache (non-HTML, or
-    // over crawler.document.cache.max.size = 2.5MB) — the accordion still works.
-    const href = cacheHref(d, state.highlightParams, state.q);
+  // Full-fidelity fallback. Absent when the page has no cache (non-HTML, or
+  // over crawler.document.cache.max.size = 2.5MB) — the accordion still works.
+  const href = cacheHref(d, state.highlightParams, state.q);
+
+  // Render the actions container only when it would have something in it —
+  // neither an empty toggle-less, link-less div.
+  if (toggle || href) {
+    const actions = el("div", { className: "hd-answer-actions" });
+    if (toggle) actions.appendChild(toggle);
     if (href) {
       actions.appendChild(el("a", {
         className: "hd-answer-original",
@@ -256,10 +276,13 @@ function buildResultCard(d, queryId, order) {
       }));
     }
     wrap.appendChild(actions);
+  }
 
-    // Clamp and offer the toggle ONLY when the text actually overflows. Without
-    // this every card — including one-line answers — shows a "Show answer"
-    // control that does nothing visible. Measured after layout.
+  // Clamp and offer the toggle ONLY when the text actually overflows. Without
+  // this every card — including one-line answers — shows a "Show answer"
+  // control that does nothing visible. Measured after layout. Only runs when
+  // there is an answer/toggle to measure at all.
+  if (answer && toggle) {
     requestAnimationFrame(() => {
       answer.classList.add("hd-answer--clamped");
       if (answer.scrollHeight > answer.clientHeight + 1) {
