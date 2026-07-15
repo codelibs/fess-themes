@@ -10,8 +10,8 @@
  *   3. Carries over and re-skins all theme-specific component CSS (result
  *      cards, facets, suggest, chat, error, profile, cache, home, …).
  *
- * Fonts (Plus Jakarta Sans / Inter / Fira Code) are loaded via <link> in
- * index.html with system-font fallbacks if the network/CSP blocks them.
+ * Fonts: system stacks only. Google Fonts cannot load due to the server's
+ * CSP policy (no font-src; style-src omits fonts.googleapis.com).
  * ========================================================================== */
 
 /* ---------------------------------------------------------------- tokens */
