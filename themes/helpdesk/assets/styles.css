@@ -935,6 +935,43 @@ legend { display: none; }
   #home-view .searchFormBox { margin-top: 3em; }
 }
 
+/* --- Category tiles ------------------------------------------------------ */
+.hd-categories { margin-top: 2.5rem; }
+
+.hd-categories-title {
+  font-size: .95rem;
+  font-weight: 700;
+  margin: 0 0 .75rem;
+  color: var(--hd-zinc-900);
+}
+
+.hd-categories-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: .75rem;
+}
+
+.hd-category-tile {
+  display: block;
+  padding: .9rem 1rem;
+  border: 1px solid var(--hd-zinc-200);
+  border-radius: .5rem;
+  text-decoration: none;
+  color: var(--hd-zinc-900);
+  background: var(--hd-surface);
+}
+
+.hd-category-tile:hover,
+.hd-category-tile:focus-visible {
+  border-color: var(--hd-primary);
+  color: var(--hd-primary);
+}
+
+.hd-category-tile:focus-visible {
+  outline: 2px solid var(--hd-primary);
+  outline-offset: 2px;
+}
+
 /* ---- Sticky footer ---- */
 body { padding-bottom: 4em; }
 footer[role="contentinfo"] {

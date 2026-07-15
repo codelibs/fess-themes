@@ -185,6 +185,41 @@ async function renderHomePopularWords() {
   } catch { /* popular words are optional — fail silently */ }
 }
 
+/**
+ * Fetch labels from /api/v2/labels and render them as category tiles.
+ *
+ * /labels rather than ui/config.label_options: the latter is built with a
+ * hardcoded Locale.ROOT (UiConfigHandler.java:210) so its names never localize.
+ * Labels are role-filtered server-side, so a user only sees their own.
+ *
+ * Renders nothing when none are registered — an unconfigured instance must not
+ * show an empty heading.
+ */
+async function renderHomeCategories() {
+  const host = document.getElementById("home-categories");
+  const list = document.getElementById("home-categories-list");
+  if (!host || !list) return;
+  try {
+    const env = await api.get("/labels");
+    const labels = env?.labels || [];
+    while (list.firstChild) list.removeChild(list.firstChild);
+    for (const l of labels) {
+      const value = l.value != null ? l.value : "";
+      if (!value) continue;
+      // data-spa: the router intercepts and runFromUrl() turns it into a real
+      // search. No inline handler — that would double-fire alongside the router
+      // (see the note on renderPopularWords).
+      const a = document.createElement("a");
+      a.className = "hd-category-tile";
+      a.textContent = l.label || value;
+      a.setAttribute("href", "/search?q=&fields.label=" + encodeURIComponent(value));
+      a.setAttribute("data-spa", "");
+      list.appendChild(a);
+    }
+    host.classList.toggle("d-none", list.childNodes.length === 0);
+  } catch { /* categories are optional — fail silently */ }
+}
+
 /** Attach the home view search form submit handler and render popular words. */
 function attachHomeView() {
   const form = document.getElementById("home-search-form");
@@ -264,6 +299,7 @@ function attachHomeView() {
     renderHomeFlash(null);
   }
   renderHomePopularWords();
+  renderHomeCategories();
 }
 
 /**

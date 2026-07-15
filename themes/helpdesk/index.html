@@ -164,6 +164,13 @@
               <div class="clearfix">
                 <p class="text-truncate" id="home-popular-words"></p>
               </div>
+              <!-- Category tiles. Sourced from /api/v2/labels (which honours the request
+                   locale) rather than ui/config.label_options (built with a hardcoded
+                   Locale.ROOT at UiConfigHandler.java:210). Hidden when none exist. -->
+              <section id="home-categories" class="hd-categories d-none" aria-labelledby="home-categories-title">
+                <h2 id="home-categories-title" class="hd-categories-title" data-i18n="faq.browse_categories">Browse by category</h2>
+                <div id="home-categories-list" class="hd-categories-list"></div>
+              </section>
               <div class="clearfix searchButtonBox btn-group">
                 <button type="submit" name="search" id="home-search-submit" class="btn btn-primary"><i class="fa fa-search" aria-hidden="true"></i> <span data-i18n="search.button">Search</span></button>
                 <button type="button" class="btn btn-outline-secondary" id="home-options-toggle"
