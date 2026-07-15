@@ -108,7 +108,7 @@ discarded — not a usable answer. Set all four before evaluating this theme:
 ```properties
 # Without these the inline answer is a ~120-character teaser with its opening
 # clause silently removed — not an answer.
-query.highlight.fragment.size=<measured empirically against real content>
+query.highlight.fragment.size=1000
 query.highlight.number.of.fragments=1
 
 # true (the default) discards everything before the first match's clause: on
@@ -123,20 +123,27 @@ query.highlight.boundary.position.detect=false
 # produced at all, and the answer falls back to `digest`, which is capped at
 # crawler.document.html.max.digest.length (see below). fragment.size above
 # has NO effect on this path; only no.match.size controls it.
-query.highlight.no.match.size=<measured empirically against real content>
+query.highlight.no.match.size=500
 
 # Raises the floor for the digest fallback path above. Requires a re-crawl —
 # it only affects content indexed after the change.
 crawler.document.html.max.digest.length=500
 ```
 
-The two `<measured empirically…>` values are deployment-specific — they
-depend on the length of a typical answer in your corpus — and are not
-chosen abstractly here; they get concrete numbers from a verification pass
-against real crawled content. Until you have measured your own values,
-start from a generous placeholder (e.g. `fragment.size=500`,
-`no.match.size=500`) and tune down once you can see real answers rendering
-without excess trailing text.
+`fragment.size=1000` and `no.match.size=500` are the values measured against
+the `docker-faqsearch` demo corpus (see that repo's
+`conf/fess_config.overlay.properties` for the full measurement writeup): its
+longest answer is 445 characters, and 1000 / 500 were the smallest of
+500/1000/2000/3000 that carried it whole on the keyword-search and
+category-browsing paths respectively. **These two values are
+deployment-specific** — they depend on the length of a typical answer in
+your corpus, and a corpus with longer answers needs larger numbers. Measure
+your own corpus with a real verification pass (search for a term inside
+your longest answer's last sentence, confirm `content_description` isn't
+truncated) rather than assuming these numbers transfer as-is. Until you have
+measured your own values, start from a generous placeholder (e.g.
+`fragment.size=2000`, `no.match.size=2000`) and tune down once you can see
+real answers rendering without excess trailing text.
 
 ## Admin-panel registration
 
