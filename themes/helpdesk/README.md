@@ -65,17 +65,21 @@ helpdesk/
 
 ## Derivation
 
-The shared SPA core (`api.js`, `auth.js`, `router.js`, `format.js`,
+The shared SPA core (`api.js`, `auth.js`, `router.js`,
 `markdown.js`, `profile.js`, `error.js`, `cache.js`, `advance.js`, `chat.js`,
 `compat.js`, `i18n.js`) is **byte-for-byte identical** to the `docuforge`
 theme this one was built from, except for the hard-coded `/themes/<name>/…`
-asset paths and in-file theme-name mentions. `search.js` and `app.js` carry
-this theme's real deltas (the accordion render path, best-bet card, home
+asset paths and in-file theme-name mentions. `format.js` is **not** on that
+list: it diverges (`sanitizeNode()`'s `DROP_WITH_CONTENT` set, added in
+`c28df7d`) so raw-text elements like `<script>`/`<style>`/`<textarea>` are
+dropped whole instead of unwrapped — a deliberate security fix, not drift;
+do not re-sync it from docuforge. `search.js` and `app.js` carry this
+theme's real deltas (the accordion render path, best-bet card, home
 category tiles), and `assets/helpdesk.js` is new — a small, DOM-free module
-of FAQ-specific helpers (`answerHtml`, `titleHtml`, `cacheHref`, `bestBets`),
-kept separate from `search.js` specifically so it can be unit tested under
-plain Node (`scripts/test-helpdesk-helpers.mjs`) with no browser or DOM
-shim required.
+of FAQ-specific helpers (`answerHtml`, `titleHtml`, `plainTitle`, `cacheHref`,
+`bestBets`), kept separate from `search.js` specifically so it can be unit
+tested under plain Node (`scripts/test-helpdesk-helpers.mjs`) with no
+browser or DOM shim required.
 
 ## Bootstrap compatibility shim (`assets/compat.js`)
 

@@ -98,6 +98,42 @@ export function cacheHref(hit, highlightParams, q) {
 }
 
 /**
+ * Plain-text title for a result document, for use in aria-label and other
+ * text-only contexts. Strips server-injected highlight markup (<strong>/<em>)
+ * from content_title, then decodes the closed set of HTML entities
+ * LaFunctions.escape() emits (&amp; &lt; &gt; &#034; &#039;) so the accessible
+ * name matches the visible title instead of reading raw entities to a
+ * screen-reader user.
+ *
+ * Decoding happens ONLY on the content_title branch. The d.title / d.url
+ * fallback (used when content_title is absent) are raw, unescaped indexed
+ * fields the server does NOT escape, so they must never be decoded — and,
+ * for the same reason, this does a targeted string replace rather than the
+ * usual `div.innerHTML = raw; div.textContent` idiom: that idiom cannot tell
+ * an escaped content_title apart from a raw title/url fallback, so it would
+ * parse attacker-influenced markup on the fallback path.
+ *
+ * @param {object|null} d - result document object
+ * @returns {string}
+ */
+export function plainTitle(d) {
+  if (!d) return "";
+  const fromContentTitle = !!d.content_title;
+  const raw = d.content_title || d.title || d.url || "";
+  const stripped = String(raw).replace(/<\/?(?:strong|em)>/g, "");
+  if (!fromContentTitle) return stripped;
+  // Decode &amp; LAST: decoding it first would turn a literal "&amp;#039;"
+  // (an escaped ampersand followed by the literal text "#039;") into "'",
+  // silently corrupting the source text.
+  return stripped
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&#034;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&amp;/g, "&");
+}
+
+/**
  * Featured-answer ("best bet") HTML snippets from a search response.
  *
  * related_contents is admin-authored RAW HTML from /admin/relatedcontent/ and is

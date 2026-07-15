@@ -3,7 +3,7 @@ import * as api from "./api.js";
 import { t, languageLabel } from "./i18n.js";
 import { formatFileSize, formatDate, sanitizeHtml } from "./format.js";
 import { navigate } from "./router.js";
-import { answerHtml, titleHtml, cacheHref, bestBets } from "./helpdesk.js";
+import { answerHtml, titleHtml, cacheHref, bestBets, plainTitle } from "./helpdesk.js";
 
 /** Guard: prevent duplicate event-listener registration on hot-reload. */
 let attached = false;
@@ -138,18 +138,10 @@ function buildGoUrl(originalUrl, docId, queryId, order, rt) {
   return goUrl;
 }
 
-/**
- * Return the plain-text title for a result document, stripping any
- * server-injected highlight markup (<strong>/<em>) from content_title.
- * Safe to use in aria-label and other text-only contexts.
- *
- * @param {Object} d - result document object
- * @returns {string}
- */
-function plainTitle(d) {
-  const raw = d.content_title || d.title || d.url || "";
-  return String(raw).replace(/<\/?(?:strong|em)>/g, "");
-}
+// plainTitle() moved to helpdesk.js: it decodes the closed set of HTML
+// entities the server emits in content_title (so aria-label matches the
+// visible title) and is DOM-free, so it lives with the other pure helpers
+// and is covered by scripts/test-helpdesk-helpers.mjs under plain Node.
 
 function buildResultCard(d, queryId, order) {
   // Tag-parity with searchResults.jsp result item:

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { answerHtml, titleHtml, hasCache, cacheHref, bestBets }
+import { answerHtml, titleHtml, hasCache, cacheHref, bestBets, plainTitle }
   from "../themes/helpdesk/assets/helpdesk.js";
 
 test("answerHtml passes content_description through untouched", () => {
@@ -104,4 +104,42 @@ test("bestBets returns [] when absent or empty", () => {
   assert.deepEqual(bestBets({ related_contents: [] }), []);
   assert.deepEqual(bestBets({}), []);
   assert.deepEqual(bestBets(null), []);
+});
+
+test("plainTitle strips <strong>/<em> highlight markup from content_title", () => {
+  assert.equal(
+    plainTitle({ content_title: "How do I <strong>reset</strong> my password?" }),
+    "How do I reset my password?"
+  );
+});
+
+test("plainTitle decodes the entities LaFunctions.escape() emits in content_title", () => {
+  // The exact demo regression: visible title and aria-label must carry the same
+  // characters — apostrophe, ampersand, and both quote marks.
+  const raw = 'What&#039;s included in Plan A &amp; Plan B &#034;bundle&#034;? <strong>FAQ</strong>';
+  assert.equal(
+    plainTitle({ content_title: raw }),
+    `What's included in Plan A & Plan B "bundle"? FAQ`
+  );
+});
+
+test("plainTitle decodes &amp; LAST so a literal &amp;#039; is not double-decoded", () => {
+  // If &amp; were decoded FIRST, "&amp;#039;" would become "&#039;" and then a
+  // subsequent &#039; pass would wrongly turn it into "'". Decoding &amp; last
+  // means the &#039; pass has already run, so the residual entity survives.
+  assert.equal(plainTitle({ content_title: "&amp;#039;" }), "&#039;");
+});
+
+test("plainTitle does NOT decode the title/url fallback — those are raw, unescaped fields", () => {
+  // content_title absent: falls back to d.title, which the server does NOT
+  // escape. Decoding here (or routing it through innerHTML) would be unsafe.
+  assert.equal(plainTitle({ title: "Q&amp;A literally in the title field" }),
+    "Q&amp;A literally in the title field");
+  assert.equal(plainTitle({ url: "https://example.com/a&amp;b" }),
+    "https://example.com/a&amp;b");
+});
+
+test("plainTitle returns '' for a missing document, title, and url", () => {
+  assert.equal(plainTitle(null), "");
+  assert.equal(plainTitle({}), "");
 });
