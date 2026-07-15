@@ -2,7 +2,7 @@ apiVersion: fess.codelibs.org/v1
 kind: StaticTheme
 name: codesearch
 displayName: "Code Search"
-version: "1.0.0"
+version: "1.0.1"
 minFessVersion: "15.7"
 supportedLocales: [en, ja, de, es, fr, ko, pt-BR, zh-CN, zh-TW, hi, id, it, nl, pl, ru, tr]
 entry: index.html
