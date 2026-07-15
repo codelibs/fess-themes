@@ -1,6 +1,11 @@
 {
   "sections": [
     {
+      "id": "accordion",
+      "title": "Respuestas en línea",
+      "html": "<p>Haga clic en un resultado de búsqueda y su respuesta se despliega directamente en la lista de resultados &mdash; no hay cambio de página.</p><p>Las respuestas largas se recortan visualmente para mantener la lista clara; el botón para expandir solo aparece cuando el texto se desborda. El texto completo siempre está presente en la página, por lo que la búsqueda del navegador (Ctrl+F / Cmd+F) y los lectores de pantalla pueden acceder a él incluso mientras está contraído.</p><p>El extracto mostrado en línea procede del contenido indexado de la página. Para ver el original completo con su formato, haga clic en <strong>Ver página original</strong>.</p>"
+    },
+    {
       "id": "basic",
       "title": "Búsqueda básica",
       "html": "<p>Para buscar, escriba su consulta en el cuadro de búsqueda y presione Intro (o haga clic en el botón Buscar).</p><p>De forma predeterminada, varias palabras se combinan con AND. Por ejemplo, <code>open source</code> encuentra documentos que contienen tanto \"open\" como \"source\".</p>"

@@ -1,6 +1,11 @@
 {
   "sections": [
     {
+      "id": "accordion",
+      "title": "Réponses en ligne",
+      "html": "<p>Cliquez sur un résultat de recherche : la réponse se déplie directement dans la liste des résultats &mdash; sans changement de page.</p><p>Les réponses longues sont tronquées visuellement pour garder la liste lisible ; un bouton d'expansion n'apparaît que si le texte dépasse. Le texte complet reste toujours présent dans la page, ce qui permet à la recherche du navigateur (Ctrl+F / Cmd+F) et aux lecteurs d'écran d'y accéder même à l'état replié.</p><p>L'extrait affiché en ligne provient du contenu indexé de la page. Pour consulter l'original complet et mis en forme, cliquez sur <strong>Afficher la page d'origine</strong>.</p>"
+    },
+    {
       "id": "basic",
       "title": "Recherche de base",
       "html": "<p>Pour effectuer une recherche, saisissez votre requête dans le champ de recherche et appuyez sur Entrée (ou cliquez sur le bouton Rechercher).</p><p>Plusieurs mots sont combinés avec AND par défaut. Par exemple, <code>open source</code> trouve les documents contenant à la fois « open » et « source ».</p>"

@@ -1,6 +1,11 @@
 {
   "sections": [
     {
+      "id": "accordion",
+      "title": "Inline Answers",
+      "html": "<p>Click a search result and its answer expands inline in the results list &mdash; there is no page navigation.</p><p>Long answers are clamped visually so the list stays scannable; a toggle appears only when the text overflows. The full answer is always present in the page, so browser search (Ctrl+F / Cmd+F) and screen readers can still reach it even while collapsed.</p><p>The inline excerpt is drawn from the page's indexed content. For the complete, fully formatted original page, click <strong>View original page</strong>.</p>"
+    },
+    {
       "id": "basic",
       "title": "Basic Search",
       "html": "<p>To search, type your query into the search box and press Enter (or click the Search button).</p><p>Multiple words are combined with AND by default. For example, <code>open source</code> finds documents containing both \"open\" and \"source\".</p>"
