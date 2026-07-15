@@ -1876,10 +1876,14 @@ function renderBestBet(env) {
   for (const html of bestBets(env)) {
     body.appendChild(sanitizeHtml(html)); // DocumentFragment
   }
-  // Un-hide only if something SURVIVED sanitization. The old code tested the
-  // raw string before sanitizing, so an admin registering markup the allow-list
-  // strips entirely (e.g. only a <script>) left a visible, empty card.
-  host.classList.toggle("d-none", body.childNodes.length === 0);
+  // Un-hide only if something SURVIVED sanitization. We test for meaningful
+  // content (non-whitespace text or at least one element) rather than node
+  // count, since sanitizeNode keeps whitespace-only text nodes. An admin
+  // pasting a disallowed tag (e.g. <img>) with a trailing newline would leave
+  // a lone "\n" node, rendering a visible, empty card — the exact case we want to
+  // prevent. The check here (after sanitizing, not before) avoids the old problem.
+  const survived = body.textContent.trim() !== "" || body.querySelector("*") !== null;
+  host.classList.toggle("d-none", !survived);
 }
 
 /**
