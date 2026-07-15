@@ -231,7 +231,14 @@
         <div id="similar-doc-banner" class="alert alert-info d-none align-items-center mb-2" role="status" aria-live="polite"></div>
         <ul id="current-filters" class="list-inline mb-2 d-none"></ul>
         <div class="d-none mb-2" id="related-queries" aria-live="polite" aria-label="Related searches"></div>
-        <div class="d-none mb-2" id="related-content" aria-live="polite"></div>
+        <!-- Featured answer ("best bet"). Sourced from related_contents, which
+             ships with every search response. It is admin-authored RAW HTML from
+             /admin/relatedcontent/ and is NOT escaped by core — it MUST go
+             through sanitizeHtml(). Hidden entirely when nothing survives. -->
+        <section id="related-content" class="hd-best-bet d-none" aria-live="polite" aria-labelledby="best-bet-title">
+          <h2 id="best-bet-title" class="hd-best-bet-title" data-i18n="faq.featured_answer">Featured answer</h2>
+          <div id="best-bet-body" class="hd-best-bet-body"></div>
+        </section>
         <div class="d-none mb-2" id="active-chips" aria-live="polite" aria-atomic="true" aria-label="Active filters"></div>
         <div id="results-warning" class="alert alert-warning d-none mb-2" role="status" aria-live="polite"></div>
 

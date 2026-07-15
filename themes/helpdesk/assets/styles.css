@@ -809,10 +809,31 @@ body.modal-open { overflow: hidden; }
 /* ---- Advanced search ---- */
 .advance-form .form-label { font-weight: 500; }
 
-/* ---- Related queries / content ---- */
+/* ---- Related queries ---- */
 #related-queries { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem; }
 .related-queries-label { white-space: nowrap; color: var(--bs-tertiary-color); font-size: .8rem; }
-#related-content { border-left: 3px solid var(--hd-primary); padding: .5rem .75rem; background: var(--hd-zinc-100); border-radius: 0 var(--fess-card-radius) var(--fess-card-radius) 0; }
+
+/* --- Featured answer (best bet) ------------------------------------------ */
+.hd-best-bet {
+  border: 1px solid var(--hd-primary);
+  border-left-width: 4px;
+  border-radius: .5rem;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  background: var(--hd-primary-subtle);
+}
+
+.hd-best-bet-title {
+  font-size: .8rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--hd-primary);
+  margin: 0 0 .5rem;
+}
+
+.hd-best-bet-body :where(p, ul, ol):last-child { margin-bottom: 0; }
+.hd-best-bet-body a { color: var(--hd-primary); }
 
 /* ---- Misc result helpers ---- */
 .copy-url-btn { color: var(--bs-tertiary-color); line-height: 1; vertical-align: middle; }

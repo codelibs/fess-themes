@@ -3,16 +3,13 @@ import * as api from "./api.js";
 import { t, languageLabel } from "./i18n.js";
 import { formatFileSize, formatDate, sanitizeHtml } from "./format.js";
 import { navigate } from "./router.js";
-import { answerHtml, titleHtml, cacheHref } from "./helpdesk.js";
+import { answerHtml, titleHtml, cacheHref, bestBets } from "./helpdesk.js";
 
 /** Guard: prevent duplicate event-listener registration on hot-reload. */
 let attached = false;
 
 /** AbortController for the most-recent in-flight search; null when idle. */
 let currentSearchAbort = null;
-
-/** AbortController for in-flight related-queries/content requests; null when idle. */
-let currentRelatedAbort = null;
 
 const state = {
   q: "",
@@ -599,6 +596,15 @@ function renderResults(env) {
   const data = env.data || [];
   // C.2: always refresh similar-doc banner (hides when state.sdh is cleared)
   renderSimilarDocBanner();
+  // related_query / related_contents ship with EVERY search response
+  // (SearchHandler.java:156-157) and the standalone /related-queries and
+  // /related-content endpoints just re-invoke the same helpers. Reading them
+  // from the response we already hold removes two round-trips per search.
+  // Rendered unconditionally (before the zero-result branch below) because
+  // they are populated regardless of hit count — same as the old loadRelated()
+  // call, which ran after renderResults() no matter how many hits came back.
+  renderRelatedQueries(env.related_query || []);
+  renderBestBet(env);
   if (data.length === 0) {
     const dnm = document.getElementById("empty-did-not-match");
     if (dnm) {
@@ -608,9 +614,6 @@ function renderResults(env) {
     meta.textContent = "";
     const statusEl = document.getElementById("results-status");
     if (statusEl) statusEl.textContent = "";
-    // ZERO-RESULT: do NOT clear related queries/content here — loadRelated() (called
-    // after renderResults in runSearch) will populate them. Clearing here would race
-    // against the async loadRelated and wipe its output (parity-r3 A2).
     const rpw = document.getElementById("results-popular-words");
     if (rpw) rpw.classList.add("d-none");
     return;
@@ -661,9 +664,6 @@ async function runSearch() {
   if (currentSearchAbort) currentSearchAbort.abort();
   currentSearchAbort = new AbortController();
   const signal = currentSearchAbort.signal;
-  // Cancel any in-flight related queries/content requests.
-  if (currentRelatedAbort) currentRelatedAbort.abort();
-  currentRelatedAbort = new AbortController();
   // Record the request time before the call so /go/ URLs embedded in result
   // cards carry the correct rt parameter (mirrors JSP #rt hidden field).
   state.requestedTime = Date.now();
@@ -749,8 +749,6 @@ async function runSearch() {
     // Hide inline validation error box on successful results.
     const eb = document.getElementById("search-error");
     if (eb) eb.classList.add("d-none");
-    // Fetch related queries and content concurrently (abortable on next search).
-    loadRelated(state.q, currentRelatedAbort.signal);
     document.dispatchEvent(new CustomEvent("fess:search:after", { detail: env }));
   } catch (e) {
     if (e && e.name === "AbortError") return; // request superseded — newer request owns the UI
@@ -1858,50 +1856,30 @@ function renderRelatedQueries(queries) {
 }
 
 /**
- * Render related content HTML above the active-chips row (Feature 2).
- * Content comes from /api/v2/related-content (key: `content`).
- * The HTML string is passed through the whitelist sanitizer from format.js.
+ * Render featured answers ("best bets") from the search response.
  *
- * @param {string} html
+ * SECURITY: these snippets are admin-authored raw HTML and are NOT escaped by
+ * core (RelatedContentHelper encodes the user's *query* before substituting it
+ * into the template, but the template body itself is trusted through). Each one
+ * goes through sanitizeHtml(), which parses into an inert <template> and walks
+ * an allow-list, returning a DocumentFragment.
+ *
+ * @param {object} env - the unwrapped /api/v2/search envelope
  */
-function renderRelatedContent(html) {
-  const container = document.getElementById("related-content");
-  if (!container) return;
-  while (container.firstChild) container.removeChild(container.firstChild);
-  if (!html || !html.trim()) {
-    container.classList.add("d-none");
-    return;
-  }
-  container.classList.remove("d-none");
-  container.appendChild(sanitizeHtml(html));
-}
+function renderBestBet(env) {
+  const host = document.getElementById("related-content");
+  const body = document.getElementById("best-bet-body");
+  if (!host || !body) return;
 
-/**
- * Fetch related queries and content concurrently for the given query string.
- * Aborts on the provided signal so superseded requests are discarded cleanly.
- *
- * @param {string} q - current search query
- * @param {AbortSignal} signal
- */
-async function loadRelated(q, signal) {
-  if (!q) {
-    renderRelatedQueries([]);
-    renderRelatedContent("");
-    return;
+  while (body.firstChild) body.removeChild(body.firstChild);
+
+  for (const html of bestBets(env)) {
+    body.appendChild(sanitizeHtml(html)); // DocumentFragment
   }
-  try {
-    const [qEnv, cEnv] = await Promise.all([
-      api.get("/related-queries", { q }, { signal }),
-      api.get("/related-content", { q }, { signal })
-    ]);
-    renderRelatedQueries(qEnv.queries || []);
-    renderRelatedContent(cEnv.content || "");
-  } catch (e) {
-    if (e && e.name === "AbortError") return; // superseded — ignore
-    // best-effort: hide both sections on error
-    renderRelatedQueries([]);
-    renderRelatedContent("");
-  }
+  // Un-hide only if something SURVIVED sanitization. The old code tested the
+  // raw string before sanitizing, so an admin registering markup the allow-list
+  // strips entirely (e.g. only a <script>) left a visible, empty card.
+  host.classList.toggle("d-none", body.childNodes.length === 0);
 }
 
 /**
