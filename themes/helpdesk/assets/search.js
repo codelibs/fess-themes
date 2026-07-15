@@ -3,6 +3,7 @@ import * as api from "./api.js";
 import { t, languageLabel } from "./i18n.js";
 import { formatFileSize, formatDate, renderHighlightedSnippet, sanitizeHtml } from "./format.js";
 import { navigate } from "./router.js";
+import { answerHtml, cacheHref } from "./helpdesk.js";
 
 /** Guard: prevent duplicate event-listener registration on hot-reload. */
 let attached = false;
@@ -214,9 +215,61 @@ function buildResultCard(d, queryId, order) {
     thumbWrap.appendChild(thumbA);
     body.appendChild(thumbWrap);
   }
-  const description = el("div", { className: "description" });
-  description.innerHTML = renderHighlightedSnippet(d.content_description || d.digest || "");
-  body.appendChild(description);
+  // --- FAQ accordion -------------------------------------------------------
+  // The answer is already in hand: content_description ships with every hit, so
+  // expanding costs no request and no navigation — it only drops a CSS clamp.
+  // Assigned verbatim: it is escaped server-side with only <strong> restored.
+  const answerId = "answer" + idx0;
+  const html = answerHtml(d);
+
+  const wrap = el("div", { className: "hd-answer-wrap" });
+  const answer = el("div", { className: "hd-answer", attrs: { id: answerId } });
+  answer.innerHTML = html; // safe: escaped server-side, <strong> only
+  wrap.appendChild(answer);
+
+  // A doc with no extractable text yields "". Render neither an empty answer box
+  // nor a toggle that expands to nothing.
+  if (html !== "") {
+    const actions = el("div", { className: "hd-answer-actions" });
+
+    const toggle = el("button", {
+      className: "hd-answer-toggle d-none",
+      text: t("faq.expand_answer"),
+      attrs: { type: "button", "aria-expanded": "false", "aria-controls": answerId }
+    });
+    toggle.addEventListener("click", () => {
+      const expanded = toggle.getAttribute("aria-expanded") === "true";
+      toggle.setAttribute("aria-expanded", expanded ? "false" : "true");
+      toggle.textContent = expanded ? t("faq.expand_answer") : t("faq.collapse_answer");
+      answer.classList.toggle("hd-answer--clamped", expanded);
+    });
+    actions.appendChild(toggle);
+
+    // Full-fidelity fallback. Absent when the page has no cache (non-HTML, or
+    // over crawler.document.cache.max.size = 2.5MB) — the accordion still works.
+    const href = cacheHref(d, state.highlightParams, state.q);
+    if (href) {
+      actions.appendChild(el("a", {
+        className: "hd-answer-original",
+        text: t("faq.view_original"),
+        attrs: { href, target: "_blank", rel: "noopener" }
+      }));
+    }
+    wrap.appendChild(actions);
+
+    // Clamp and offer the toggle ONLY when the text actually overflows. Without
+    // this every card — including one-line answers — shows a "Show answer"
+    // control that does nothing visible. Measured after layout.
+    requestAnimationFrame(() => {
+      answer.classList.add("hd-answer--clamped");
+      if (answer.scrollHeight > answer.clientHeight + 1) {
+        toggle.classList.remove("d-none");
+      } else {
+        answer.classList.remove("hd-answer--clamped");
+      }
+    });
+  }
+  body.appendChild(wrap);
   li.appendChild(body);
 
   // --- div.site.text-truncate > (copy icon)? + cite ---
@@ -271,17 +324,6 @@ function buildResultCard(d, queryId, order) {
   if (sizeStr) {
     appendNbspSpacer();
     info.appendChild(document.createTextNode(sizeStr + " "));
-  }
-
-  // cache link
-  if (d.has_cache === "true" || d.has_cache === true) {
-    appendNbspSpacer();
-    const hlParam = state.highlightParams || ("&hq=" + encodeURIComponent(state.q || ""));
-    info.appendChild(el("a", {
-      className: "cache d-print-none",
-      text: t("result.cache"),
-      attrs: { href: `/cache/?docId=${encodeURIComponent(d.doc_id || "")}${hlParam}`, target: "_blank", rel: "noopener" }
-    }));
   }
 
   // similar docs link (theme extra; same .info row)

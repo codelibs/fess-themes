@@ -30,6 +30,7 @@
   --hd-error-subtle: #FEF2F2;
   --hd-info: #2563EB;
   --hd-info-subtle: #EFF6FF;
+  --hd-highlight-bg: #fff3bf;
 
   /* neutrals (zinc) */
   --hd-bg: #FAFAFA;               /* page background */
@@ -946,3 +947,55 @@ footer[role="contentinfo"] {
 /* ---- Focus management (showView focuses each view root) ---- */
 #page-root *:focus-visible { outline: 2px solid var(--hd-primary); outline-offset: 2px; }
 #page-root [tabindex="-1"]:focus, #page-root [tabindex="-1"]:focus-visible { outline: none; }
+
+/* --- FAQ accordion ------------------------------------------------------- */
+/* The wrap is one flex child: #result .body is display:flex, so appending the
+   answer and its actions directly would lay them out side by side. */
+.hd-answer-wrap { min-width: 0; flex: 1 1 auto; }
+
+/* Collapsed answers are clamped, not truncated: the full text is already in the
+   DOM, so expanding is instant. Visual only — Ctrl+F and screen readers still
+   reach the whole answer. */
+.hd-answer {
+  color: var(--hd-zinc-600);
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.hd-answer--clamped {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.hd-answer strong {
+  font-weight: 700;
+  background: var(--hd-highlight-bg);
+  padding: 0 .1em;
+}
+
+.hd-answer-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-top: .5rem;
+  flex-wrap: wrap;
+}
+
+.hd-answer-toggle {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: var(--hd-primary);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.hd-answer-toggle:focus-visible,
+.hd-answer-original:focus-visible {
+  outline: 2px solid var(--hd-primary);
+  outline-offset: 2px;
+}

@@ -14,8 +14,9 @@
  *
  * Deliberately NOT routed through format.js renderHighlightedSnippet(): that
  * escapes again, so a server-sent &amp; becomes &amp;amp; and renders as a
- * literal "&amp;". docuforge/assets/search.js:218 has that bug; this theme
- * shows far more of the field, so it would be far more visible.
+ * literal "&amp;". The theme this was forked from has that exact bug at
+ * assets/search.js:218; this theme shows far more of the field, so it would
+ * be far more visible.
  *
  * There is no digest fallback: getContentDescription() iterates hl_content AND
  * digest and only returns "" when both are blank, so `|| hit.digest` is dead code.
