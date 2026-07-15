@@ -29,7 +29,7 @@ process.exit(bad?1:0);
 ' "$DIR/i18n" || fail "i18n key parity"
 echo "OK: i18n parity"
 
-CNT=$(ls "$DIR/i18n" | grep -c '^messages\..*\.json$')
+CNT=$(ls "$DIR/i18n" 2>/dev/null | grep -c '^messages\..*\.json$' || true)
 [ "$CNT" -eq 16 ] || fail "expected 16 i18n bundles, found $CNT"
 
 # 2. no stray baseline paths, and no leftover baseline substring in SHIPPED files
@@ -57,7 +57,7 @@ done
 echo "OK: required element IDs present (${#REQUIRED_IDS[@]})"
 
 # 4. help bundles: 8 locales, identical section id sets.
-HCNT=$(ls "$DIR/help" | grep -c '\.json$')
+HCNT=$(ls "$DIR/help" 2>/dev/null | grep -c '\.json$' || true)
 [ "$HCNT" -eq 8 ] || fail "expected 8 help bundles, found $HCNT"
 node -e '
 const fs=require("fs"),path=require("path");
