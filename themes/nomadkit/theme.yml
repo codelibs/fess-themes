@@ -2,7 +2,7 @@ apiVersion: fess.codelibs.org/v1
 kind: StaticTheme
 name: nomadkit
 displayName: "NomadKit"
-version: "1.0.1"
+version: "1.0.2"
 author: "CodeLibs Project"
 description: "Free-spirited static theme for Fess. Self-contained (no Bootstrap), clean search UI with a persistent facet sidebar, built on the NomadKit design system — warm sand primary balanced by ocean and forest accents — over /api/v2/*."
 license: "Apache-2.0"
