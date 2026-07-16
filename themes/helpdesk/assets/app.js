@@ -36,13 +36,28 @@ function showView(id) {
     if (!el) continue;
     if (vid === id) {
       el.removeAttribute("hidden");
-      // H.2: move keyboard focus to the first rendered heading or the section
-      // root so screen readers announce the new view after a client-side
-      // navigation. Hidden headings must be skipped: #best-bet-title and
-      // #home-categories-title sit inside .d-none wrappers until their widget
-      // has content, and focus() on a display:none element is a silent no-op,
-      // which would leave the new view unannounced.
-      const heading = Array.from(el.querySelectorAll("h1, h2, h3")).find(isRendered);
+      // H.2: move keyboard focus to the first heading of the view's own static
+      // chrome, or the section root, so screen readers announce the new view
+      // after a client-side navigation. Two kinds of heading are not eligible:
+      //
+      // Response-dependent ones. showView() runs before the new response lands
+      // (see dispatch order below: showView → attach → runFromUrl), so #results
+      // still holds the previous query's result <h3>s, and #related-content /
+      // #home-categories still hold the previous best bet and category tiles.
+      // Focusing one announces stale text, and the re-render that follows —
+      // renderResults() clears #results, renderBestBet()/renderHomeCategories()
+      // re-hide their host — destroys the focused node and drops focus to
+      // <body>, restarting Tab order from the top of the document.
+      //
+      // Hidden ones. #best-bet-title ships .d-none until its widget has content,
+      // and focus() on a display:none element is a silent no-op, which would
+      // leave the view unannounced. (Both of that heading's exclusions overlap
+      // today; keep the isRendered() guard for chrome added later.)
+      //
+      // results-view has no eligible heading and so focuses the section root,
+      // which is what the baseline theme this one was forked from does.
+      const heading = Array.from(el.querySelectorAll("h1, h2, h3"))
+        .find(h => isRendered(h) && !h.closest("#results, #related-content, #home-categories"));
       const target = heading || el;
       if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
       // Defer focus so the element is visible before receiving focus.
