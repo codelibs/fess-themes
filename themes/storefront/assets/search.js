@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import * as api from "./api.js";
 import { t, languageLabel, getLocale } from "./i18n.js";
-import { formatFileSize, formatDate, renderHighlightedSnippet, sanitizeHtml } from "./format.js";
+import { sanitizeHtml } from "./format.js";
 import { navigate } from "./router.js";
-import { formatPrice, ratingStars, availabilityLabel } from "./storefront.js";
+import { formatPrice, ratingStars, availabilityLabel, hasImage } from "./storefront.js";
 
 /** Guard: prevent duplicate event-listener registration on hot-reload. */
 let attached = false;
@@ -13,14 +13,6 @@ let currentSearchAbort = null;
 
 /** AbortController for in-flight related-queries/content requests; null when idle. */
 let currentRelatedAbort = null;
-
-/**
- * Sticky flag: records whether this deployment has ever returned the `searcher`
- * provenance field, i.e. semantic/hybrid search is active. Once true it stays true.
- * Used to gate the quote-on-filter workaround so keyword-only deployments (which
- * never emit `searcher`) are left untouched — see runSearch / quoteQueryForFilter.
- */
-let semanticSeen = false;
 
 const state = {
   q: "",
@@ -35,44 +27,12 @@ const state = {
   exQ: [],             // string[] — extra ex_q clauses forwarded from advance search (ADV-2)
   geo: { lat: "", lon: "", distance: "" }, // GEO-1: geo search state
   requestedTime: 0,     // epoch ms of the most-recent search; used in /go/ click-log URL
-  highlightParams: "",  // server-supplied highlight_params string (e.g. "&hl.q=...&hl.fragsize=...")
-  viewMode: "grid",     // "grid" | "list" — grid (gallery tiles) is the storefront default; A4 wires the toggle UI
-  currentEnv: null      // last search response envelope; re-rendered on view-mode toggle (see setViewMode)
+  highlightParams: ""   // server-supplied highlight_params string (e.g. "&hl.q=...&hl.fragsize=...")
 };
-
-// A4: restore the persisted grid/list view mode (if any) before the first render —
-// module-top-level code runs once at import time, ahead of attach()/runFromUrl().
-// Invalid/missing storage silently keeps the "grid" default set above.
-try {
-  const storedViewMode = localStorage.getItem("storefront.view");
-  if (storedViewMode === "grid" || storedViewMode === "list") state.viewMode = storedViewMode;
-} catch (e) {
-  // localStorage unavailable (privacy mode / disabled storage) — keep the "grid" default.
-}
 
 // XSS-safety: this module builds every result-card DOM node with
 // document.createElement + textContent. No untrusted string is ever
 // passed to innerHTML.
-
-/**
- * Return `url` only when its scheme is in the http/https/ftp/ftps allowlist.
- * Any other scheme (e.g. javascript:, data:, vbscript:) returns "#" so that
- * setAttribute("href", safeHref(u)) can never inject executable content.
- */
-function safeHref(url) {
-  if (!url || typeof url !== "string") return "#";
-  try {
-    const u = new URL(url, location.href);
-    if (u.protocol === "https:" || u.protocol === "http:" ||
-        u.protocol === "ftp:" || u.protocol === "ftps:") {
-      return url;
-    }
-  } catch (e) {
-    // URL constructor failed — treat as unsafe.
-    return "#";
-  }
-  return "#";
-}
 
 function el(tag, opts) {
   const node = document.createElement(tag);
@@ -85,41 +45,11 @@ function el(tag, opts) {
 }
 
 /**
- * Copy text to the clipboard with a fallback for non-secure contexts.
- * navigator.clipboard is undefined on plain-HTTP non-localhost origins
- * (e.g. http://host:8080), so fall back to a hidden textarea + execCommand.
- *
- * @param {string} text
- * @returns {Promise<void>}
- */
-function copyToClipboard(text) {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    return navigator.clipboard.writeText(text);
-  }
-  return new Promise((resolve, reject) => {
-    try {
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.className = "chat-clipboard-fallback"; // off-screen, invisible
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      const ok = document.execCommand("copy");
-      document.body.removeChild(ta);
-      ok ? resolve() : reject(new Error("copy command rejected"));
-    } catch (e) {
-      reject(e);
-    }
-  });
-}
-
-/**
  * Build the /go/ click-tracking URL for a result link.
  *
  * Mirrors the JSP mousedown handler in src/main/webapp/js/search.js:111-127.
  * Returns "#" when the original URL is not in the http/https/ftp/ftps allowlist
- * so that safeHref semantics are preserved — the /go/ redirect would fail anyway
- * for unsafe schemes.
+ * — the /go/ redirect would fail anyway for unsafe schemes.
  *
  * @param {string} originalUrl - the document's url_link / url value
  * @param {string} docId       - document identifier
@@ -129,7 +59,7 @@ function copyToClipboard(text) {
  * @returns {string} the /go/ redirect URL, or "#" for unsafe schemes
  */
 function buildGoUrl(originalUrl, docId, queryId, order, rt) {
-  // Validate scheme — same rules as safeHref; only build /go/ for safe schemes.
+  // Validate scheme — only build /go/ for the http/https/ftp/ftps allowlist.
   if (!originalUrl || typeof originalUrl !== "string") return "#";
   try {
     const u = new URL(originalUrl, location.href);
@@ -153,194 +83,6 @@ function buildGoUrl(originalUrl, docId, queryId, order, rt) {
   }
 
   return goUrl;
-}
-
-/**
- * Return the plain-text title for a result document, stripping any
- * server-injected highlight markup (<strong>/<em>) from content_title.
- * Safe to use in aria-label and other text-only contexts.
- *
- * @param {Object} d - result document object
- * @returns {string}
- */
-function plainTitle(d) {
-  const raw = d.content_title || d.title || d.url || "";
-  return String(raw).replace(/<\/?(?:strong|em)>/g, "");
-}
-
-function buildResultCard(d, queryId, order) {
-  // Tag-parity with searchResults.jsp result item:
-  //   li#result{n}
-  //     h3.title.text-truncate > a.link[data-uri,data-id,data-order]
-  //     div.body > (div.me-3 > a.link.d-none.d-sm-flex > img.thumbnail)? + div.description
-  //     div.site.text-truncate > (i.far.fa-copy.url-copy)? + cite
-  //     div.more > a
-  //     div.info > date + (size) + (cache)
-  const cfg = api.getConfig() || {};
-  const features = cfg.features || {};
-  const idx0 = order - 1;
-
-  const li = el("li", {
-    attrs: { id: "result" + idx0 },
-    dataset: { docId: d.doc_id || "", queryId: queryId || "" }
-  });
-
-  // Build /go/ URL so click-logging + server-side redirect work for all click types.
-  const originalUrl = d.url_link || d.url || "";
-  const goHref = buildGoUrl(originalUrl, d.doc_id, queryId, order, state.requestedTime);
-
-  // --- h3.title > a.link ---
-  const h3 = el("h3", { className: "title text-truncate" });
-  const a = el("a", {
-    className: "link",
-    attrs: {
-      href: goHref,
-      "data-uri": safeHref(originalUrl) !== "#" ? originalUrl : "",
-      "data-id": d.doc_id || "",
-      "data-order": String(idx0),
-      title: safeHref(originalUrl) !== "#" ? originalUrl : ""
-    }
-  });
-  if (d.content_title) {
-    a.innerHTML = renderHighlightedSnippet(d.content_title);
-  } else {
-    a.textContent = d.title || d.url || "";
-  }
-  h3.appendChild(a);
-  li.appendChild(h3);
-
-  // --- div.body > (thumbnail)? + div.description ---
-  const body = el("div", { className: "body" });
-  if (d.thumbnail && features.thumbnail_enabled) {
-    const thumbWrap = el("div", { className: "me-3" });
-    const thumbA = el("a", {
-      className: "link d-none d-sm-flex",
-      attrs: { href: goHref, "aria-hidden": "true", tabindex: "-1" }
-    });
-    const img = document.createElement("img");
-    img.className = "thumbnail";
-    img.setAttribute("loading", "lazy");
-    img.setAttribute("alt", "");
-    img.setAttribute("src",
-      "/thumbnail/?docId=" + encodeURIComponent(d.doc_id || "") +
-      "&queryId=" + encodeURIComponent(queryId || ""));
-    img.addEventListener("error", () => { thumbWrap.classList.add("d-none"); });
-    thumbA.appendChild(img);
-    thumbWrap.appendChild(thumbA);
-    body.appendChild(thumbWrap);
-  }
-  const description = el("div", { className: "description" });
-  description.innerHTML = renderHighlightedSnippet(d.content_description || d.digest || "");
-  body.appendChild(description);
-  li.appendChild(body);
-
-  // --- div.site.text-truncate > (copy icon)? + cite ---
-  const site = el("div", { className: "site text-truncate" });
-  if (features.clipboard_copy_icon) {
-    const rawUrl = d.url_link || d.url || "";
-    const copyIcon = el("i", {
-      className: "far fa-copy url-copy d-print-none",
-      attrs: { "aria-hidden": "true", "data-clipboard-text": rawUrl, role: "button", "aria-label": t("result.copy_url") + ": " + rawUrl }
-    });
-    copyIcon.addEventListener("click", () => {
-      copyToClipboard(rawUrl).then(() => {
-        // JSP parity (js/search.js): swap the copy icon to a green checkmark for ~2s.
-        copyIcon.classList.remove("url-copy", "far", "fa-copy");
-        copyIcon.classList.add("url-copied", "fas", "fa-check");
-        copyIcon.setAttribute("aria-label", t("result.copied"));
-        setTimeout(() => {
-          copyIcon.classList.remove("url-copied", "fas", "fa-check");
-          copyIcon.classList.add("url-copy", "far", "fa-copy");
-          copyIcon.setAttribute("aria-label", t("result.copy_url") + ": " + rawUrl);
-        }, 2000);
-      }).catch(() => { /* clipboard not available */ });
-    });
-    site.appendChild(copyIcon);
-    // JSP has whitespace between the copy icon and the cite — keep them from touching.
-    site.appendChild(document.createTextNode(" "));
-  }
-  site.appendChild(el("cite", { text: d.site_path || d.site || d.url || "" }));
-  li.appendChild(site);
-
-  // --- div.more > a (hidden on desktop via #result .more{display:none}) ---
-  const more = el("div", { className: "more" });
-  more.appendChild(el("a", {
-    text: t("labels.search_result_more"),
-    attrs: { href: "#result" + idx0, "aria-label": t("labels.search_result_more") + " - " + plainTitle(d) }
-  }));
-  li.appendChild(more);
-
-  // --- div.info > date + (size) + (cache) + (similar) + (favorite) ---
-  const info = el("div", { className: "info" });
-  const dateStr = formatDate(d.last_modified || d.created);
-  if (dateStr) info.appendChild(document.createTextNode(dateStr + " "));
-
-  const appendNbspSpacer = () => {
-    info.appendChild(el("div", { className: "d-sm-none" }));
-    const sp = el("span", { className: "d-none d-sm-inline-block" });
-    sp.appendChild(document.createTextNode(" "));
-    info.appendChild(sp);
-  };
-
-  const sizeStr = formatFileSize(d.content_length);
-  if (sizeStr) {
-    appendNbspSpacer();
-    info.appendChild(document.createTextNode(sizeStr + " "));
-  }
-
-  // cache link
-  if (d.has_cache === "true" || d.has_cache === true) {
-    appendNbspSpacer();
-    const hlParam = state.highlightParams || ("&hq=" + encodeURIComponent(state.q || ""));
-    info.appendChild(el("a", {
-      className: "cache d-print-none",
-      text: t("result.cache"),
-      attrs: { href: `/cache/?docId=${encodeURIComponent(d.doc_id || "")}${hlParam}`, target: "_blank", rel: "noopener" }
-    }));
-  }
-
-  // similar docs link (theme extra; same .info row)
-  const simCount = Number(d.similar_docs_count);
-  if (simCount > 1) {
-    appendNbspSpacer();
-    const simLink = el("a", {
-      className: "similar d-print-none",
-      text: t("result.similar", { count: simCount }),
-      attrs: { href: "#" }
-    });
-    simLink.addEventListener("click", ev => {
-      ev.preventDefault();
-      state.sdh = d.similar_docs_hash || d.doc_id || "";
-      state.start = 0;
-      runSearch();
-    });
-    info.appendChild(simLink);
-  }
-
-  // favorite button (theme extra; same .info row). Config flag is features.user_favorite
-  // (searchResults.jsp favoriteSupport / FessConfig.isUserFavorite), not features.favorite.
-  // The star + favorite count are shown to EVERYONE (guests included) when the feature is on
-  // — matching the legacy searchResults.jsp, which renders the star purely on ${favoriteSupport}
-  // — so the count acts as a popularity / social-proof signal. Adding a favorite, however,
-  // requires login: a guest click hits FavoritePostHandler's AUTH_REQUIRED gate and
-  // toggleFavorite() opens the login modal. So gate display only on features.user_favorite; do
-  // NOT add an api.isAuthenticated() check here (that would hide the count from guests).
-  if (features.user_favorite) {
-    // Spacer before the star (searchResults.jsp puts an &nbsp; before the favorite).
-    appendNbspSpacer();
-    const favBtn = el("button", {
-      className: "btn btn-link btn-sm favorite-btn p-0",
-      attrs: { type: "button", "aria-pressed": "false", "aria-label": t("result.favorite_add") }
-    });
-    const favIcon = el("i", { className: "far fa-star", attrs: { "aria-hidden": "true" } });
-    favBtn.appendChild(favIcon);
-    favBtn.dataset.count = String(d.favorite_count || 0);
-    setFavoriteUi(favBtn, false, d.favorite_count || 0);
-    info.appendChild(favBtn);
-  }
-
-  li.appendChild(info);
-  return li;
 }
 
 // --- Gallery tile (grid-mode result rendering) ---------------------------------
@@ -379,10 +121,15 @@ function attachThumb(imgEl, docId, queryId, filetype) {
   imgEl.addEventListener("error", () => {
     if (attempt >= THUMB_RETRY_MS.length) {
       const tile = imgEl.closest(".tile");
+      // Replace the <img> with the fallback icon in its own parent (the
+      // tile__link anchor), not unconditionally at the tile's first child —
+      // the image lives inside the go-URL anchor, and inserting the icon
+      // outside it would silently drop it from the tile's click target.
+      const parent = imgEl.parentNode;
       imgEl.remove();
       if (tile) {
         tile.classList.add("tile--noimg");
-        tile.insertBefore(buildTileIcon(filetype), tile.firstChild);
+        if (parent) parent.insertBefore(buildTileIcon(filetype), parent.firstChild);
       }
       return;
     }
@@ -420,8 +167,19 @@ function buildTileIcon(filetype) {
   });
 }
 
-function buildStars(stars) {
-  const wrap = el("span", { className: "sf-stars" });
+/**
+ * @param {Object} stars - breakdown from ratingStars() ({full, half, empty})
+ * @param {number} rating - the raw doc.rating value the breakdown was derived
+ *   from; reported verbatim (rounded to 1 decimal) in the aria-label rather
+ *   than reconstructed from the half-star-rounded `stars` breakdown, so a
+ *   screen-reader user gets the exact rating, not the visual approximation.
+ */
+function buildStars(stars, rating) {
+  const label = t("product.rating_label", { rating: Math.round(Number(rating) * 10) / 10 });
+  // role="img": the row is a set of decorative icon spans standing in for a
+  // single piece of information (the rating), so it is exposed as one unit
+  // with a text alternative — same pattern as an <img alt>.
+  const wrap = el("span", { className: "sf-stars", attrs: { role: "img", "aria-label": label } });
   for (let i = 0; i < stars.full; i++) wrap.appendChild(el("span", { className: "sf-star sf-star--full" }));
   if (stars.half) wrap.appendChild(el("span", { className: "sf-star sf-star--half" }));
   for (let i = 0; i < stars.empty; i++) wrap.appendChild(el("span", { className: "sf-star sf-star--empty" }));
@@ -429,11 +187,18 @@ function buildStars(stars) {
 }
 
 /**
- * Build one grid-mode result tile: a thumbnail (gated on
- * window.__storefrontThumbEnabled && doc.thumbnail) or a typed fallback card, plus a
- * product card body (name, price, rating, availability, brand). XSS-safe:
- * every string is set via textContent (via the el() helper or direct
- * assignment) — never innerHTML.
+ * Build one grid-mode result tile: a thumbnail (gated via hasImage(), i.e.
+ * window.__storefrontThumbEnabled && doc.thumbnail) or a typed fallback card,
+ * plus a product card body (name, price, rating, availability, brand).
+ * XSS-safe: every string is set via textContent (via the el() helper or
+ * direct assignment) — never innerHTML.
+ *
+ * The image and product name are wrapped in a single go-URL anchor — the
+ * tile's only activation path (no lightbox, no click-delegation elsewhere).
+ * Built the same way the (removed) list card built its title anchor: through
+ * buildGoUrl(), never a bare doc.url, so the /go/ redirect still records
+ * click_count. Price/rating/availability/brand stay outside the anchor, as
+ * informational meta rather than part of the click target.
  *
  * @param {Object} doc - result document (env.data[i])
  * @param {string} queryId - env.query_id from the search response
@@ -449,19 +214,29 @@ function buildGalleryTile(doc, queryId, rank) {
   // be visible to the user/screen reader verbatim otherwise).
   const titleText = String(doc.content_title || doc.filename || doc.url_link || "").replace(/<\/?(?:strong|em)>/g, "");
 
-  const thumbOk = window.__storefrontThumbEnabled === true && !!doc.thumbnail;
+  const originalUrl = doc.url_link || doc.url || "";
+  const goHref = buildGoUrl(originalUrl, doc.doc_id, queryId, rank, state.requestedTime);
+  // No tabIndex/role="button" here — that was lightbox scaffolding on the <li>.
+  // An <a href> is focusable and activatable by default.
+  const link = el("a", { className: "tile__link", attrs: { href: goHref } });
+
+  const thumbOk = hasImage(doc, { thumbnail_enabled: window.__storefrontThumbEnabled === true });
   if (thumbOk) {
     const img = document.createElement("img");
     img.className = "tile__img";
     // No loading="lazy" here — attachThumb()'s IntersectionObserver already
     // gates when the request starts, so the native attribute is redundant.
-    img.alt = titleText;
-    li.appendChild(img);
+    // alt="" (decorative): the tile__title span right below already supplies
+    // the anchor's accessible name — a repeated alt would double-announce it.
+    img.alt = "";
+    link.appendChild(img);
     attachThumb(img, doc.doc_id, queryId, doc.filetype);
   } else {
     li.classList.add("tile--noimg");
-    li.appendChild(buildTileIcon(doc.filetype));
+    link.appendChild(buildTileIcon(doc.filetype));
   }
+  link.appendChild(el("span", { className: "tile__title", text: titleText }));
+  li.appendChild(link);
 
   // Product card body — XSS-safe throughout (textContent via el()).
   //
@@ -471,14 +246,13 @@ function buildGalleryTile(doc, queryId, rank) {
   // product page is noise. This omission is the theme's whole point — do not
   // "fix" it back by adding renderHighlightedSnippet here.
   const cap = el("div", { className: "tile__cap" });
-  cap.appendChild(el("span", { className: "tile__title", text: titleText }));
 
   const price = formatPrice(doc, getLocale());
   if (price) cap.appendChild(el("span", { className: "sf-price", text: price }));
 
   // null rating -> no row at all, rather than five empty stars implying zero.
   const stars = ratingStars(doc);
-  if (stars) cap.appendChild(buildStars(stars));
+  if (stars) cap.appendChild(buildStars(stars, doc.rating));
 
   const avail = availabilityLabel(doc);
   if (avail) {
@@ -707,20 +481,16 @@ function renderOptionsBar() {
 }
 
 /**
- * Recompute #results' className from state.viewMode. Shared by renderResults (which
- * calls it on every (re)populate) and setViewMode (which calls it immediately, even
- * when there is no state.currentEnv yet to re-render — e.g. on startup before the
- * first search). #results keeps its "col-md-8" sizing in both modes so it still sits
- * correctly next to the facet sidebar; ".gallery"/".list-unstyled" establish the tile
- * grid vs plain list layout (styles.css), and the "results--grid"/"results--list"
- * companions are the A4 toggle-control + list-row-spacing CSS hook.
+ * Recompute #results' className. Grid-only (a result is a product, not a
+ * document — there is no list mode to branch on): the "gallery"/"col-md-8"
+ * pair establishes the tile grid layout (styles.css) and keeps #results
+ * sized correctly next to the facet sidebar. Called by renderResults on
+ * every (re)populate.
  */
 function applyResultsClassName() {
   const list = document.getElementById("results");
   if (!list) return;
-  list.className = (state.viewMode === "grid")
-    ? "gallery results--grid col-md-8"
-    : "list-unstyled results--list col-md-8";
+  list.className = "gallery results--grid col-md-8";
 }
 
 function renderResults(env) {
@@ -728,18 +498,11 @@ function renderResults(env) {
   const meta = document.getElementById("results-meta");
   const empty = document.getElementById("empty-state");
   list.innerHTML = "";   // empty-string literal — clears children, no untrusted data
-  // Grid (gallery tiles) vs list (semanticlens result cards) — driven by the #view-toggle
-  // buttons via setViewMode() (A4); state.viewMode defaults to "grid" (see state
-  // declaration), restored from localStorage("storefront.view") at module load.
   applyResultsClassName();
   const data = env.data || [];
-  // Cache the last full envelope so setViewMode() can re-render (grid <-> list)
-  // without re-issuing the search.
-  state.currentEnv = env;
   // Gate gallery-tile thumbnail rendering on the boot config's feature flag. Read
   // lazily here (rather than at app boot) because search.js never calls
-  // api.init() itself — see buildResultCard's own `api.getConfig()` read above
-  // for the same lazy-config-read convention already used in this file.
+  // api.init() itself.
   const cfg = api.getConfig() || {};
   window.__storefrontThumbEnabled = !!(cfg.features && cfg.features.thumbnail_enabled);
   // C.2: always refresh similar-doc banner (hides when state.sdh is cleared)
@@ -774,13 +537,9 @@ function renderResults(env) {
   if (queryIdEl) queryIdEl.value = env.query_id || "";
   const rtEl = document.getElementById("rt");
   if (rtEl) rtEl.value = String(state.requestedTime || "");
-  // Pass 1-based order/rank so buildResultCard/buildGalleryTile can embed it in
-  // the /go/ URL and the data-rank attribute respectively.
-  if (state.viewMode === "grid") {
-    data.forEach((d, idx) => list.appendChild(buildGalleryTile(d, env.query_id, idx + 1)));
-  } else {
-    data.forEach((d, idx) => list.appendChild(buildResultCard(d, env.query_id, idx + 1)));
-  }
+  // Pass 1-based order/rank so buildGalleryTile can embed it in the /go/ URL
+  // and the data-rank attribute respectively.
+  data.forEach((d, idx) => list.appendChild(buildGalleryTile(d, env.query_id, idx + 1)));
   list.querySelectorAll("li[data-doc-id]").forEach(li => {
     const btn = li.querySelector(".favorite-btn");
     const docId = li.dataset.docId;
@@ -797,43 +556,6 @@ function renderResults(env) {
 }
 
 /**
- * Sync the #view-toggle buttons' aria-pressed with state.viewMode. Selector is scoped
- * to [data-view] rather than a hardcoded pair of ids so it degrades gracefully if a
- * later task (A7) adds more view modes/buttons.
- */
-function updateViewToggleButtons() {
-  document.querySelectorAll("#view-toggle [data-view]").forEach(btn => {
-    btn.setAttribute("aria-pressed", btn.dataset.view === state.viewMode ? "true" : "false");
-  });
-}
-
-/**
- * Switch between the grid (gallery tiles) and list (semanticlens result-card) result
- * views (A4). Persists the choice to localStorage so it survives reloads/navigation,
- * and — unlike a plain re-render — updates the toggle buttons and #results' class
- * immediately even when there is nothing to re-render yet (e.g. called during startup
- * restore, before the first search has populated state.currentEnv).
- *
- * @param {("grid"|"list")} mode
- */
-export function setViewMode(mode) {
-  if (mode !== "grid" && mode !== "list") return;
-  state.viewMode = mode;
-  applyResultsClassName();
-  updateViewToggleButtons();
-  try {
-    localStorage.setItem("storefront.view", mode);
-  } catch (e) {
-    // localStorage unavailable (privacy mode / disabled storage) — the in-memory
-    // state.viewMode still switches for the rest of this session.
-  }
-  // Re-render the last results in the new mode. No-op before the first search
-  // (state.currentEnv is null) — applyResultsClassName()/updateViewToggleButtons()
-  // above already put the (still-empty) container and buttons in the right state.
-  if (state.currentEnv) renderResults(state.currentEnv);
-}
-
-/**
  * Toggle the in-flight search loading indicator (#search-loading).
  * Gives sighted users visible feedback during a /search request; cache and chat
  * already have loading states, search did not.
@@ -841,44 +563,6 @@ export function setViewMode(mode) {
 function showSearchLoading(show) {
   const el = document.getElementById("search-loading");
   if (el) el.classList.toggle("d-none", !show);
-}
-
-/**
- * True when the request carries at least one field/range filter — the same merged
- * filter state runSearch emits (facet query views, advance ex_q clauses, field
- * filters, label facets). Used (only when semanticSeen, i.e. semantic search is
- * active) to decide whether the free-text query must be collapsed to a single
- * quoted phrase (see quoteQueryForFilter).
- */
-function hasActiveFilter() {
-  return (Array.isArray(state.facetQueries) && state.facetQueries.length > 0)
-    || (Array.isArray(state.exQ) && state.exQ.length > 0)
-    || Object.values(state.fields).some(v => v && v.length)
-    || Object.values(state.facets).some(v => v && v.length);
-}
-
-/**
- * Quote-on-filter transform. Applied only when semanticSeen (semantic/hybrid search
- * is active) and a filter is active: a multi-word free-text query must then be sent as
- * a single quoted phrase so the semantic plugin collapses it to one neural clause —
- * otherwise the duplicate content_vector inner-hits names trip an HTTP 400
- * (`[inner_hits] already contains an entry for key [content_vector]`). This only
- * replicates what the plugin already does for the unfiltered case, so it is
- * forward-safe. Keyword-only deployments never reach here (semanticSeen stays false),
- * so their multi-word + filter queries are unchanged — parity with other themes.
- * Left untouched when empty, already a single quoted phrase, a user-authored advanced
- * query (field:/operators), or a single token.
- *
- * @param {string} q
- * @returns {string}
- */
-function quoteQueryForFilter(q) {
-  const s = (q || "").trim();
-  if (!s) return q;                                            // empty browse-by-filter
-  if (/^".*"$/.test(s)) return q;                              // already one quoted phrase
-  if (/[:"()]/.test(s) || /\b(AND|OR|NOT)\b/.test(s)) return q; // user advanced query
-  if (!/\s/.test(s)) return q;                                 // single token
-  return '"' + s.replace(/"/g, '\\"') + '"';                   // multi-word + filter
 }
 
 async function runSearch() {
@@ -898,11 +582,7 @@ async function runSearch() {
   if (prevErr) prevErr.classList.add("d-none");
   showSearchLoading(true);
   try {
-    // Quote-on-filter: when semantic/hybrid search is active AND any filter is active,
-    // send a multi-word query as a single quoted phrase so the semantic branch stays one
-    // neural clause (avoids HTTP 400). Gated on semanticSeen so keyword-only deployments
-    // are unaffected (no exact-phrase collapse) — parity with other themes.
-    const params = { q: (semanticSeen && hasActiveFilter()) ? quoteQueryForFilter(state.q) : state.q, start: state.start, num: state.num };
+    const params = { q: state.q, start: state.start, num: state.num };
     if (state.sort) params.sort = state.sort;
     // state.lang is string[] — send as repeated lang= params (empty array → omit).
     if (Array.isArray(state.lang) && state.lang.length > 0) {
@@ -1685,16 +1365,8 @@ export function attach() {
   if (urlQ && input) { input.value = urlQ; state.q = urlQ; }
   if (!urlQ) loadPopularWords();
 
-  // A4: grid/list view-toggle buttons (#view-toggle [data-view], static markup in
-  // index.html). No inline handlers (CSP) — wired here via addEventListener, same
-  // convention as the rest of attach(). Sync the buttons + #results class with the
-  // already-restored state.viewMode (see the localStorage restore at module load)
-  // right away, since the HTML's own aria-pressed defaults only cover the "grid"
-  // default and may not match a restored "list" mode.
-  document.querySelectorAll("#view-toggle [data-view]").forEach(btn => {
-    btn.addEventListener("click", () => setViewMode(btn.dataset.view));
-  });
-  updateViewToggleButtons();
+  // Grid-only: make sure #results carries its class before the first search
+  // (the static markup already matches, but this keeps attach() authoritative).
   applyResultsClassName();
 }
 
@@ -2352,4 +2024,4 @@ export const _state = state;
 // renderPopularWords is exported inline at its declaration (line ~1515); do NOT
 // re-export it here — a duplicate export is a module-level SyntaxError that aborts
 // the entire SPA bootstrap (app.js never runs, so the home view never renders).
-export { runSearch, el, buildResultCard, buildGoUrl, renderSearchOptions, syncSearchInputs };
+export { runSearch, el, buildGoUrl, renderSearchOptions, syncSearchInputs };

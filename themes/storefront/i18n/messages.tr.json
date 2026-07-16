@@ -362,5 +362,6 @@
   "gallery.grid": "Izgara görünümü",
   "gallery.list": "Liste görünümü",
   "product.in_stock": "Stokta",
-  "product.out_of_stock": "Stokta yok"
+  "product.out_of_stock": "Stokta yok",
+  "product.rating_label": "{rating} out of 5"
 }

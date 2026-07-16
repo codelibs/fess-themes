@@ -362,5 +362,6 @@
   "gallery.grid": "Vista de cuadrícula",
   "gallery.list": "Vista de lista",
   "product.in_stock": "En stock",
-  "product.out_of_stock": "Agotado"
+  "product.out_of_stock": "Agotado",
+  "product.rating_label": "{rating} out of 5"
 }

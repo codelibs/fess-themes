@@ -362,5 +362,6 @@
   "gallery.grid": "Visualização em grade",
   "gallery.list": "Visualização em lista",
   "product.in_stock": "Em estoque",
-  "product.out_of_stock": "Fora de estoque"
+  "product.out_of_stock": "Fora de estoque",
+  "product.rating_label": "{rating} out of 5"
 }

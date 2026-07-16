@@ -11,18 +11,21 @@
  * hide that, so we render nothing.
  */
 export function formatPrice(hit, locale) {
-  if (!hit || typeof hit.price !== "number" || !Number.isFinite(hit.price)) return "";
+  if (!hit || typeof hit.price !== "number" || !Number.isFinite(hit.price) || hit.price < 0) return "";
   return "¥" + hit.price.toLocaleString(locale || "ja", { maximumFractionDigits: 0 });
 }
 
 /**
  * Star breakdown rounded to the nearest half, clamped to 0..5.
  * Five slots total: a half star occupies one, so full + (half?1:0) + empty === 5.
- * Returns null when there is no rating, so the card can omit the row entirely
- * rather than render five empty stars and imply a zero score.
+ * Returns null when there is no rating (or the rating is negative — invalid
+ * data, not a real zero), so the card can omit the row entirely rather than
+ * render five empty stars and imply a zero score. A rating of exactly 0 is a
+ * real, legitimate score and must still render five empty stars — only a
+ * negative value is treated as absent.
  */
 export function ratingStars(hit) {
-  if (!hit || typeof hit.rating !== "number" || !Number.isFinite(hit.rating)) return null;
+  if (!hit || typeof hit.rating !== "number" || !Number.isFinite(hit.rating) || hit.rating < 0) return null;
   const clamped = Math.min(5, Math.max(0, hit.rating));
   const halves = Math.round(clamped * 2);
   const full = Math.floor(halves / 2);

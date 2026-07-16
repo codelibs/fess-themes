@@ -362,5 +362,6 @@
   "gallery.grid": "Vue en grille",
   "gallery.list": "Vue en liste",
   "product.in_stock": "En stock",
-  "product.out_of_stock": "Rupture de stock"
+  "product.out_of_stock": "Rupture de stock",
+  "product.rating_label": "{rating} out of 5"
 }

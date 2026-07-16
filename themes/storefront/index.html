@@ -257,19 +257,6 @@
             <p id="results-status" aria-live="polite" aria-atomic="true"></p>
             <div id="results-popular-words" class="d-none text-muted small" aria-live="polite"></div>
           </div>
-          <!-- Grid/list view toggle (A4, theme extra — no JSP parity). Buttons carry
-               data-view + aria-pressed; both are kept in sync with state.viewMode by
-               search.js's setViewMode()/updateViewToggleButtons() (initial values here
-               are the "grid is default" fallback, overridden on load from the
-               localStorage("storefront.view") restore). No inline handlers — click
-               listeners are wired via addEventListener in search.js (CSP: script-src
-               'self'). -->
-          <div class="col-auto">
-            <div class="view-toggle" id="view-toggle" role="group" aria-label="Result view">
-              <button type="button" class="view-toggle__btn" data-view="grid" aria-pressed="true" data-i18n-aria-label="gallery.grid" aria-label="Grid view"><i class="fa fa-th" aria-hidden="true"></i></button>
-              <button type="button" class="view-toggle__btn" data-view="list" aria-pressed="false" data-i18n-aria-label="gallery.list" aria-label="List view"><i class="fa fa-list" aria-hidden="true"></i></button>
-            </div>
-          </div>
         </div>
 
         <!-- Mobile facet toggle (parity searchResults.jsp div.d-md-none.mb-2). -->
@@ -302,10 +289,9 @@
           <input type="hidden" id="queryId" value="">
           <input type="hidden" id="rt" value="">
           <aside class="col-md-4 d-none d-md-block" id="facet-body"></aside>
-          <!-- <ul>: search.js toggles className between "gallery results--grid" (grid,
-               default) and "list-unstyled results--list" (list, A4 — driven by the
-               #view-toggle buttons above) and repopulates children on every render;
-               the static tag/attrs here just need valid initial list semantics. -->
+          <!-- <ul>: grid-only gallery of product tiles (search.js buildGalleryTile()),
+               repopulated on every render; class stays "gallery results--grid col-md-8"
+               (search.js applyResultsClassName()). -->
           <ul class="gallery results--grid col-md-8" id="results" role="list"></ul>
         </div>
 

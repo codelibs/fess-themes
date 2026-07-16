@@ -362,5 +362,6 @@
   "gallery.grid": "Vista a griglia",
   "gallery.list": "Vista a elenco",
   "product.in_stock": "Disponibile",
-  "product.out_of_stock": "Esaurito"
+  "product.out_of_stock": "Esaurito",
+  "product.rating_label": "{rating} out of 5"
 }

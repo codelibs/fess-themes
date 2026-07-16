@@ -362,5 +362,6 @@
   "gallery.grid": "Rasteransicht",
   "gallery.list": "Listenansicht",
   "product.in_stock": "Auf Lager",
-  "product.out_of_stock": "Nicht auf Lager"
+  "product.out_of_stock": "Nicht auf Lager",
+  "product.rating_label": "{rating} out of 5"
 }

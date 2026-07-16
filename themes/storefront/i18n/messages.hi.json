@@ -362,5 +362,6 @@
   "gallery.grid": "ग्रिड दृश्य",
   "gallery.list": "सूची दृश्य",
   "product.in_stock": "स्टॉक में उपलब्ध",
-  "product.out_of_stock": "स्टॉक समाप्त"
+  "product.out_of_stock": "स्टॉक समाप्त",
+  "product.rating_label": "{rating} out of 5"
 }

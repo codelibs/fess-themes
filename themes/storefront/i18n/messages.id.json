@@ -362,5 +362,6 @@
   "gallery.grid": "Tampilan kisi",
   "gallery.list": "Tampilan daftar",
   "product.in_stock": "Tersedia",
-  "product.out_of_stock": "Stok habis"
+  "product.out_of_stock": "Stok habis",
+  "product.rating_label": "{rating} out of 5"
 }

@@ -362,5 +362,6 @@
   "gallery.grid": "網格檢視",
   "gallery.list": "清單檢視",
   "product.in_stock": "現貨",
-  "product.out_of_stock": "缺貨"
+  "product.out_of_stock": "缺貨",
+  "product.rating_label": "{rating} out of 5"
 }

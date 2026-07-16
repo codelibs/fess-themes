@@ -362,5 +362,6 @@
   "gallery.grid": "グリッド表示",
   "gallery.list": "リスト表示",
   "product.in_stock": "在庫あり",
-  "product.out_of_stock": "在庫切れ"
+  "product.out_of_stock": "在庫切れ",
+  "product.rating_label": "5つ星のうち{rating}"
 }

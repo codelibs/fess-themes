@@ -362,5 +362,6 @@
   "gallery.grid": "Вид сеткой",
   "gallery.list": "Вид списком",
   "product.in_stock": "В наличии",
-  "product.out_of_stock": "Нет в наличии"
+  "product.out_of_stock": "Нет в наличии",
+  "product.rating_label": "{rating} out of 5"
 }

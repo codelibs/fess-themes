@@ -362,5 +362,6 @@
   "gallery.grid": "Widok siatki",
   "gallery.list": "Widok listy",
   "product.in_stock": "Dostępny",
-  "product.out_of_stock": "Niedostępny"
+  "product.out_of_stock": "Niedostępny",
+  "product.rating_label": "{rating} out of 5"
 }

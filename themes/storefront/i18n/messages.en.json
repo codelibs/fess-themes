@@ -362,5 +362,6 @@
   "gallery.grid": "Grid view",
   "gallery.list": "List view",
   "product.in_stock": "In Stock",
-  "product.out_of_stock": "Out of Stock"
+  "product.out_of_stock": "Out of Stock",
+  "product.rating_label": "{rating} out of 5"
 }

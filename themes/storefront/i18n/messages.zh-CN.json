@@ -362,5 +362,6 @@
   "gallery.grid": "网格视图",
   "gallery.list": "列表视图",
   "product.in_stock": "现货",
-  "product.out_of_stock": "缺货"
+  "product.out_of_stock": "缺货",
+  "product.rating_label": "{rating} out of 5"
 }

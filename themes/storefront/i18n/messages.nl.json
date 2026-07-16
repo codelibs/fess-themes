@@ -362,5 +362,6 @@
   "gallery.grid": "Rasterweergave",
   "gallery.list": "Lijstweergave",
   "product.in_stock": "Op voorraad",
-  "product.out_of_stock": "Niet op voorraad"
+  "product.out_of_stock": "Niet op voorraad",
+  "product.rating_label": "{rating} out of 5"
 }
