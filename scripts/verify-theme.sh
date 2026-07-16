@@ -33,15 +33,17 @@ CNT=$(ls "$DIR/i18n" 2>/dev/null | grep -c '^messages\..*\.json$' || true)
 [ "$CNT" -eq 16 ] || fail "expected 16 i18n bundles, found $CNT"
 
 # 2. no stray baseline paths, and no leftover baseline substring in SHIPPED files
-if grep -riIn "/themes/${BASELINE}/" "$DIR" >/dev/null 2>&1; then
-  grep -riIn "/themes/${BASELINE}/" "$DIR"; fail "stray /themes/${BASELINE}/ path"
+# Both checks skip DESIGN.md/README.md: those intentionally name the baseline to
+# document what the theme was forked from, paths included ("we replaced every
+# /themes/<baseline>/ path"). -F: the baseline is a fixed string, not a pattern.
+if grep -riIFn --exclude=DESIGN.md --exclude=README.md "/themes/${BASELINE}/" "$DIR" >/dev/null 2>&1; then
+  grep -riIFn --exclude=DESIGN.md --exclude=README.md "/themes/${BASELINE}/" "$DIR"; fail "stray /themes/${BASELINE}/ path"
 fi
 # Case-insensitive on purpose: the display spelling (e.g. "DocuForge") appears in
 # doc comments and theme.yml#displayName. The original check was case-sensitive,
 # so a copy could ship the baseline's brand in 15 files and still print PASS.
-# DESIGN.md/README.md intentionally reference the baseline → exclude them.
-if grep -riIn --exclude=DESIGN.md --exclude=README.md "$BASELINE" "$DIR" >/dev/null 2>&1; then
-  grep -riIn --exclude=DESIGN.md --exclude=README.md "$BASELINE" "$DIR"; fail "leftover '${BASELINE}' substring (any case) in a shipped file"
+if grep -riIFn --exclude=DESIGN.md --exclude=README.md "$BASELINE" "$DIR" >/dev/null 2>&1; then
+  grep -riIFn --exclude=DESIGN.md --exclude=README.md "$BASELINE" "$DIR"; fail "leftover '${BASELINE}' substring (any case) in a shipped file"
 fi
 echo "OK: no stray baseline paths/substrings (baseline=${BASELINE}, case-insensitive)"
 
@@ -75,9 +77,36 @@ process.exit(bad?1:0);
 ' "$DIR/help" || fail "help section id parity"
 echo "OK: help bundles (8, section ids match en.json)"
 
-# 5. stale-facet invariant in search.js
-for inv in 'state.facets = {}' 'state.facetQueries = \[\]' 'state.sdh = ""'; do
-  grep -Eq "$inv" "$DIR/assets/search.js" || fail "runFromUrl invariant missing: $inv"
+# 5. stale-facet invariant: runFromUrl() must reset every in-memory filter store,
+# or facets leak across navigations. The three resets also occur in
+# resetSearchState()/attach()/renderFacets(), so grepping the whole file stays
+# green even when runFromUrl() itself loses them — i.e. it cannot catch the very
+# regression it exists for. Slice the function body out first and assert on that.
+SEARCH_JS="$DIR/assets/search.js"
+[ -f "$SEARCH_JS" ] || fail "assets/search.js not found"
+# Top-level functions here are formatted with their closing brace at column 0, so
+# the body spans the declaration through the first such brace. Reaching the next
+# top-level declaration first means that convention broke and the slice would
+# silently swallow the following function (whose resets would mask the failure) —
+# exit 2 instead. exit 3 = declaration never found (renamed?).
+SLICE_RC=0
+BODY=$(awk '
+  /^(export )?(async )?function [A-Za-z_$]/ {
+    if (started) exit 2
+    if ($0 ~ /^(export )?(async )?function runFromUrl[[:space:]]*\(/) started=1
+  }
+  started { print; if ($0 ~ /^}$/) { done=1; exit 0 } }
+  END { if (!started) exit 3; if (!done) exit 2 }
+' "$SEARCH_JS") || SLICE_RC=$?
+# A check that matches nothing must fail loudly, never pass.
+[ "$SLICE_RC" -ne 3 ] || fail "runFromUrl() declaration not found in assets/search.js — invariant unverifiable"
+[ "$SLICE_RC" -eq 0 ] || fail "runFromUrl() body not terminated by a column-0 '}' in assets/search.js — invariant unverifiable"
+[ -n "$BODY" ] || fail "runFromUrl() body sliced empty from assets/search.js — invariant unverifiable"
+# Anchor each reset to the start of its line so a commented-out one ("// state.
+# facets = {}") no longer satisfies the check — that is a disabled reset, i.e.
+# the bug, not evidence against it.
+for inv in 'state\.facets = \{\}' 'state\.facetQueries = \[\]' 'state\.sdh = ""'; do
+  grep -Eq "^[[:space:]]*$inv" <<<"$BODY" || fail "runFromUrl() invariant missing: ${inv//\\/}"
 done
-echo "OK: stale-facet invariant intact"
+echo "OK: stale-facet invariant intact (checked inside runFromUrl(), $(printf '%s\n' "$BODY" | wc -l | tr -d ' ') lines)"
 echo "PASS: $NAME"
