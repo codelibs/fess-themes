@@ -195,9 +195,9 @@ literal `style="` attribute, and the bar widths are set with `setProperty("--bar
 `assets/format.js` (the HTML sanitizer) is shared core and carries the `DROP_WITH_CONTENT`
 guard, which drops raw-text elements whole instead of unwrapping them. Every theme in this
 repository carries the same copy, identical but for the per-theme comment on line 2. The
-bundled `bootstrap` reference theme in the `fess` repo currently lags: its copy has no
-`DROP_WITH_CONTENT` guard at all, so the themes here are ahead of it rather than identical
-to it.
+bundled `bootstrap` reference theme in the `fess` repo is the canonical source: since
+codelibs/fess#3187 (`76a5402`) its copy carries the same guard, and this theme's copy is
+byte-identical to it from line 3 on.
 
 **Port any change to it into every copy in the same PR; never overwrite one theme's copy
 with another's.** Nothing enforces this — CI checks locale bundles only.
