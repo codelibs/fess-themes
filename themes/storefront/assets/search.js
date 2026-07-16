@@ -3,7 +3,7 @@ import * as api from "./api.js";
 import { t, languageLabel, getLocale } from "./i18n.js";
 import { sanitizeHtml } from "./format.js";
 import { navigate } from "./router.js";
-import { formatPrice, ratingStars, availabilityLabel, hasImage } from "./storefront.js";
+import { formatPrice, ratingStars, availabilityLabel, hasImage, barWidths } from "./storefront.js";
 
 /** Guard: prevent duplicate event-listener registration on hot-reload. */
 let attached = false;
@@ -623,11 +623,19 @@ async function runSearch() {
       params["geo.location.point"] = state.geo.lat + "," + state.geo.lon;
       params["geo.location.distance"] = state.geo.distance;
     }
-    // Request only the cheap "label" field facet (still supports a label facet group
-    // when configured). Storefront renders a count-free filter sidebar whose options
-    // come from /api/v2/ui/config, so we no longer request facet.query counts — removing
-    // them also drops the "counts exclude semantic results" discomfort.
+    // Request the "label" field facet plus every configured facet-query view
+    // (timestamp / size / price bands / ...) so the sidebar can draw a count bar
+    // next to each option (SRCH-4 count bars). A partial, BM25-only count under a
+    // hybrid/semantic query can still under-report the true total, but a bar is
+    // only ever read relative to its own group, so it stays truthful even then —
+    // unlike a bare number, which invites over-reading. File type stays separate
+    // (cfg.filetype_options has no live counts) and is unaffected.
+    const cfgFacet = api.getConfig() || {};
     params["facet.field"] = ["label"];
+    const facetQueryValues = [];
+    (cfgFacet.facet_views || []).forEach(v =>
+      (v.queries || []).forEach(qy => { if (qy && qy.value) facetQueryValues.push(qy.value); }));
+    if (facetQueryValues.length > 0) params["facet.query"] = facetQueryValues;
     const env = await api.get("/search", params, { signal });
     // Prefer the server-supplied requested_time when available (more accurate).
     if (env.requested_time) state.requestedTime = env.requested_time;
@@ -1419,25 +1427,34 @@ function buildFacetGroup(title, entries, fieldKey) {
 }
 
 /**
- * Storefront: build the count-free, always-present filter groups from
- * /api/v2/ui/config (NOT from result tallies — honors "no client-side facet
- * computation"). File type options come from cfg.filetype_options; Updated and
- * Size from the cfg.facet_views timestamp & content_length groups. Every option
- * toggles its ex_q clause in state.facetQueries and re-queries the server, so the
- * filter narrows the full fused set (keyword + visual) in every mode. No counts,
- * no zero-suppression — the option set is stable for every search.
+ * Storefront: build the always-present filter groups from /api/v2/ui/config
+ * (NOT from client-side result tallies, which would only reflect the current
+ * page). File type options come from cfg.filetype_options and stay count-free,
+ * since Fess has no live per-filetype count to join here. Every other group —
+ * Updated, Size, a price-band group, or any other facet_views group the server
+ * defines — is joined against env.facet_query (SRCH-4) and drawn as count bars
+ * rather than a numeric badge: see barWidths() in storefront.js for why a bar,
+ * not a histogram, is the honest way to draw a cumulative facet like Updated
+ * alongside a disjoint one like a price band. Every option toggles its ex_q
+ * clause in state.facetQueries and re-queries the server, so the filter narrows
+ * the full fused set (keyword + visual) in every mode.
  *
  * @param {Element} body - the facet-body container element
+ * @param {Object} env  - the search response envelope (for env.facet_query)
  */
-function renderFilterGroups(body) {
+function renderFilterGroups(body, env) {
   const cfg = api.getConfig() || {};
+  const countByValue = {};
+  ((env && env.facet_query) || []).forEach(fq => { countByValue[fq.value] = Number(fq.count) || 0; });
 
-  const buildGroup = (title, options) => {
+  const buildGroup = (title, options, withCounts) => {
     if (!options.length) return;
     const group = el("div", { className: "filter-group" });
     group.appendChild(el("div", { className: "filter-group__title", text: title }));
     const ul = el("ul", { className: "filter-opts list-unstyled mb-0" });
-    options.forEach(opt => {
+    const counts = withCounts ? options.map(opt => countByValue[opt.value] || 0) : null;
+    const widths = withCounts ? barWidths(counts) : null;
+    options.forEach((opt, idx) => {
       const active = (state.facetQueries || []).includes(opt.value);
       const li = el("li", {
         className: "filter-opt" + (active ? " is-active" : ""),
@@ -1445,6 +1462,12 @@ function renderFilterGroups(body) {
       });
       li.appendChild(el("span", { className: "filter-chk", attrs: { "aria-hidden": "true" } }));
       li.appendChild(el("span", { className: "filter-opt__label", text: opt.label }));
+      if (withCounts) {
+        const bar = el("span", { className: "sf-facet-bar" });
+        bar.style.setProperty("--bar-w", widths[idx] + "%");
+        li.appendChild(bar);
+        li.appendChild(el("span", { className: "sf-facet-count", text: String(counts[idx]) }));
+      }
       const toggle = () => {
         const arr = state.facetQueries ? [...state.facetQueries] : [];
         const i = arr.indexOf(opt.value);
@@ -1464,23 +1487,25 @@ function renderFilterGroups(body) {
   };
 
   // File type — from filetype_options; each value becomes a `filetype:<value>` ex_q
-  // clause (same format the facet_views filetype group would use).
+  // clause (same format the facet_views filetype group would use). No live count to
+  // join, so this group stays exactly as before: count-free.
   const fileTypeOptions = (cfg.filetype_options || []).map(o => ({
     value: "filetype:" + o.value,
     label: o.label_key ? t(o.label_key) : o.value
   }));
-  buildGroup(t("labels.facet_filetype_title"), fileTypeOptions);
+  buildGroup(t("labels.facet_filetype_title"), fileTypeOptions, false);
 
-  // Updated + Size — from the facet_views timestamp & content_length groups. Skip the
-  // facet_views filetype group (File type already comes from filetype_options).
+  // Every other facet_views group (Updated, Size, a price band, ...) — skip only
+  // the facet_views filetype group (File type already comes from filetype_options
+  // above, and rendering it twice would duplicate the sidebar entry).
   (cfg.facet_views || []).forEach(view => {
     const gname = view.group_name || "";
-    if (gname !== "labels.facet_timestamp_title" && gname !== "labels.facet_contentLength_title") return;
+    if (gname === "labels.facet_filetype_title") return;
     const options = (view.queries || []).map(qy => ({
       value: qy.value,
       label: qy.label_key && qy.label_key.startsWith("labels.") ? t(qy.label_key) : (qy.label_key || qy.value)
     }));
-    buildGroup(gname.startsWith("labels.") ? t(gname) : gname, options);
+    buildGroup(gname.startsWith("labels.") ? t(gname) : gname, options, true);
   });
 }
 
@@ -1531,11 +1556,12 @@ function renderFacets(env, labels) {
     }
   }
 
-  // 3. Count-free filter groups (File type / Updated / Size) built from
+  // 3. Filter groups (File type / Updated / Size / price band / ...) built from
   //    /api/v2/ui/config — always present and functional in every mode, including
   //    visual-only (where the server returns no facet buckets). Clicking a row
-  //    re-queries the server so it narrows the full fused result set.
-  renderFilterGroups(body);
+  //    re-queries the server so it narrows the full fused result set. Every group
+  //    except File type also draws a count bar from env.facet_query.
+  renderFilterGroups(body, env);
 
   // Show clear button if any filter is active (optional control; may be absent).
   const anyActive =
@@ -1544,8 +1570,8 @@ function renderFacets(env, labels) {
     (Array.isArray(state.facetQueries) && state.facetQueries.length > 0);
   if (clearBtn) clearBtn.classList.toggle("d-none", !anyActive);
 
-  // Mirror the rendered sidebar (caption + label facet + count-free filter groups)
-  // into the mobile offcanvas (#facet-body-mobile). The desktop aside (#facet-body)
+  // Mirror the rendered sidebar (caption + label facet + filter groups, count bars
+  // included) into the mobile offcanvas (#facet-body-mobile). The desktop aside (#facet-body)
   // is the source of truth; clone each top-level group and forward clone clicks to
   // the originals so the offcanvas drives the same searches. Rewires both the legacy
   // list-group anchors and the new .filter-opt rows. Re-rendered after each search.

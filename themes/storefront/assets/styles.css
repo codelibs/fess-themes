@@ -82,6 +82,12 @@
   /* header height (app.js may refine body padding-top to the live value) */
   --df-header-h: 56px;
 
+  /* facet count bars (SRCH-4) — track + fill; the fill's width comes from a
+     per-element --bar-w custom property set in JS (search.js renderFilterGroups),
+     never a literal style="" attribute. */
+  --sf-bar-track: var(--df-stone-200);
+  --sf-bar-fill: var(--df-primary);
+
   /* ---- map Storefront tokens onto the --bs-* vars the theme CSS uses ---- */
   --bs-body-bg: var(--df-surface);
   --bs-body-color: var(--df-stone-800);
@@ -1220,7 +1226,8 @@ footer[role="contentinfo"] {
 .sf-avail--out_of_stock { background: var(--df-error-subtle); color: var(--df-error); }
 .sf-brand { font-size: .75rem; color: var(--df-stone-500); }
 
-/* ===== Storefront: count-free filter sidebar ========================== */
+/* ===== Storefront: filter sidebar (File type stays count-free; the rest
+ *       draw a count bar — see .sf-facet-bar below) ==================== */
 .filter-group { padding: .6rem 0; border-top: 1px solid var(--bs-border-color); }
 .filter-group:first-of-type { border-top: 0; padding-top: 0; }
 .filter-group__title { font-size: .8rem; font-weight: 700; color: var(--df-stone-700); margin-bottom: .4rem; }
@@ -1245,6 +1252,36 @@ footer[role="contentinfo"] {
   border-width: 0 2px 2px 0; transform: rotate(45deg);
 }
 .filter-opt__label { flex: 1 1 auto; min-width: 0; }
+
+/* Count bars (SRCH-4) — a bar proportional to a facet-query's count, not a
+   histogram of the whole group (see barWidths() in storefront.js for why).
+   --bar-w is set per-element from JS via style.setProperty; never a literal
+   style="" attribute. */
+.sf-facet-bar {
+  position: relative;
+  display: block;
+  flex: 0 0 auto;
+  width: 60px;
+  height: 4px;
+  border-radius: var(--df-radius-pill);
+  background: var(--sf-bar-track);
+}
+.sf-facet-bar::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--bar-w, 0%);
+  border-radius: inherit;
+  background: var(--sf-bar-fill);
+}
+.sf-facet-count {
+  flex: 0 0 auto;
+  min-width: 1.6em;
+  text-align: right;
+  font-size: .75rem;
+  color: var(--df-stone-500);
+}
+.filter-opt.is-active .sf-facet-count { color: var(--df-primary-text); }
 
 /* ===== Storefront: header brand mark ====================================
    A small four-quadrant "storefront tile" glyph — the three source-of-match

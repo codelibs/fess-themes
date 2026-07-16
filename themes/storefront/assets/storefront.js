@@ -49,3 +49,19 @@ export function availabilityLabel(hit) {
 export function hasImage(hit, features) {
   return !!(hit && hit.thumbnail && features && features.thumbnail_enabled);
 }
+
+/**
+ * Bar width as a percentage of the largest count in the group.
+ *
+ * Deliberately "count bars", not a histogram. Fess's shipped timestamp facet is
+ * CUMULATIVE and overlapping ([now/d-1d TO *], [now/d-7d TO *], ...), and a
+ * theme cannot tell disjoint bands from cumulative ones by parsing the query
+ * string. A bar proportional to a count is truthful either way; for a disjoint
+ * band set — which is what a price facet is — it happens to also be a
+ * distribution. So every group gets bars and nothing is inferred.
+ */
+export function barWidths(counts) {
+  const max = Math.max(0, ...counts.map(c => Number(c) || 0));
+  if (max <= 0) return counts.map(() => 0);
+  return counts.map(c => Math.round(((Number(c) || 0) / max) * 100));
+}
