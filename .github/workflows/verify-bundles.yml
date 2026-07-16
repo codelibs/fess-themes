@@ -1,0 +1,35 @@
+# Checks the locale-bundle contract of every theme: 16 message bundles and 8
+# help bundles each, key parity across all of them, and matching help section
+# ids. A key missing from a single bundle renders as the raw key for that
+# locale, which is not something a human sees when reading a 16-bundle diff.
+name: Verify Bundles
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# Read-only: this job inspects files and reports; it never needs to write.
+permissions:
+  contents: read
+
+jobs:
+  verify-bundles:
+    name: Verify Locale Bundles
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22.x
+
+    # Every theme, not just the changed ones: the whole repo takes a few
+    # seconds, and a diff-scoped run would miss a theme broken by a rename.
+    # No install step — the script is plain node with no dependencies.
+    - name: Verify locale bundles
+      run: node scripts/verify-bundles.mjs
