@@ -102,8 +102,15 @@ plain `md5` reports a difference for every theme and tells you nothing.
 Identical across all 8 themes (line 2 aside):
 
 ```
-advance.js  cache.js  error.js  format.js  markdown.js  profile.js  router.js
+cache.js  error.js  format.js  markdown.js  profile.js  router.js
 ```
+
+`advance.js` is identical across every theme **except `storefront`**, which imports
+`sortOptionsFor()` from its own `storefront.js` so the advanced-search sort select offers
+the price/rating sorts the server has no way to advertise. Without them the select omits an
+incoming `sort=price.asc`, and submit silently drops it back to relevance order. The
+divergence is deliberate — a theme contributing its own sort fields has nowhere else to put
+them — so do **not** "restore" it by copying another theme's copy over it.
 
 Identical across 7, with `codesearch` diverged: `api.js`, `auth.js`.
 `chat.js` splits 6 / `codesearch` / `docsearch`.
