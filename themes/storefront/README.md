@@ -138,6 +138,18 @@ Three things that will otherwise cost you an afternoon:
   response fields are misconfigured, and rendering it raw would hide that.
 - **A missing rating omits the star row** rather than showing five empty stars — an empty
   row would imply a real zero. A genuine `0` rating does render five empty stars.
+- **The price is rounded to whole yen** (`maximumFractionDigits: 0`), so a `price` of
+  `999.5` renders as `¥1,000`. Yen has no minor unit; a shop pricing in decimals needs a
+  change in `assets/storefront.js`.
+- **Favorites / wishlist are not supported.** Fess's favorite star lived on the list card
+  this theme removed, and a product tile has no room for one — so the whole subsystem
+  (including its `GET /api/v2/favorites` sync) is gone rather than left half-wired. A real
+  wishlist is a feature, not a port of the star.
+- **The three product sort options are offered unconditionally.** The theme cannot detect a
+  deployment missing `query.additional.sort.fields=price,rating`, and there they are three
+  permanently broken options: the server answers `InvalidQueryException`. It fails loudly
+  rather than silently returning the wrong order, which is the right failure — but it is
+  the deployment's job to supply the config.
 - No cart, no comparison tray, no personalisation. This is a search theme.
 
 ## Counts are BM25-only — read this before porting the count bars
@@ -182,8 +194,10 @@ literal `style="` attribute, and the bar widths are set with `setProperty("--bar
 
 `assets/format.js` (the HTML sanitizer) is shared core and carries the `DROP_WITH_CONTENT`
 guard, which drops raw-text elements whole instead of unwrapping them. Every theme in this
-repository — and the bundled `bootstrap` reference theme in the `fess` repo — carries the
-same copy, identical but for the per-theme comment on line 2.
+repository carries the same copy, identical but for the per-theme comment on line 2. The
+bundled `bootstrap` reference theme in the `fess` repo currently lags: its copy has no
+`DROP_WITH_CONTENT` guard at all, so the themes here are ahead of it rather than identical
+to it.
 
 **Port any change to it into every copy in the same PR; never overwrite one theme's copy
 with another's.** Nothing enforces this — CI checks locale bundles only.

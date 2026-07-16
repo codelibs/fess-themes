@@ -53,10 +53,10 @@ Product-specific tokens add to it rather than replace it:
 
 ```
 li.tile
-  img.tile__img            ← lazy, via attachThumb(); or buildTileIcon() when absent
-  a                        ← wraps image + name; href is the /go/ click-logging redirect
-  div.tile__cap
+  a.tile__link             ← wraps image + name; href is the /go/ click-logging redirect
+    img.tile__img          ← lazy, via attachThumb(); or buildTileIcon() when absent
     span.tile__title       ← product name (highlight tags stripped)
+  div.tile__cap
     span.sf-price          ← formatPrice(); omitted entirely when non-numeric
     span.sf-stars          ← ratingStars(); omitted entirely when there is no rating
     span.sf-avail          ← availabilityLabel(); omitted when the value is unrecognised
@@ -89,16 +89,19 @@ and can be exercised under plain Node with no DOM shim:
 | `ratingStars(hit)` | `null` when absent or negative; else `{full, half, empty}` with `full + (half?1:0) + empty === 5` |
 | `availabilityLabel(hit)` | `"in_stock"` / `"out_of_stock"`, else `null`; caller joins `t("product." + label)` |
 | `hasImage(hit, features)` | the thumbnail gate — the doc has one *and* the feature is on |
-| `barWidths(counts)` | integer percentages of the group's largest count; all-zero rather than dividing by zero |
+| `barWidths(counts)` | integer percentages of the group's largest count; a nonzero count floors at 1% so it always draws, only a real zero draws nothing; all-zero rather than dividing by zero |
 
 The module ships; its test does not. That matches `helpdesk`, and the repository has no test
 runner by design.
 
 ## Count bars, and why not a histogram
 
-`barWidths()` scales each count against the largest in its group; `renderFacetQueryViews()`
+`barWidths()` scales each count against the largest in its group; `renderFilterGroups()`
 sets the width from JS with `setProperty("--bar-w", …)` and CSS draws it via
-`.sf-facet-bar::before { width: var(--bar-w, 0%) }`.
+`.sf-facet-bar::before { width: var(--bar-w, 0%) }`. A band holding one product against a
+band holding a thousand still draws a 1% sliver rather than rounding away to nothing — a
+count bar that vanishes for a nonzero count is a lie, and a skewed catalogue is the normal
+case, not the corner one.
 
 **They are count bars, not a histogram, and that distinction is load-bearing.** A histogram
 implies a distribution over disjoint buckets. Fess's own shipped `timestamp` facet is
@@ -116,9 +119,7 @@ car dealer differ only by a properties file.
 **Counts are BM25-only.** That is why `mosaic` and `semanticlens` deliberately ship
 count-free sidebars — under a semantic or visual search their counts go empty or misleading.
 Storefront is keyword-only, so re-requesting `facet.query` here is correct rather than a
-regression. Note mosaic's own design doc justifies count-free facets with an "N fan-out
-requests" cost that does not exist: the bands go out as repeated `facet.query` parameters on
-a single call.
+regression.
 
 ## Structure
 
