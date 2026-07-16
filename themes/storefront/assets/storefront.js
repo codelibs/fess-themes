@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
-// Pure, DOM-free helpers for the storefront product card.
-// Kept out of search.js so they can be unit tested under plain Node.
+// Pure, DOM-free helpers for the storefront's product fields: rendering them on
+// the card, and sorting by them.
+// Kept out of search.js so they can be unit tested under plain Node, and so
+// every view resolves the theme's sort options from one place.
 
 /**
  * Format a product price. Returns "" when there is no usable numeric price.
@@ -76,4 +78,59 @@ export function barWidths(counts) {
     const n = Number(c) || 0;
     return n > 0 ? Math.max(1, Math.round((n / max) * 100)) : 0;
   });
+}
+
+/**
+ * Sort options for the product fields this theme is built around.
+ *
+ * The server cannot offer these: UiConfigHandler.buildSortOptions() is a
+ * hardcoded list (score / filename / created / content_length / last_modified /
+ * click_count / favorite_count) with no config key to extend it. But the search
+ * API *does* accept sort=price.asc once price is listed in
+ * query.additional.sort.fields — which this theme requires anyway, because the
+ * product card cannot render without the field. So the theme knows its own
+ * fields and contributes the options the server has no way to advertise.
+ *
+ * Written in the server's { value, label_key } shape so a consumer can treat
+ * these and the server's own options identically.
+ */
+export const PRODUCT_SORT_OPTIONS = [
+  { value: "price.asc", label_key: "product.sort_price_asc" },
+  { value: "price.desc", label_key: "product.sort_price_desc" },
+  { value: "rating.desc", label_key: "product.sort_rating_desc" },
+];
+
+/**
+ * Every sort option a storefront view may offer or label: the theme's product
+ * sorts followed by the server's own, in the server's { value, label_key } shape.
+ *
+ * This is THE list to resolve a sort value against. A view that reads
+ * cfg.sort_options directly never sees a price/rating entry, and each such view
+ * broke differently: a select omitted them, a label lookup fell through to
+ * printing the raw "price.asc", and an <option> match test dropped an incoming
+ * sort=price.asc on submit. One list means the next view cannot pick a fourth way.
+ *
+ * The product sorts lead because price is the axis a shopper sorts on. On a
+ * deployment missing the required config the server rejects the sort rather than
+ * returning something wrong — see this theme's README.
+ *
+ * The server's own list heads with a value="" entry labelled "Score". It is
+ * dropped here because callers prepend their own placeholder, and keeping both
+ * would show a duplicate empty option + "Score"/"スコア順" pair (JSP parity:
+ * searchOptions.jsp, advance.jsp:159-162).
+ *
+ * @param {object} [cfg]      - api config; cfg.sort_options is used when non-empty
+ * @param {Array}  [fallback] - options to use when the server supplies none. The
+ *                              caller owns this because the views disagree: the
+ *                              results select falls back to score alone, advance
+ *                              search to a feature-gated list.
+ * @returns {Array<{value: string, label_key?: string}>}
+ */
+export function sortOptionsFor(cfg, fallback) {
+  const server = cfg && Array.isArray(cfg.sort_options) ? cfg.sort_options : [];
+  const list = server.length > 0 ? server : (Array.isArray(fallback) ? fallback : []);
+  const body = (list.length > 0 && (list[0].value == null || list[0].value === ""))
+    ? list.slice(1)
+    : list;
+  return [...PRODUCT_SORT_OPTIONS, ...body];
 }

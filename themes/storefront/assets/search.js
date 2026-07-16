@@ -3,7 +3,7 @@ import * as api from "./api.js";
 import { t, languageLabel, getLocale } from "./i18n.js";
 import { sanitizeHtml } from "./format.js";
 import { navigate } from "./router.js";
-import { formatPrice, ratingStars, availabilityLabel, hasImage, barWidths } from "./storefront.js";
+import { formatPrice, ratingStars, availabilityLabel, hasImage, barWidths, sortOptionsFor } from "./storefront.js";
 
 /** Guard: prevent duplicate event-listener registration on hot-reload. */
 let attached = false;
@@ -175,7 +175,10 @@ function buildTileIcon(filetype) {
  *   screen-reader user gets the exact rating, not the visual approximation.
  */
 function buildStars(stars, rating) {
-  const label = t("product.rating_label", { rating: Math.round(Number(rating) * 10) / 10 });
+  // Clamped to 0..5 exactly as ratingStars() clamps the visual: the message says
+  // "out of 5", so a crawled 9.7 would otherwise announce "9.7 out of 5" beside
+  // five stars. Only out-of-range values move — 4.3 still reports 4.3.
+  const label = t("product.rating_label", { rating: Math.round(Math.min(5, Math.max(0, Number(rating))) * 10) / 10 });
   // role="img": the row is a set of decorative icon spans standing in for a
   // single piece of information (the rating), so it is exposed as one unit
   // with a text alternative — same pattern as an <img alt>.
@@ -359,7 +362,7 @@ function renderCurrentFilters() {
 
   // Sort
   if (state.sort) {
-    const opt = (cfg.sort_options || []).find(o => o.value === state.sort);
+    const opt = sortOptionsFor(cfg).find(o => o.value === state.sort);
     const name = opt ? t(opt.label_key || opt.value) : state.sort;
     badges.push({ name, targetId: "sortSearchOption" });
   }
@@ -431,7 +434,7 @@ function renderOptionsBar() {
   };
 
   // Sort
-  const sortOpts = cfg.sort_options || [];
+  const sortOpts = sortOptionsFor(cfg);
   let sortLabel;
   if (state.sort) {
     const found = sortOpts.find(o => o.value === state.sort);
@@ -831,49 +834,17 @@ function ensureRouteListener() {
 
 // ─── Phase 3: Search option selects ──────────────────────────────────────────
 
-/**
- * Sort options for the product fields this theme is built around. See the
- * comment in renderSortOptions() for why the server cannot supply them.
- */
-const PRODUCT_SORT_OPTIONS = [
-  { value: "price.asc", label_key: "product.sort_price_asc" },
-  { value: "price.desc", label_key: "product.sort_price_desc" },
-  { value: "rating.desc", label_key: "product.sort_rating_desc" },
-];
-
 function renderSortOptions() {
   const sel = document.getElementById("sortSearchOption");
   if (!sel) return;
   while (sel.firstChild) sel.removeChild(sel.firstChild);
   const cfg = api.getConfig() || {};
-  const rawOpts = cfg.sort_options && cfg.sort_options.length > 0
-    ? cfg.sort_options
-    : [{ value: "score.desc", label_key: "labels.search_result_sort_score_desc" }];
   // JSP parity (searchOptions.jsp): a single empty-value placeholder heads the
-  // sort list, followed by the real sort options. The server's sort_options
-  // already supplies a leading value="" entry (labelled "Score"); drop it before
-  // prepending the placeholder so the list does not show a duplicate empty
-  // option + "Score"/"スコア順" pair.
-  const body = (rawOpts.length > 0 && (rawOpts[0].value == null || rawOpts[0].value === ""))
-    ? rawOpts.slice(1)
-    : rawOpts;
-  // Product sort options, contributed by the theme rather than the server.
-  //
-  // The server cannot offer these: UiConfigHandler.buildSortOptions() is a
-  // hardcoded list (score / filename / created / content_length / last_modified /
-  // click_count / favorite_count) with no config key to extend it. But the search
-  // API *does* accept sort=price.asc once price is listed in
-  // query.additional.sort.fields — which this theme requires anyway, because the
-  // product card cannot render without the field. So the theme knows its own
-  // fields and contributes the options the server has no way to advertise.
-  //
-  // They lead the list because price is the axis a shopper sorts on. On a
-  // deployment missing the required config the server rejects the sort rather
-  // than returning something wrong — see this theme's README.
+  // sort list, followed by the real sort options — the theme's product sorts and
+  // the server's own, deduped and ordered by sortOptionsFor().
   const opts = [
     { value: "", label_key: "labels.advance_search_sort_default" },
-    ...PRODUCT_SORT_OPTIONS,
-    ...body,
+    ...sortOptionsFor(cfg, [{ value: "score.desc", label_key: "labels.search_result_sort_score_desc" }]),
   ];
   for (const o of opts) {
     const opt = document.createElement("option");
@@ -1510,10 +1481,19 @@ function renderFilterGroups(body, env) {
   (cfg.facet_views || []).forEach(view => {
     const gname = view.group_name || "";
     if (gname === "labels.facet_filetype_title") return;
-    const options = (view.queries || []).map(qy => ({
-      value: qy.value,
-      label: qy.label_key && qy.label_key.startsWith("labels.") ? t(qy.label_key) : (qy.label_key || qy.value)
-    }));
+    // Zero-count bands are dropped (same as the label facet above). Fess folds an
+    // active ex_q into the main query and these aggs are bare top-level filters —
+    // no post_filter — so selecting one band of a DISJOINT group (Size) drives
+    // every sibling to 0, and a column of "0"s with 0-width bars is noise. An
+    // active option is always kept, or it could never be deselected. buildGroup
+    // early-returns when nothing survives, so the group disappears entirely.
+    const options = (view.queries || [])
+      .map(qy => ({
+        value: qy.value,
+        label: qy.label_key && qy.label_key.startsWith("labels.") ? t(qy.label_key) : (qy.label_key || qy.value)
+      }))
+      .filter(opt => (countByValue[opt.value] || 0) > 0
+        || (state.facetQueries || []).includes(opt.value));
     buildGroup(gname.startsWith("labels.") ? t(gname) : gname, options, true);
   });
 }
