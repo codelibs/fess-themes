@@ -360,5 +360,7 @@
   "sidebar.caption_visual": "La mayoría de los resultados coinciden visualmente. Los filtros reducen todos, incluidas las coincidencias visuales.",
   "sidebar.caption_mixed": "Los filtros reducen el conjunto completo de resultados — tanto coincidencias por palabras clave como visuales.",
   "gallery.grid": "Vista de cuadrícula",
-  "gallery.list": "Vista de lista"
+  "gallery.list": "Vista de lista",
+  "product.in_stock": "En stock",
+  "product.out_of_stock": "Agotado"
 }

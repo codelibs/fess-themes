@@ -360,5 +360,7 @@
   "sidebar.caption_visual": "A maioria dos resultados corresponde visualmente. Os filtros reduzem todos, incluindo as correspondências visuais.",
   "sidebar.caption_mixed": "Os filtros reduzem o conjunto completo de resultados — tanto visuais quanto por palavras-chave.",
   "gallery.grid": "Visualização em grade",
-  "gallery.list": "Visualização em lista"
+  "gallery.list": "Visualização em lista",
+  "product.in_stock": "Em estoque",
+  "product.out_of_stock": "Fora de estoque"
 }

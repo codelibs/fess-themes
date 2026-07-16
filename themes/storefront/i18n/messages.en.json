@@ -360,5 +360,7 @@
   "sidebar.caption_visual": "Most results are visually matched. Filters narrow all of them, including visual matches.",
   "sidebar.caption_mixed": "Filters narrow the full result set — keyword and visual alike.",
   "gallery.grid": "Grid view",
-  "gallery.list": "List view"
+  "gallery.list": "List view",
+  "product.in_stock": "In Stock",
+  "product.out_of_stock": "Out of Stock"
 }

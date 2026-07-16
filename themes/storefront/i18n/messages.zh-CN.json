@@ -360,5 +360,7 @@
   "sidebar.caption_visual": "大多数结果通过视觉匹配。过滤器缩小所有结果的范围，包括视觉匹配。",
   "sidebar.caption_mixed": "过滤器缩小完整结果集的范围——视觉匹配和关键词结果均适用。",
   "gallery.grid": "网格视图",
-  "gallery.list": "列表视图"
+  "gallery.list": "列表视图",
+  "product.in_stock": "现货",
+  "product.out_of_stock": "缺货"
 }

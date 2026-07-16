@@ -360,5 +360,7 @@
   "sidebar.caption_visual": "대부분의 결과는 비주얼 검색으로 매치되었습니다. 필터는 비주얼 매치를 포함한 모든 결과를 좁힙니다.",
   "sidebar.caption_mixed": "필터는 키워드 매치와 비주얼 매치를 포함한 전체 결과를 좁힙니다.",
   "gallery.grid": "그리드 보기",
-  "gallery.list": "목록 보기"
+  "gallery.list": "목록 보기",
+  "product.in_stock": "재고 있음",
+  "product.out_of_stock": "품절"
 }

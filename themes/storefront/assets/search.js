@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import * as api from "./api.js";
-import { t, languageLabel } from "./i18n.js";
+import { t, languageLabel, getLocale } from "./i18n.js";
 import { formatFileSize, formatDate, renderHighlightedSnippet, sanitizeHtml } from "./format.js";
 import { navigate } from "./router.js";
+import { formatPrice, ratingStars, availabilityLabel } from "./storefront.js";
 
 /** Guard: prevent duplicate event-listener registration on hot-reload. */
 let attached = false;
@@ -419,11 +420,20 @@ function buildTileIcon(filetype) {
   });
 }
 
+function buildStars(stars) {
+  const wrap = el("span", { className: "sf-stars" });
+  for (let i = 0; i < stars.full; i++) wrap.appendChild(el("span", { className: "sf-star sf-star--full" }));
+  if (stars.half) wrap.appendChild(el("span", { className: "sf-star sf-star--half" }));
+  for (let i = 0; i < stars.empty; i++) wrap.appendChild(el("span", { className: "sf-star sf-star--empty" }));
+  return wrap;
+}
+
 /**
  * Build one grid-mode result tile: a thumbnail (gated on
  * window.__storefrontThumbEnabled && doc.thumbnail) or a typed fallback card, plus a
- * text caption. XSS-safe: every string is set via textContent
- * (via the el() helper or direct assignment) — never innerHTML.
+ * product card body (name, price, rating, availability, brand). XSS-safe:
+ * every string is set via textContent (via the el() helper or direct
+ * assignment) — never innerHTML.
  *
  * @param {Object} doc - result document (env.data[i])
  * @param {string} queryId - env.query_id from the search response
@@ -453,9 +463,33 @@ function buildGalleryTile(doc, queryId, rank) {
     li.appendChild(buildTileIcon(doc.filetype));
   }
 
-  // Caption (title) — always present, XSS-safe (textContent via el()).
+  // Product card body — XSS-safe throughout (textContent via el()).
+  //
+  // Deliberately NO content_description snippet. Every other theme in this repo
+  // renders a document (title + snippet + url); a product is not one. A shopper
+  // scanning a grid reads the price and the picture, and a prose fragment of the
+  // product page is noise. This omission is the theme's whole point — do not
+  // "fix" it back by adding renderHighlightedSnippet here.
   const cap = el("div", { className: "tile__cap" });
   cap.appendChild(el("span", { className: "tile__title", text: titleText }));
+
+  const price = formatPrice(doc, getLocale());
+  if (price) cap.appendChild(el("span", { className: "sf-price", text: price }));
+
+  // null rating -> no row at all, rather than five empty stars implying zero.
+  const stars = ratingStars(doc);
+  if (stars) cap.appendChild(buildStars(stars));
+
+  const avail = availabilityLabel(doc);
+  if (avail) {
+    cap.appendChild(el("span", {
+      className: "sf-avail sf-avail--" + avail,
+      text: t("product." + avail)
+    }));
+  }
+
+  if (doc.brand) cap.appendChild(el("span", { className: "sf-brand", text: doc.brand }));
+
   li.appendChild(cap);
   return li;
 }

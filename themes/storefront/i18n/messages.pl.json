@@ -360,5 +360,7 @@
   "sidebar.caption_visual": "Większość wyników jest dopasowana wizualnie. Filtry zawężają wszystkie wyniki, w tym dopasowania wizualne.",
   "sidebar.caption_mixed": "Filtry zawężają pełny zestaw wyników — zarówno wizualnie, jak i według słów kluczowych.",
   "gallery.grid": "Widok siatki",
-  "gallery.list": "Widok listy"
+  "gallery.list": "Widok listy",
+  "product.in_stock": "Dostępny",
+  "product.out_of_stock": "Niedostępny"
 }

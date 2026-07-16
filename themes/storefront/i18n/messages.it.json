@@ -360,5 +360,7 @@
   "sidebar.caption_visual": "La maggior parte dei risultati corrisponde visivamente. I filtri restringono tutti i risultati, incluse le corrispondenze visive.",
   "sidebar.caption_mixed": "I filtri restringono l'intero set di risultati — sia per parole chiave che per corrispondenze visive.",
   "gallery.grid": "Vista a griglia",
-  "gallery.list": "Vista a elenco"
+  "gallery.list": "Vista a elenco",
+  "product.in_stock": "Disponibile",
+  "product.out_of_stock": "Esaurito"
 }

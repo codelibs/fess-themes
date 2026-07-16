@@ -360,5 +360,7 @@
   "sidebar.caption_visual": "Sebagian besar hasil dicocokkan secara visual. Filter mempersempit semuanya, termasuk kecocokan visual.",
   "sidebar.caption_mixed": "Filter mempersempit set hasil penuh — baik kata kunci maupun kecocokan visual.",
   "gallery.grid": "Tampilan kisi",
-  "gallery.list": "Tampilan daftar"
+  "gallery.list": "Tampilan daftar",
+  "product.in_stock": "Tersedia",
+  "product.out_of_stock": "Stok habis"
 }

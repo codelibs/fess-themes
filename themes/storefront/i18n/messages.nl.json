@@ -360,5 +360,7 @@
   "sidebar.caption_visual": "De meeste resultaten zijn visueel afgestemd. Filters beperken alle resultaten, inclusief visuele overeenkomsten.",
   "sidebar.caption_mixed": "Filters beperken de volledige resultatenset — zowel op trefwoord als visueel.",
   "gallery.grid": "Rasterweergave",
-  "gallery.list": "Lijstweergave"
+  "gallery.list": "Lijstweergave",
+  "product.in_stock": "Op voorraad",
+  "product.out_of_stock": "Niet op voorraad"
 }

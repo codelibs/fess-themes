@@ -360,5 +360,7 @@
   "sidebar.caption_visual": "大多數結果通過視覺匹配。過濾器縮小所有結果的範圍，包括視覺匹配。",
   "sidebar.caption_mixed": "過濾器縮小完整結果集的範圍——視覺匹配和關鍵字結果均適用。",
   "gallery.grid": "網格檢視",
-  "gallery.list": "清單檢視"
+  "gallery.list": "清單檢視",
+  "product.in_stock": "現貨",
+  "product.out_of_stock": "缺貨"
 }

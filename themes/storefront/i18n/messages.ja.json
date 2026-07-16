@@ -360,5 +360,7 @@
   "sidebar.caption_visual": "多くはビジュアル検索の結果です。フィルターはビジュアル検索を含むすべての結果を絞り込みます。",
   "sidebar.caption_mixed": "フィルターはキーワード・ビジュアル検索を含む全結果を絞り込みます。",
   "gallery.grid": "グリッド表示",
-  "gallery.list": "リスト表示"
+  "gallery.list": "リスト表示",
+  "product.in_stock": "在庫あり",
+  "product.out_of_stock": "在庫切れ"
 }
