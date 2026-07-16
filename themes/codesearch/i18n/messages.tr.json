@@ -15,6 +15,7 @@
   "facet.filter_button": "Filtreler",
   "facet.clear": "Temizle",
   "facet.empty": "Henüz yön yok — arama yapın.",
+  "facets.empty": "Bu arama için kullanılabilir filtre yok.",
   "facet.not_found": "No matching filters.",
   "pagination.next": "Sonraki",
   "pagination.prev": "Önceki",
@@ -349,5 +350,10 @@
   "search.sort.relevance": "Relevance",
   "search.density": "Density",
   "search.density_comfortable": "Comfortable",
-  "search.density_compact": "Compact"
+  "search.density_compact": "Compact",
+  "facet.repository": "Depo",
+  "facet.language": "Dil",
+  "facet.organization": "Kuruluş",
+  "facet.path": "Yol / Dosya adı",
+  "chip.remove_filter": "{field} filtresini kaldır"
 }

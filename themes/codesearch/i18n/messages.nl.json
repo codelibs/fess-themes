@@ -15,6 +15,7 @@
   "facet.filter_button": "Filters",
   "facet.clear": "Wissen",
   "facet.empty": "Nog geen facetten — voer een zoekopdracht uit.",
+  "facets.empty": "Geen filters beschikbaar voor deze zoekopdracht.",
   "facet.not_found": "No matching filters.",
   "pagination.next": "Volgende",
   "pagination.prev": "Vorige",
@@ -349,5 +350,10 @@
   "search.sort.relevance": "Relevance",
   "search.density": "Density",
   "search.density_comfortable": "Comfortable",
-  "search.density_compact": "Compact"
+  "search.density_compact": "Compact",
+  "facet.repository": "Repository",
+  "facet.language": "Taal",
+  "facet.organization": "Organisatie",
+  "facet.path": "Pad / Bestandsnaam",
+  "chip.remove_filter": "Filter {field} verwijderen"
 }

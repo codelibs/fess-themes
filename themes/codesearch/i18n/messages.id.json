@@ -15,6 +15,7 @@
   "facet.filter_button": "Filter",
   "facet.clear": "Hapus",
   "facet.empty": "Belum ada faset — lakukan pencarian.",
+  "facets.empty": "Tidak ada filter yang tersedia untuk pencarian ini.",
   "facet.not_found": "No matching filters.",
   "pagination.next": "Berikutnya",
   "pagination.prev": "Sebelumnya",
@@ -349,5 +350,10 @@
   "search.sort.relevance": "Relevance",
   "search.density": "Density",
   "search.density_comfortable": "Comfortable",
-  "search.density_compact": "Compact"
+  "search.density_compact": "Compact",
+  "facet.repository": "Repositori",
+  "facet.language": "Bahasa",
+  "facet.organization": "Organisasi",
+  "facet.path": "Jalur / Nama berkas",
+  "chip.remove_filter": "Hapus filter {field}"
 }

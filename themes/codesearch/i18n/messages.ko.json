@@ -15,6 +15,7 @@
   "facet.filter_button": "필터",
   "facet.clear": "초기화",
   "facet.empty": "패싯 없음 — 검색을 실행하세요.",
+  "facets.empty": "이 검색에 사용할 수 있는 필터가 없습니다.",
   "facet.not_found": "일치하는 필터가 없습니다.",
   "pagination.next": "다음",
   "pagination.prev": "이전",
@@ -349,5 +350,10 @@
   "search.sort.relevance": "Relevance",
   "search.density": "Density",
   "search.density_comfortable": "Comfortable",
-  "search.density_compact": "Compact"
+  "search.density_compact": "Compact",
+  "facet.repository": "저장소",
+  "facet.language": "언어",
+  "facet.organization": "조직",
+  "facet.path": "경로 / 파일 이름",
+  "chip.remove_filter": "{field} 필터 제거"
 }

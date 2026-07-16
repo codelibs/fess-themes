@@ -15,6 +15,7 @@
   "facet.filter_button": "फ़िल्टर",
   "facet.clear": "साफ करें",
   "facet.empty": "अभी कोई पहलू नहीं — खोज करें।",
+  "facets.empty": "इस खोज के लिए कोई फ़िल्टर उपलब्ध नहीं है।",
   "facet.not_found": "No matching filters.",
   "pagination.next": "अगला",
   "pagination.prev": "पिछला",
@@ -349,5 +350,10 @@
   "search.sort.relevance": "Relevance",
   "search.density": "Density",
   "search.density_comfortable": "Comfortable",
-  "search.density_compact": "Compact"
+  "search.density_compact": "Compact",
+  "facet.repository": "रिपॉज़िटरी",
+  "facet.language": "भाषा",
+  "facet.organization": "संगठन",
+  "facet.path": "पथ / फ़ाइल नाम",
+  "chip.remove_filter": "{field} फ़िल्टर हटाएँ"
 }

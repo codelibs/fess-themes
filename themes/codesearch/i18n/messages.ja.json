@@ -355,15 +355,5 @@
   "facet.language": "言語",
   "facet.organization": "組織",
   "facet.path": "パス / ファイル名",
-  "ask.ai_title": "AIに聞く",
-  "result.files_count": "{count} 件",
-  "result.open_in_repository": "リポジトリで開く",
-  "search.qualifier_hint": "ヒント: repo: org: path: file: lang: 修飾子が使えます",
-  "search.qualifier_repo": "リポジトリで絞り込む",
-  "search.qualifier_org": "組織で絞り込む",
-  "search.qualifier_path": "パスで絞り込む",
-  "search.qualifier_file": "ファイル名で絞り込む",
-  "search.qualifier_lang": "言語で絞り込む",
-  "chip.remove": "フィルターを解除",
   "chip.remove_filter": "{field}フィルターを解除"
 }

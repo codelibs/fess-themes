@@ -49,7 +49,7 @@ fess-themes/
 1. Package it into a ZIP:
    ```bash
    ./scripts/package.sh docuforge
-   # → dist/docuforge-1.0.0.zip
+   # → dist/docuforge-1.0.1.zip
    ```
 2. In Fess, open **Admin → Theme** (`/admin/theme/`) and upload the ZIP, then
    activate it (or bind it to a virtual host).
@@ -63,7 +63,16 @@ fess-themes/
 1. Create `themes/<name>/` (copy an existing theme as a starting point).
 2. Set `theme.yml#name` / `#displayName` to `<name>`, and update every
    `/themes/<old>/…` path in `index.html` / `assets/*.js` to `/themes/<name>/…`.
-3. Add a row to the **Themes** table above.
+3. Reset `theme.yml#version` to `"1.0.0"` — versions are per-theme, not repo-wide.
+4. Add a row to the **Themes** table above.
+
+## Versioning
+
+Each theme is versioned independently by `theme.yml#version` (SemVer). Changing a theme's
+shipped files means bumping that theme's version in the same commit: patch for fixes,
+minor for backwards-compatible additions, major for breaking changes. Edits confined to
+`README.md` / `DESIGN.md` ship nothing and need no bump. See [`CLAUDE.md`](CLAUDE.md) for
+the full rules and the format the server enforces.
 
 ## Requirements
 
