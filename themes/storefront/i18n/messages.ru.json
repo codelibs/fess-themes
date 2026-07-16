@@ -3,7 +3,7 @@
   "search.button": "Поиск",
   "search.no_results": "Нет результатов.",
   "search.popular_searches": "Популярные запросы",
-  "search.did_not_match": "Your search — {0} — did not match any documents.",
+  "search.did_not_match": "Your search — {0} — did not match any products.",
   "search.did_not_match_suggestion": "Try different keywords or fewer keywords.",
   "search.options": "Options",
   "search.options_title": "Параметры поиска",
@@ -352,5 +352,8 @@
   "labels.facet_label_reset": "Сброс",
   "product.in_stock": "В наличии",
   "product.out_of_stock": "Нет в наличии",
-  "product.rating_label": "{rating} out of 5"
+  "product.rating_label": "{rating} out of 5",
+  "product.sort_price_asc": "Price: low to high",
+  "product.sort_price_desc": "Price: high to low",
+  "product.sort_rating_desc": "Rating: best first"
 }

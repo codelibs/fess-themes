@@ -3,7 +3,7 @@
   "search.button": "खोजें",
   "search.no_results": "कोई परिणाम नहीं।",
   "search.popular_searches": "लोकप्रिय खोजें",
-  "search.did_not_match": "Your search — {0} — did not match any documents.",
+  "search.did_not_match": "Your search — {0} — did not match any products.",
   "search.did_not_match_suggestion": "Try different keywords or fewer keywords.",
   "search.options": "Options",
   "search.options_title": "खोज विकल्प",
@@ -352,5 +352,8 @@
   "labels.facet_label_reset": "रीसेट",
   "product.in_stock": "स्टॉक में उपलब्ध",
   "product.out_of_stock": "स्टॉक समाप्त",
-  "product.rating_label": "{rating} out of 5"
+  "product.rating_label": "{rating} out of 5",
+  "product.sort_price_asc": "Price: low to high",
+  "product.sort_price_desc": "Price: high to low",
+  "product.sort_rating_desc": "Rating: best first"
 }

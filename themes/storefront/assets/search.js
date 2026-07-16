@@ -846,6 +846,16 @@ function ensureRouteListener() {
  * Task 3.1 — Populate the sort <select> from api config sort_options.
  * Uses fess_label-compatible keys directly as i18n keys (no mapping needed).
  */
+/**
+ * Sort options for the product fields this theme is built around. See the
+ * comment in renderSortOptions() for why the server cannot supply them.
+ */
+const PRODUCT_SORT_OPTIONS = [
+  { value: "price.asc", label_key: "product.sort_price_asc" },
+  { value: "price.desc", label_key: "product.sort_price_desc" },
+  { value: "rating.desc", label_key: "product.sort_rating_desc" },
+];
+
 function renderSortOptions() {
   const sel = document.getElementById("sortSearchOption");
   if (!sel) return;
@@ -862,8 +872,22 @@ function renderSortOptions() {
   const body = (rawOpts.length > 0 && (rawOpts[0].value == null || rawOpts[0].value === ""))
     ? rawOpts.slice(1)
     : rawOpts;
+  // Product sort options, contributed by the theme rather than the server.
+  //
+  // The server cannot offer these: UiConfigHandler.buildSortOptions() is a
+  // hardcoded list (score / filename / created / content_length / last_modified /
+  // click_count / favorite_count) with no config key to extend it. But the search
+  // API *does* accept sort=price.asc once price is listed in
+  // query.additional.sort.fields — which this theme requires anyway, because the
+  // product card cannot render without the field. So the theme knows its own
+  // fields and contributes the options the server has no way to advertise.
+  //
+  // They lead the list because price is the axis a shopper sorts on. On a
+  // deployment missing the required config the server rejects the sort rather
+  // than returning something wrong — see this theme's README.
   const opts = [
     { value: "", label_key: "labels.advance_search_sort_default" },
+    ...PRODUCT_SORT_OPTIONS,
     ...body,
   ];
   for (const o of opts) {

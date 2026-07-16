@@ -3,7 +3,7 @@
   "search.button": "搜索",
   "search.no_results": "无结果。",
   "search.popular_searches": "热门搜索",
-  "search.did_not_match": "您的搜索 — {0} — 未匹配到任何文档。",
+  "search.did_not_match": "Your search — {0} — did not match any products.",
   "search.did_not_match_suggestion": "请尝试其他关键词或减少关键词。",
   "search.options": "选项",
   "search.options_title": "搜索选项",
@@ -352,5 +352,8 @@
   "labels.facet_label_reset": "重置",
   "product.in_stock": "现货",
   "product.out_of_stock": "缺货",
-  "product.rating_label": "{rating} out of 5"
+  "product.rating_label": "{rating} out of 5",
+  "product.sort_price_asc": "Price: low to high",
+  "product.sort_price_desc": "Price: high to low",
+  "product.sort_rating_desc": "Rating: best first"
 }

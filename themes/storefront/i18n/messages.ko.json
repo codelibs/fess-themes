@@ -3,7 +3,7 @@
   "search.button": "검색",
   "search.no_results": "결과 없음.",
   "search.popular_searches": "인기 검색어",
-  "search.did_not_match": "검색어 — {0} — 와(과) 일치하는 문서가 없습니다.",
+  "search.did_not_match": "Your search — {0} — did not match any products.",
   "search.did_not_match_suggestion": "다른 키워드를 사용하거나 키워드 수를 줄여 보세요.",
   "search.options": "옵션",
   "search.options_title": "검색 옵션",
@@ -352,5 +352,8 @@
   "labels.facet_label_reset": "리셋",
   "product.in_stock": "재고 있음",
   "product.out_of_stock": "품절",
-  "product.rating_label": "{rating} out of 5"
+  "product.rating_label": "{rating} out of 5",
+  "product.sort_price_asc": "Price: low to high",
+  "product.sort_price_desc": "Price: high to low",
+  "product.sort_rating_desc": "Rating: best first"
 }

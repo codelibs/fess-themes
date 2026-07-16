@@ -3,7 +3,7 @@
   "search.button": "Cerca",
   "search.no_results": "Nessun risultato.",
   "search.popular_searches": "Ricerche popolari",
-  "search.did_not_match": "Your search — {0} — did not match any documents.",
+  "search.did_not_match": "Your search — {0} — did not match any products.",
   "search.did_not_match_suggestion": "Try different keywords or fewer keywords.",
   "search.options": "Options",
   "search.options_title": "Opzioni di ricerca",
@@ -352,5 +352,8 @@
   "labels.facet_label_reset": "Reimposta",
   "product.in_stock": "Disponibile",
   "product.out_of_stock": "Esaurito",
-  "product.rating_label": "{rating} out of 5"
+  "product.rating_label": "{rating} out of 5",
+  "product.sort_price_asc": "Price: low to high",
+  "product.sort_price_desc": "Price: high to low",
+  "product.sort_rating_desc": "Rating: best first"
 }
