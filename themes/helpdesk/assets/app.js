@@ -13,6 +13,21 @@ import * as help from "./help.js";
 import * as advance from "./advance.js";
 import * as cache from "./cache.js";
 
+/** True when el is rendered, and can therefore take focus. Views hide content
+ *  several ways — .d-none, the hidden attribute, .collapse, the responsive
+ *  .d-*-none utilities, visibility on .offcanvas — and carrying .d-none is not
+ *  conclusive on its own (#facet-body is `d-none d-md-block`, i.e. shown from
+ *  the md breakpoint up), so ask for the computed result rather than test any
+ *  single class. checkVisibilityCSS is the original option name and
+ *  visibilityProperty the standardized one; unknown members are ignored, so
+ *  pass both. */
+function isRendered(el) {
+  if (typeof el.checkVisibility === "function") {
+    return el.checkVisibility({ checkVisibilityCSS: true, visibilityProperty: true });
+  }
+  return el.getClientRects().length > 0; // display:none generates no boxes
+}
+
 /** Show one SPA view section and hide the rest. H.2: focus management on route change. */
 function showView(id) {
   const viewIds = ["home-view", "results-view", "advance-view", "error-view", "profile-view", "help-view", "chat-view", "cache-view"];
@@ -21,9 +36,13 @@ function showView(id) {
     if (!el) continue;
     if (vid === id) {
       el.removeAttribute("hidden");
-      // H.2: move keyboard focus to the first heading or the section root so
-      // screen readers announce the new view after a client-side navigation.
-      const heading = el.querySelector("h1, h2, h3");
+      // H.2: move keyboard focus to the first rendered heading or the section
+      // root so screen readers announce the new view after a client-side
+      // navigation. Hidden headings must be skipped: #best-bet-title and
+      // #home-categories-title sit inside .d-none wrappers until their widget
+      // has content, and focus() on a display:none element is a silent no-op,
+      // which would leave the new view unannounced.
+      const heading = Array.from(el.querySelectorAll("h1, h2, h3")).find(isRendered);
       const target = heading || el;
       if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
       // Defer focus so the element is visible before receiving focus.
