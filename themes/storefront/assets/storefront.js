@@ -33,7 +33,11 @@ export function ratingStars(hit) {
   return { full, half, empty: 5 - full - (half ? 1 : 0) };
 }
 
-const AVAILABILITY = { InStock: "in_stock", OutOfStock: "out_of_stock" };
+// Null-prototype: `availability` is crawled third-party data (an itemprop on
+// someone else's page), so a plain object literal would resolve "__proto__",
+// "constructor", "toString", ... to Object.prototype members and hand them back
+// as if they were statuses. With no prototype there is nothing to inherit.
+const AVAILABILITY = Object.assign(Object.create(null), { InStock: "in_stock", OutOfStock: "out_of_stock" });
 
 /**
  * Map a schema.org availability tail to a message-key suffix; the caller does
@@ -59,9 +63,17 @@ export function hasImage(hit, features) {
  * string. A bar proportional to a count is truthful either way; for a disjoint
  * band set — which is what a price facet is — it happens to also be a
  * distribution. So every group gets bars and nothing is inferred.
+ *
+ * A nonzero count always draws a visible bar, floored at 1%: on a skewed
+ * catalogue (1 luxury item against 400 cheap ones) the honest ratio rounds to
+ * 0, and a 0%-wide bar beside the numeral "1" is indistinguishable from an
+ * empty band. Only a real zero draws nothing.
  */
 export function barWidths(counts) {
   const max = Math.max(0, ...counts.map(c => Number(c) || 0));
   if (max <= 0) return counts.map(() => 0);
-  return counts.map(c => Math.round(((Number(c) || 0) / max) * 100));
+  return counts.map(c => {
+    const n = Number(c) || 0;
+    return n > 0 ? Math.max(1, Math.round((n / max) * 100)) : 0;
+  });
 }

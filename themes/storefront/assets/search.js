@@ -540,19 +540,8 @@ function renderResults(env) {
   // Pass 1-based order/rank so buildGalleryTile can embed it in the /go/ URL
   // and the data-rank attribute respectively.
   data.forEach((d, idx) => list.appendChild(buildGalleryTile(d, env.query_id, idx + 1)));
-  list.querySelectorAll("li[data-doc-id]").forEach(li => {
-    const btn = li.querySelector(".favorite-btn");
-    const docId = li.dataset.docId;
-    if (!btn || !docId) return;
-    btn.addEventListener("click", () => toggleFavorite(docId, btn, li.dataset.queryId || ""));
-  });
-  // Bulk-sync the *per-user* favorited state (solid vs outline star) for all result cards in
-  // one request (Feature 5). Only logged-in users can own favorites (adding requires login),
-  // so gate this on api.isAuthenticated() — a guest has nothing to sync. The star itself and
-  // its count are still rendered for guests above; this only flips already-favorited stars to
-  // the solid icon for the signed-in user.
-  const favEnabled = !!(api.getConfig()?.features?.user_favorite) && api.isAuthenticated();
-  if (favEnabled && env.query_id) syncFavorites(env.query_id);
+  // No favorites wiring here: the star lived on the list card this theme removed,
+  // and a product tile has no room for one. See this theme's README.
 }
 
 /**
@@ -842,10 +831,6 @@ function ensureRouteListener() {
 
 // ─── Phase 3: Search option selects ──────────────────────────────────────────
 
-/**
- * Task 3.1 — Populate the sort <select> from api config sort_options.
- * Uses fess_label-compatible keys directly as i18n keys (no mapping needed).
- */
 /**
  * Sort options for the product fields this theme is built around. See the
  * comment in renderSortOptions() for why the server cannot supply them.
@@ -1461,7 +1446,7 @@ function buildFacetGroup(title, entries, fieldKey) {
  * not a histogram, is the honest way to draw a cumulative facet like Updated
  * alongside a disjoint one like a price band. Every option toggles its ex_q
  * clause in state.facetQueries and re-queries the server, so the filter narrows
- * the full fused set (keyword + visual) in every mode.
+ * the full result set rather than the current page.
  *
  * @param {Element} body - the facet-body container element
  * @param {Object} env  - the search response envelope (for env.facet_query)
@@ -1921,33 +1906,6 @@ async function loadRelated(q, signal) {
   }
 }
 
-/**
- * Bulk-sync favorite state for all result cards in a single request (Feature 5).
- * Calls GET /api/v2/favorites?query_id=<queryId> and updates each card's button.
- * On 401/AUTH_REQUIRED (unauthenticated) the function exits silently.
- *
- * @param {string} queryId
- */
-async function syncFavorites(queryId) {
-  if (!queryId) return;
-  try {
-    const env = await api.get("/favorites", { query_id: queryId });
-    const favoriteSet = new Set((env.data || []).map(item => String(item.doc_id || item)));
-    const list = document.getElementById("results");
-    if (!list) return;
-    list.querySelectorAll("li[data-doc-id]").forEach(li => {
-      const btn = li.querySelector(".favorite-btn");
-      if (!btn) return;
-      const docId = li.dataset.docId;
-      if (!docId) return;
-      setFavoriteUi(btn, favoriteSet.has(docId), Number(btn.dataset.count) || 0);
-    });
-  } catch (e) {
-    if (e && (e.code === "AUTH_REQUIRED" || e.httpStatus === 401)) return; // unauthenticated — silent
-    // other errors: ignore, favorites are best-effort
-  }
-}
-
 function renderPagination(env) {
   // Tag-parity with searchResults.jsp pagination:
   //   nav#subfooter.mx-auto > ul.pagination.justify-content-center
@@ -2020,52 +1978,6 @@ function renderPagination(env) {
     });
     li.appendChild(a);
     ul.appendChild(li);
-  }
-}
-
-async function refreshFavorite(docId, btn) {
-  try {
-    const env = await api.get("/documents/" + encodeURIComponent(docId) + "/favorite");
-    setFavoriteUi(btn, !!env.favorite, env.count || 0);
-  } catch (e) {
-    if (e.code === "AUTH_REQUIRED" || e.httpStatus === 401) btn.classList.add("d-none");
-  }
-}
-
-function setFavoriteUi(btn, on, count) {
-  btn.setAttribute("aria-pressed", on ? "true" : "false");
-  btn.setAttribute("aria-label", on ? t("result.favorite_remove") : t("result.favorite_add"));
-  const icon = btn.querySelector("i");
-  // Font Awesome 5+: solid star when favorited, regular (outline) when not.
-  // (fa-star-o is FA4 syntax and renders nothing with this theme's FA build.)
-  if (icon) icon.className = on ? "fas fa-star" : "far fa-star";
-  btn.dataset.count = String(count);
-  // Show or hide the count badge next to the star icon
-  let countEl = btn.querySelector(".favorite-count");
-  if (count > 0) {
-    if (!countEl) {
-      countEl = el("span", { className: "favorite-count" });
-      btn.appendChild(countEl);
-    }
-    countEl.textContent = String(count);
-  } else if (countEl) {
-    btn.removeChild(countEl);
-  }
-}
-
-async function toggleFavorite(docId, btn, queryId) {
-  try {
-    // #3 (parity js/search.js:137): include query_id so the click is attributed to its query.
-    const env = await api.post("/documents/" + encodeURIComponent(docId) + "/favorite", { query_id: queryId || "" });
-    setFavoriteUi(btn, !!env.favorite, env.count || 0);
-  } catch (e) {
-    if (e.code === "AUTH_REQUIRED" || e.httpStatus === 401) {
-      if (!window.bootstrap || !bootstrap.Modal) {
-        console.warn("[fess] bootstrap not loaded; skipping modal show");
-      } else {
-        bootstrap.Modal.getOrCreateInstance(document.getElementById("login-modal")).show();
-      }
-    }
   }
 }
 
