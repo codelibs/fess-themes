@@ -200,7 +200,7 @@ h1, h2, h3, h4 { font-weight: 600; line-height: 1.25; margin: 0 0 .5em; }
   font-size: 13.5px;
   outline: none;
 }
-.search-bar input::placeholder { color: var(--faint); }
+.search-bar input::placeholder { color: var(--muted); }
 .search-bar .scope-pill {
   flex: 0 0 auto;
   font-family: var(--mono);
@@ -683,7 +683,7 @@ mark, .match {
   background: transparent; border: 0; outline: none;
   color: var(--text); font-family: var(--mono); font-size: 15px;
 }
-.home .home-search input::placeholder { color: var(--faint); }
+.home .home-search input::placeholder { color: var(--muted); }
 .home .home-search button {
   flex: 0 0 auto;
   height: 34px; padding: 0 16px;

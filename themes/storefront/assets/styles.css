@@ -451,7 +451,7 @@ button { font-family: inherit; }
   padding: 10px 14px;
   transition: border-color .15s ease, box-shadow .15s ease;
 }
-.form-control::placeholder { color: var(--df-stone-400); }
+.form-control::placeholder { color: var(--df-stone-500); }
 .form-control:hover { border-color: var(--df-stone-300); }
 .form-control:focus {
   outline: none;
