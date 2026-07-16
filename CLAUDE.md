@@ -17,6 +17,9 @@ See `README.md` for the theme list, repository layout, and install instructions.
 ```bash
 ./scripts/package.sh <name> [<name> ...]   # → dist/<name>-<version>.zip
 ./scripts/package.sh --all                 # every theme under themes/
+
+node scripts/verify-bundles.mjs            # locale-bundle contract, every theme
+node scripts/verify-bundles.mjs <name>     # one theme
 ```
 
 `zip` is required; `yq` is used if present, else the `^version:` grep fallback (below).
@@ -24,7 +27,13 @@ The script checks only that the theme dir, `theme.yml`, and a non-empty version 
 does **not** validate the version against the server's SemVer pattern, so a malformed
 version packages fine and only fails at install with `INVALID_VERSION`.
 
-**There is no build, no CI, no test runner, and no dev server.** A theme cannot be
+`verify-bundles.mjs` is plain node with no dependencies — no install, no package.json.
+`.github/workflows/verify-bundles.yml` runs it over every theme on push and PR. It is
+the repo's only CI, and it checks **only** the locale-bundle contract: a bundle for
+every locale `i18n.js` serves, i18n key parity across them, and help section-id parity.
+Nothing else is enforced anywhere.
+
+**There is no build, no test runner, and no dev server.** A theme cannot be
 previewed from `file://`: it is an SPA on absolute `/themes/<name>/` paths calling
 `/api/v2/*`, so it only runs when served by Fess. The loop is package → upload at
 **Admin → Theme** (`/admin/theme/`) → activate, or set `theme.default=<name>` in
@@ -110,7 +119,8 @@ READMEs assert identity with it.
 
 **When patching a shared core file, patch every copy in the same PR and bump every
 affected theme**, otherwise the identity claims silently become false. Nothing enforces
-this — there is no CI. Verify with a hash that ignores the comment line:
+this: CI checks locale bundles only, and never compares these copies. Verify by hand,
+with a hash that ignores the comment line:
 
 ```bash
 for f in themes/*/assets/format.js ../fess/src/main/webapp/themes/bootstrap/assets/format.js; do
@@ -134,7 +144,9 @@ done | sort   # a single distinct hash = all copies in sync
   bundle and `t()` returns `messages[key] || key`; the English fallback only fires when the
   whole bundle fails to fetch, never per key. So a key present in `messages.en.json` but
   absent from `messages.de.json` puts the literal text `facets.empty` on the page for German
-  users. This is why parity is load-bearing rather than cosmetic — check it before shipping.
+  users. This is why parity is load-bearing rather than cosmetic, and why it is the one
+  thing CI enforces (`scripts/verify-bundles.mjs`). It has drifted before: `codesearch`
+  shipped with keys missing from 14 of its 16 bundles, repaired by hand in #27.
 
 ## Gotchas
 
