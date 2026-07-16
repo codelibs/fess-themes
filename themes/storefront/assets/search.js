@@ -36,9 +36,7 @@ const state = {
   requestedTime: 0,     // epoch ms of the most-recent search; used in /go/ click-log URL
   highlightParams: "",  // server-supplied highlight_params string (e.g. "&hl.q=...&hl.fragsize=...")
   viewMode: "grid",     // "grid" | "list" — grid (gallery tiles) is the storefront default; A4 wires the toggle UI
-  currentEnv: null,     // last search response envelope; consumed by the lightbox (A3)
-  lbRank: -1,           // A3: 0-based index into currentEnv.data[] of the open lightbox doc (-1 = closed)
-  lbPrevFocus: null      // A3: element focused before openLightbox(), restored by closeLightbox()
+  currentEnv: null      // last search response envelope; re-rendered on view-mode toggle (see setViewMode)
 };
 
 // A4: restore the persisted grid/list view mode (if any) before the first render —
@@ -73,19 +71,6 @@ function safeHref(url) {
     return "#";
   }
   return "#";
-}
-
-/**
- * True when `u` can be safely loaded as an <img> src under the theme's CSP
- * (`img-src 'self' data: https:` — no bare `http:`): https: URLs, or any
- * scheme/host that resolves to this page's own origin. Used by openLightbox()
- * to decide between the crawled full-res url_link and the same-origin
- * thumbnail fallback, since an http:// url_link would otherwise be silently
- * CSP-blocked and render as a broken image.
- */
-function isDisplayableImageUrl(u) {
-  try { const url = new URL(u, location.href); return url.protocol === "https:" || url.origin === location.origin; }
-  catch (_) { return false; }
 }
 
 function el(tag, opts) {
@@ -182,151 +167,6 @@ function plainTitle(d) {
   return String(raw).replace(/<\/?(?:strong|em)>/g, "");
 }
 
-// --- Searcher provenance (keyword vs visual vs blend) --------------------------
-// d.searcher is the rank-fusion provenance field Fess exposes when
-// query.additional.api.response.fields=searcher is set (docker-multimodalsearch).
-// Value is an array (or comma string) of searcher names: "default" (BM25/keyword)
-// and/or "multi_modal" (CLIP image-vector kNN). Absent on deployments that don't
-// expose it → no badge is rendered (graceful degradation: stays a valid
-// general-purpose theme).
-//
-// searcherKinds/searcherBadgeKind below are the canonical multimodal mapping
-// (default -> keyword, multi_modal -> visual, both -> blend) and are the
-// single producer/consumer contract for every consumer of searcher provenance
-// in this theme: buildGalleryTile/buildGallerySearcherBadge (grid mode +
-// lightbox meta), buildSearcherBadge/buildResultCard (list mode badge +
-// card spine + result-why microcopy), renderComposition (composition band),
-// and renderFacets' mode-aware sidebar caption. All of these speak the same
-// keyword/visual/blend vocabulary and the matching --mm-*/i18n keys — task A6
-// reconciled the composition band + sidebar caption, and task A7 reconciled
-// the last holdout (list mode's badge pill + card spine), which used to
-// bridge onto older CSS classes and i18n keys inherited from semanticlens.
-const SEARCHER_BADGES = {
-  keyword: { label: "searcher.keyword", title: "searcher.title_keyword", icon: "fa fa-search" },
-  visual:  { label: "searcher.visual",  title: "searcher.title_visual",  icon: "fa fa-image" },
-  blend:   { label: "searcher.blend",   title: "searcher.title_blend",   icon: "fa fa-bolt" }
-};
-
-/** searcher may be an array or comma-string of searcher names. */
-function searcherKinds(doc) {
-  const raw = doc && doc.searcher;
-  const list = Array.isArray(raw) ? raw : (typeof raw === "string" ? raw.split(",") : []);
-  return new Set(list.map(s => String(s).trim().toLowerCase()).filter(Boolean));
-}
-
-/** Map a doc's searcher field to a single badge kind: keyword | visual | blend | other | null. */
-function searcherBadgeKind(doc) {
-  const k = searcherKinds(doc);
-  if (k.size === 0) return null;                 // field absent → no badge (graceful degradation)
-  const kw = k.has("default"), vi = k.has("multi_modal");
-  if (kw && vi) return "blend";
-  if (vi) return "visual";
-  if (kw) return "keyword";
-  return "other"; // unknown searcher name(s) — neutral badge with the raw name(s)
-}
-
-/** Build the list-mode searcher badge pill for a hit, or null when no searcher data. */
-function buildSearcherBadge(d) {
-  const kind = searcherBadgeKind(d);
-  if (!kind) return null;
-  const badge = el("span", { className: "searcher-badge searcher-badge--" + kind });
-  if (kind === "other") {
-    const raw = Array.from(searcherKinds(d)).join(", ");
-    badge.setAttribute("title", raw);
-    badge.setAttribute("aria-label", raw);
-    badge.appendChild(el("i", { className: "fa fa-tag", attrs: { "aria-hidden": "true" } }));
-    badge.appendChild(el("span", { className: "searcher-badge__label", text: raw }));
-    return badge;
-  }
-  const spec = SEARCHER_BADGES[kind];
-  badge.setAttribute("title", t(spec.title));
-  badge.setAttribute("aria-label", t(spec.title));
-  badge.appendChild(el("i", { className: spec.icon, attrs: { "aria-hidden": "true" } }));
-  badge.appendChild(el("span", { className: "searcher-badge__label", text: t(spec.label) }));
-  return badge;
-}
-
-/**
- * Read-only tally of a result page's searcher provenance kinds. Display-only —
- * its result is used solely to drive the composition band's bar/verdict and the
- * sidebar caption. It is NEVER used to build filters (honors the "no client-side
- * facet computation" rule). Returns { blend, visual, keyword, total } in the
- * canonical multimodal vocabulary (searcherBadgeKind() — "other"/null kinds are
- * excluded from the tally, same as before).
- *
- * @param {Object[]} data - the search response hit array (env.data)
- */
-function tallyKinds(data) {
-  const counts = { blend: 0, visual: 0, keyword: 0 };
-  (data || []).forEach(d => {
-    const kind = searcherBadgeKind(d);
-    if (kind === "blend" || kind === "visual" || kind === "keyword") counts[kind]++;
-  });
-  counts.total = counts.blend + counts.visual + counts.keyword;
-  return counts;
-}
-
-/**
- * Storefront Search Composition band. Shows the server's record_count total, a
- * plain-language verdict (balanced / mostly visual / mostly keyword), a
- * proportional 3-segment bar, and a count-free legend — all in the canonical
- * multimodal keyword/visual/blend vocabulary (A6 reconciles this off the
- * legacy semantic/hybrid wording A2 left in place). The proportions/verdict
- * come from a read-only page tally (tallyKinds) — display only, never numbers
- * per source, and NEVER fed back into filter queries. Hidden gracefully
- * (d-none) when no hit on the page carries known searcher provenance, e.g. a
- * keyword-only deployment that never emits the `searcher` field.
- *
- * @param {Object} env - the search response envelope
- */
-function renderComposition(env) {
-  const box = document.getElementById("search-composition");
-  if (!box) return;
-  while (box.firstChild) box.removeChild(box.firstChild);
-  const tally = tallyKinds(env.data || []);
-  if (tally.total === 0) { box.classList.add("d-none"); return; }
-
-  // Verdict by 60% thresholds of the visible page.
-  let verdictKey = "composition.balanced";
-  if (tally.visual / tally.total >= 0.6) verdictKey = "composition.mostly_visual";
-  else if (tally.keyword / tally.total >= 0.6) verdictKey = "composition.mostly_keyword";
-
-  // Left cluster: server total + "results" label.
-  const lead = el("div", { className: "comp-lead" });
-  const total = env.record_count != null ? env.record_count : tally.total;
-  lead.appendChild(el("span", { className: "comp-count", text: total.toLocaleString() }));
-  lead.appendChild(el("span", { className: "comp-count-label", text: t("composition.results") }));
-  box.appendChild(lead);
-
-  // Middle: verdict + proportional bar (segment widths set inline).
-  const mid = el("div", { className: "comp-mid" });
-  mid.appendChild(el("div", { className: "comp-verdict", text: t(verdictKey) }));
-  const bar = el("div", { className: "comp-bar" });
-  const addSeg = (kind, n) => {
-    if (n <= 0) return;
-    const seg = el("i", { className: "comp-seg comp-seg--" + kind });
-    seg.style.width = (n / tally.total * 100) + "%";
-    bar.appendChild(seg);
-  };
-  addSeg("blend", tally.blend);
-  addSeg("visual", tally.visual);
-  addSeg("keyword", tally.keyword);
-  mid.appendChild(bar);
-  box.appendChild(mid);
-
-  // Legend: count-free dots + labels.
-  const legend = el("div", { className: "comp-legend" });
-  [["blend", "searcher.blend"], ["visual", "searcher.visual"], ["keyword", "searcher.keyword"]].forEach(([kind, key]) => {
-    const item = el("span", { className: "comp-legend__item" });
-    item.appendChild(el("span", { className: "comp-dot comp-dot--" + kind, attrs: { "aria-hidden": "true" } }));
-    item.appendChild(el("span", { text: t(key) }));
-    legend.appendChild(item);
-  });
-  box.appendChild(legend);
-
-  box.classList.remove("d-none");
-}
-
 function buildResultCard(d, queryId, order) {
   // Tag-parity with searchResults.jsp result item:
   //   li#result{n}
@@ -343,13 +183,6 @@ function buildResultCard(d, queryId, order) {
     attrs: { id: "result" + idx0 },
     dataset: { docId: d.doc_id || "", queryId: queryId || "" }
   });
-
-  // Storefront: source-of-match kind drives the colored left spine + microcopy.
-  // Absent searcher field → no kind → card renders unchanged (graceful degradation).
-  const kind = searcherBadgeKind(d);
-  if (kind === "blend" || kind === "visual" || kind === "keyword") {
-    li.classList.add("result--" + kind);
-  }
 
   // Build /go/ URL so click-logging + server-side redirect work for all click types.
   const originalUrl = d.url_link || d.url || "";
@@ -373,23 +206,7 @@ function buildResultCard(d, queryId, order) {
     a.textContent = d.title || d.url || "";
   }
   h3.appendChild(a);
-  // Storefront: when the hit carries searcher provenance, wrap the title in a
-  // flex row so the badge sits to the right of the (truncating) title. When the
-  // field is absent, append the h3 exactly as before (zero visual change).
-  const searcherBadge = buildSearcherBadge(d);
-  if (searcherBadge) {
-    const head = el("div", { className: "result-head" });
-    head.appendChild(h3);
-    head.appendChild(searcherBadge);
-    li.appendChild(head);
-  } else {
-    li.appendChild(h3);
-  }
-  // Storefront: one-line "Matched by …" microcopy, colored by source. Only when
-  // the hit carries a known searcher kind (textContent only).
-  if (kind === "blend" || kind === "visual" || kind === "keyword") {
-    li.appendChild(el("div", { className: "result-why result-why--" + kind, text: t("searcher.why_" + kind) }));
-  }
+  li.appendChild(h3);
 
   // --- div.body > (thumbnail)? + div.description ---
   const body = el("div", { className: "body" });
@@ -602,32 +419,10 @@ function buildTileIcon(filetype) {
   });
 }
 
-/** Icon for the gallery-tile searcher badge (multimodal vocabulary). */
-const TILE_BADGE_ICON = { keyword: "fa fa-search", visual: "fa fa-image", blend: "fa fa-bolt" };
-
-/**
- * Build the gallery-tile searcher badge: icon + i18n text, never color alone
- * (WCAG 1.4.1). Distinct markup/CSS namespace ("badge badge--{kind}") from the
- * list-mode pill (buildSearcherBadge() above -> "searcher-badge searcher-badge--{kind}")
- * so grid and list views can be styled independently.
- *
- * @param {string} kind - "keyword" | "visual" | "blend" | "other"
- * @returns {HTMLSpanElement|null} null for "other"/unmapped kinds (no i18n text defined)
- */
-function buildGallerySearcherBadge(kind) {
-  const icon = TILE_BADGE_ICON[kind];
-  if (!icon) return null;
-  const label = t("searcher." + kind);
-  const badge = el("span", { className: "badge badge--" + kind, attrs: { "aria-label": label } });
-  badge.appendChild(el("i", { className: icon, attrs: { "aria-hidden": "true" } }));
-  badge.appendChild(el("span", { text: label }));
-  return badge;
-}
-
 /**
  * Build one grid-mode result tile: a thumbnail (gated on
  * window.__storefrontThumbEnabled && doc.thumbnail) or a typed fallback card, plus a
- * text caption and searcher badge. XSS-safe: every string is set via textContent
+ * text caption. XSS-safe: every string is set via textContent
  * (via the el() helper or direct assignment) — never innerHTML.
  *
  * @param {Object} doc - result document (env.data[i])
@@ -637,8 +432,6 @@ function buildGallerySearcherBadge(kind) {
  */
 function buildGalleryTile(doc, queryId, rank) {
   const li = el("li", { className: "tile", dataset: { docId: doc.doc_id || "", rank: String(rank) } });
-  const kind = searcherBadgeKind(doc);
-  if (kind) li.classList.add("tile--" + kind);
 
   // Title fallback chain shared by the thumbnail's alt text and the caption
   // below; highlight markup (<strong>/<em>) is stripped so it never leaks as
@@ -663,186 +456,8 @@ function buildGalleryTile(doc, queryId, rank) {
   // Caption (title) — always present, XSS-safe (textContent via el()).
   const cap = el("div", { className: "tile__cap" });
   cap.appendChild(el("span", { className: "tile__title", text: titleText }));
-
-  if (kind) {
-    const badge = buildGallerySearcherBadge(kind);
-    if (badge) li.appendChild(badge);
-  }
   li.appendChild(cap);
-  li.tabIndex = 0; // keyboard focusable → opens lightbox (A3)
-  li.setAttribute("role", "button");
-  li.setAttribute("aria-label", titleText);
   return li;
-}
-
-// --- Lightbox (A3: full-size preview overlay for a gallery tile) --------------
-//
-// `rank` in openLightbox()/state.lbRank is the 0-based index into
-// state.currentEnv.data[] — NOT the 1-based `data-rank` tile attribute
-// buildGalleryTile() sets above (that value feeds buildGoUrl's 1-based
-// `order` param, an unrelated contract). The tile click/keydown wiring in
-// attach() converts data-rank -> 0-based index before calling openLightbox().
-
-/**
- * Focusable elements within the lightbox, recomputed on every Tab keydown
- * (rather than cached) because the meta panel — and therefore its cache/
- * original-URL links — is rebuilt by buildLightboxMeta() on every open.
- */
-function lightboxFocusables(lb) {
-  return Array.from(lb.querySelectorAll('button, a[href], [tabindex]:not([tabindex="-1"])'))
-    .filter(node => !node.disabled && node.offsetParent !== null);
-}
-
-/**
- * Tab/Shift+Tab focus trap: while the lightbox is open, wrap focus at the
- * first/last focusable element inside #lightbox so it never escapes to the
- * page behind. Called from the document keydown listener in attach(), which
- * already gates on the lightbox being open.
- */
-function trapLightboxTab(ev, lb) {
-  const focusables = lightboxFocusables(lb);
-  if (focusables.length === 0) return;
-  const first = focusables[0];
-  const last = focusables[focusables.length - 1];
-  const active = document.activeElement;
-  if (ev.shiftKey) {
-    if (active === first || !lb.contains(active)) {
-      ev.preventDefault();
-      last.focus();
-    }
-  } else if (active === last || !lb.contains(active)) {
-    ev.preventDefault();
-    first.focus();
-  }
-}
-
-/**
- * Build the lightbox metadata panel (figcaption content) for one document:
- * title, the original URL as a safeHref-gated link (target=_blank,
- * rel=noopener — this link doubles as the "open original" action), mimetype/
- * filetype, size, last-modified date, score, the searcher badge (reusing
- * searcherBadgeKind()/buildGallerySearcherBadge() from the gallery tile
- * above), and a Cache action when doc.has_cache — same /cache/?docId=&hq=
- * URL convention buildResultCard's own cache link already uses. XSS-safe:
- * every string is set via textContent (via the el() helper) or a
- * safeHref()-validated href — never innerHTML with doc data.
- *
- * @param {Object} doc - result document (env.data[i])
- * @returns {HTMLDivElement}
- */
-function buildLightboxMeta(doc) {
-  const meta = el("div", { className: "lightbox__meta-body" });
-
-  meta.appendChild(el("h2", { className: "lightbox__title", text: plainTitle(doc) }));
-
-  const originalUrl = doc.url_link || doc.url || "";
-  const href = safeHref(originalUrl);
-  if (originalUrl && href !== "#") {
-    meta.appendChild(el("a", {
-      className: "lightbox__link",
-      text: originalUrl,
-      attrs: { href, target: "_blank", rel: "noopener" }
-    }));
-  }
-
-  // Unlabeled fact row (mimetype/filetype, size, date, score) — mirrors the
-  // unlabeled-values convention buildResultCard's own .info row already uses
-  // for date/size (no "Size:"/"Updated:" captions there either).
-  const facts = el("div", { className: "lightbox__facts" });
-  const addFact = (className, text) => {
-    if (!text) return;
-    if (facts.childNodes.length) facts.appendChild(el("span", { className: "lightbox__sep", attrs: { "aria-hidden": "true" }, text: "·" }));
-    facts.appendChild(el("span", { className: "lightbox__fact " + className, text }));
-  };
-  addFact("lightbox__fact--type", doc.mimetype || doc.filetype || "");
-  addFact("lightbox__fact--size", formatFileSize(doc.content_length));
-  addFact("lightbox__fact--date", formatDate(doc.last_modified || doc.created));
-  const scoreNum = Number(doc.score);
-  addFact("lightbox__fact--score", Number.isFinite(scoreNum) ? scoreNum.toFixed(3) : "");
-  if (facts.childNodes.length) meta.appendChild(facts);
-
-  const kind = searcherBadgeKind(doc);
-  if (kind) {
-    const badge = buildGallerySearcherBadge(kind);
-    if (badge) meta.appendChild(badge);
-  }
-
-  const actions = el("div", { className: "lightbox__actions" });
-  if (doc.has_cache === true || doc.has_cache === "true") {
-    const hlParam = state.highlightParams || ("&hq=" + encodeURIComponent(state.q || ""));
-    actions.appendChild(el("a", {
-      className: "lightbox__action cache",
-      text: t("result.cache"),
-      attrs: { href: `/cache/?docId=${encodeURIComponent(doc.doc_id || "")}${hlParam}`, target: "_blank", rel: "noopener" }
-    }));
-  }
-  if (actions.childNodes.length) meta.appendChild(actions);
-
-  return meta;
-}
-
-/**
- * Open the lightbox on state.currentEnv.data[rank] (0-based index — see the
- * note above). Loads the full-resolution image (via safeHref) for
- * image-mimetype hits; falls back to the same thumbnail endpoint the gallery
- * tile uses (thumbUrl()) for every other hit, or when the URL scheme is
- * unsafe. Also used for in-place Next/Prev navigation while already open
- * (lightboxNext/lightboxPrev both call this), so the previously-focused
- * element is captured ONLY on the closed -> open transition (lb.hidden is
- * still true at that point) — otherwise a Next/Prev call would overwrite
- * state.lbPrevFocus with a lightbox-internal element (e.g. the close
- * button), and closeLightbox() would restore focus to <body>/nothing useful
- * instead of the gallery tile that originally opened the lightbox. Moves
- * focus to the close button on every open/navigate (WCAG 2.4.3 focus order).
- *
- * @param {number} rank - 0-based index into state.currentEnv.data[]
- */
-function openLightbox(rank) {
-  const env = state.currentEnv;
-  if (!env) return;
-  const doc = env.data && env.data[rank];
-  if (!doc) return;
-  state.lbRank = rank;
-  const lb = document.getElementById("lightbox");
-  if (!lb) return;
-  const img = lb.querySelector(".lightbox__img");
-  const isImage = (doc.mimetype || "").startsWith("image/");
-  const rawUrl = doc.url_link || doc.url || "";
-  const safeUrl = safeHref(rawUrl);
-  img.src = (isImage && safeUrl !== "#" && isDisplayableImageUrl(safeUrl)) ? safeUrl : thumbUrl(doc.doc_id, env.query_id);
-  img.alt = plainTitle(doc);
-  lb.querySelector(".lightbox__meta").replaceChildren(buildLightboxMeta(doc));
-  // Boundary hint for the nav buttons (styles.css dims + inert-s a disabled
-  // edge button); Next/Prev themselves already no-op at the boundary
-  // (see lightboxNext/lightboxPrev), so this is a pure a11y/visual affordance.
-  const prevBtn = lb.querySelector(".lightbox__prev");
-  const nextBtn = lb.querySelector(".lightbox__next");
-  if (prevBtn) prevBtn.setAttribute("aria-disabled", rank <= 0 ? "true" : "false");
-  if (nextBtn) nextBtn.setAttribute("aria-disabled", rank >= env.data.length - 1 ? "true" : "false");
-  if (lb.hidden) state.lbPrevFocus = document.activeElement;
-  lb.hidden = false;
-  lb.querySelector(".lightbox__close").focus();
-}
-
-/** Close the lightbox and restore focus to whatever was focused before it opened. */
-function closeLightbox() {
-  const lb = document.getElementById("lightbox");
-  if (!lb) return;
-  lb.hidden = true;
-  state.lbPrevFocus?.focus?.();
-  state.lbPrevFocus = null;
-}
-
-/** Advance to the next hit, if any; no-op (stays open) at the last hit. */
-function lightboxNext() {
-  const n = state.lbRank + 1;
-  if (state.currentEnv && state.currentEnv.data && state.currentEnv.data[n]) openLightbox(n);
-}
-
-/** Go back to the previous hit, if any; no-op (stays open) at the first hit. */
-function lightboxPrev() {
-  const n = state.lbRank - 1;
-  if (n >= 0) openLightbox(n);
 }
 
 /**
@@ -1084,8 +699,8 @@ function renderResults(env) {
   // declaration), restored from localStorage("storefront.view") at module load.
   applyResultsClassName();
   const data = env.data || [];
-  // A3's lightbox reads the last full envelope (hits, query_id, etc.) off state
-  // rather than being threaded through as a parameter.
+  // Cache the last full envelope so setViewMode() can re-render (grid <-> list)
+  // without re-issuing the search.
   state.currentEnv = env;
   // Gate gallery-tile thumbnail rendering on the boot config's feature flag. Read
   // lazily here (rather than at app boot) because search.js never calls
@@ -1093,11 +708,6 @@ function renderResults(env) {
   // for the same lazy-config-read convention already used in this file.
   const cfg = api.getConfig() || {};
   window.__storefrontThumbEnabled = !!(cfg.features && cfg.features.thumbnail_enabled);
-  // Sticky: mark semantic/hybrid search active once any hit carries searcher provenance.
-  // Filters are only clickable after a search has rendered, so by the time a filter can be
-  // active this flag is already known — no first-request edge case (see runSearch gating).
-  if (!semanticSeen && data.some(d => searcherBadgeKind(d) !== null)) semanticSeen = true;
-  renderComposition(env); // Storefront: show search-composition band when hits carry provenance
   // C.2: always refresh similar-doc banner (hides when state.sdh is cleared)
   renderSimilarDocBanner();
   if (data.length === 0) {
@@ -2041,69 +1651,6 @@ export function attach() {
   if (urlQ && input) { input.value = urlQ; state.q = urlQ; }
   if (!urlQ) loadPopularWords();
 
-  // A3: open the lightbox when a gallery tile is activated. Delegated on
-  // #results (a persistent container across renderResults' innerHTML-based
-  // re-renders) rather than per-tile, since tiles are torn down and rebuilt
-  // on every search/page/facet change. tile.dataset.rank is the 1-based rank
-  // buildGalleryTile() set (shared with buildGoUrl's `order` param) — convert
-  // to the 0-based env.data[] index openLightbox() expects.
-  const resultsList = document.getElementById("results");
-  if (resultsList) {
-    resultsList.addEventListener("click", ev => {
-      const tile = ev.target.closest(".tile");
-      if (!tile || !resultsList.contains(tile)) return;
-      openLightbox(Number(tile.dataset.rank) - 1);
-    });
-    resultsList.addEventListener("keydown", ev => {
-      if (ev.key !== "Enter" && ev.key !== " ") return;
-      const tile = ev.target.closest(".tile");
-      if (!tile || !resultsList.contains(tile)) return;
-      ev.preventDefault(); // Space must not also scroll the page
-      openLightbox(Number(tile.dataset.rank) - 1);
-    });
-  }
-
-  // A3: lightbox close/prev/next buttons ([data-lb] inside #lightbox). The
-  // buttons themselves are static markup (index.html), so this could be three
-  // direct listeners instead of delegation, but delegating on the container
-  // keeps this one listener even if A7 adds more [data-lb] controls later.
-  const lightbox = document.getElementById("lightbox");
-  if (lightbox) {
-    lightbox.addEventListener("click", ev => {
-      const btn = ev.target.closest("[data-lb]");
-      if (btn && lightbox.contains(btn)) {
-        if (btn.dataset.lb === "close") closeLightbox();
-        else if (btn.dataset.lb === "prev") lightboxPrev();
-        else if (btn.dataset.lb === "next") lightboxNext();
-        return;
-      }
-      // A click directly on the backdrop (not the figure/image/meta/nav
-      // buttons, which all stopPropagation-free bubble here as a *descendant*
-      // target, never as ev.target itself) closes the lightbox too.
-      if (ev.target === lightbox) closeLightbox();
-    });
-  }
-
-  // A3: Esc/ArrowLeft/ArrowRight navigation + Tab focus-trap — active only
-  // while the lightbox is open (lb.hidden false); a no-op otherwise, so this
-  // single document-level listener never interferes with normal page/typing
-  // keydowns (e.g. the query input's own suggest-dropdown ArrowUp/Down/Esc
-  // handling above, which in any case can't receive focus while the
-  // lightbox's focus trap holds focus inside #lightbox).
-  document.addEventListener("keydown", ev => {
-    const lb = document.getElementById("lightbox");
-    if (!lb || lb.hidden) return;
-    if (ev.key === "Escape") {
-      closeLightbox();
-    } else if (ev.key === "ArrowRight") {
-      lightboxNext();
-    } else if (ev.key === "ArrowLeft") {
-      lightboxPrev();
-    } else if (ev.key === "Tab") {
-      trapLightboxTab(ev, lb);
-    }
-  });
-
   // A4: grid/list view-toggle buttons (#view-toggle [data-view], static markup in
   // index.html). No inline handlers (CSP) — wired here via addEventListener, same
   // convention as the rest of attach(). Sync the buttons + #results class with the
@@ -2252,19 +1799,6 @@ function renderFacets(env, labels) {
     if (mobileBody) while (mobileBody.firstChild) mobileBody.removeChild(mobileBody.firstChild);
     if (clearBtn) clearBtn.classList.add("d-none");
     return;
-  }
-
-  // Storefront: mode-aware caption from a read-only page tally (display only) —
-  // reassures that filters narrow the full fused set, including visual matches.
-  // Multimodal vocabulary (A6); never used to build filters. Skipped gracefully
-  // when no hit carries searcher provenance.
-  const tally = tallyKinds(env.data || []);
-  if (tally.total > 0) {
-    const visualDominant = tally.visual / tally.total >= 0.6;
-    body.appendChild(el("div", {
-      className: "facet-cap " + (visualDominant ? "cap--visual" : "cap--mixed"),
-      text: t(visualDominant ? "sidebar.caption_visual" : "sidebar.caption_mixed")
-    }));
   }
 
   // 1. Label facet — built from env.facet_field where name === "label" with per-label counts,

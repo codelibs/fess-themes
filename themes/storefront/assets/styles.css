@@ -38,11 +38,10 @@
   --df-info-subtle: #E0F2FE;
 
   /* Storefront source-of-match colors — keyword / visual / blend provenance.
-     Used everywhere the searcher origin is surfaced: gallery tile badges,
-     lightbox meta badge, the composition band, the list-mode result spine +
-     badge, and the sidebar caption. Each hue is a base/subtle/text triple
-     (fill / tint background / accessible-contrast text). Deliberately kept
-     out of the neutral page chrome — thumbnails and badges carry the color,
+     Used by the header brand mark (.mm-brandmark) and the home-view search-mode
+     preview cards. Each hue is a base/subtle/text triple (fill / tint
+     background / accessible-contrast text). Deliberately kept out of the
+     neutral page chrome — the brand mark and preview icons carry the color,
      not the surrounding UI. */
   --mm-keyword:#D97706;  --mm-keyword-subtle:#FEF3E2; --mm-keyword-text:#9A5A05; /* amber */
   --mm-visual:#7C3AED;   --mm-visual-subtle:#F1E9FE;  --mm-visual-text:#5B21B6;  /* violet */
@@ -1162,82 +1161,9 @@ footer[role="contentinfo"] {
   @keyframes nk-skeleton-pulse { 50% { opacity: .55; } }
 }
 
-/* ===== Searcher provenance: result-head badge + legend (Storefront) ===== */
-.result-head { display: flex; align-items: flex-start; gap: .5rem; }
-.result-head .title { flex: 1 1 auto; min-width: 0; margin: 0; }
-
-.searcher-badge {
-  flex: 0 0 auto;
-  display: inline-flex; align-items: center; gap: .3em;
-  padding: .12em .6em; border-radius: 999px;
-  font-size: .72rem; font-weight: 600; line-height: 1.6;
-  white-space: nowrap; border: 1px solid transparent;
-}
-.searcher-badge .fa, .searcher-badge .fas, .searcher-badge .far { font-size: .92em; }
-.searcher-badge--blend   { color: var(--mm-blend-text);   background: var(--mm-blend-subtle); }
-.searcher-badge--visual { color: var(--mm-visual-text); background: var(--mm-visual-subtle); }
-.searcher-badge--keyword  { color: var(--mm-keyword-text);  background: var(--mm-keyword-subtle); }
-.searcher-badge--other    { color: var(--df-stone-700);     background: var(--df-stone-100); }
-
-/* ===== Storefront: Search Composition band ============================== */
-.composition {
-  display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;
-  margin: 0 0 1.25rem; padding: .85rem 1.1rem;
-  background: var(--df-surface);
-  border: 1px solid var(--bs-border-color);
-  border-radius: var(--df-radius-lg);
-  box-shadow: var(--df-shadow-subtle);
-}
-.comp-lead { display: flex; align-items: baseline; gap: .4rem; flex: 0 0 auto; }
-.comp-count { font-size: 1.5rem; font-weight: 800; line-height: 1; color: var(--df-stone-900); }
-.comp-count-label {
-  font-size: .72rem; font-weight: 600; letter-spacing: .04em;
-  text-transform: uppercase; color: var(--df-stone-500);
-}
-.comp-mid { flex: 1 1 260px; min-width: 220px; }
-.comp-verdict { font-weight: 600; font-size: .9rem; color: var(--df-stone-700); margin-bottom: .5rem; }
-.comp-bar {
-  display: flex; height: 12px; border-radius: 7px; overflow: hidden;
-  background: var(--df-stone-200);
-}
-.comp-seg { display: block; height: 100%; }
-.comp-seg--blend   { background: var(--mm-blend); }
-.comp-seg--visual  { background: var(--mm-visual); }
-.comp-seg--keyword { background: var(--mm-keyword); }
-.comp-legend { display: flex; gap: .25rem 1rem; flex-wrap: wrap; flex: 0 0 auto; }
-.comp-legend__item { display: inline-flex; align-items: center; gap: .4rem; font-size: .78rem; color: var(--df-stone-600); }
-.comp-dot { width: .6rem; height: .6rem; border-radius: 3px; flex: 0 0 auto; }
-.comp-dot--blend   { background: var(--mm-blend); }
-.comp-dot--visual  { background: var(--mm-visual); }
-.comp-dot--keyword { background: var(--mm-keyword); }
-
-/* ===== Storefront: provenance-forward result cards ===================== */
-li[id^="result"].result--blend,
-li[id^="result"].result--visual,
-li[id^="result"].result--keyword {
-  position: relative;
-  padding-left: .85rem;
-  border-left: 3px solid var(--df-stone-200);
-  border-radius: 2px;
-}
-.result--blend   { border-left-color: var(--mm-blend); }
-.result--visual { border-left-color: var(--mm-visual); }
-.result--keyword  { border-left-color: var(--mm-keyword); }
-.result-why {
-  margin-top: .35rem; font-size: .78rem; color: var(--df-stone-500);
-  display: inline-flex; align-items: center; gap: .4rem;
-}
-.result-why::before {
-  content: ""; width: .5rem; height: .5rem; border-radius: 50%;
-  flex: 0 0 auto; background: var(--df-stone-400);
-}
-.result-why--blend::before   { background: var(--mm-blend); }
-.result-why--visual::before { background: var(--mm-visual); }
-.result-why--keyword::before  { background: var(--mm-keyword); }
-
 /* ===== Storefront: gallery grid (thumbnail tiles, grid mode) ===========================
    A responsive photo/media grid — square thumbnails carry the color, the
-   surrounding chrome (card, caption, badge) stays neutral so the result
+   surrounding chrome (card, caption) stays neutral so the result
    reads as a real media gallery rather than a bare grid of boxes. */
 .gallery {
   display: grid;
@@ -1306,53 +1232,7 @@ li[id^="result"].result--keyword {
   color: var(--df-stone-700);
 }
 
-/* Gallery-tile / lightbox-meta searcher badge — icon + visible text always
-   render together (WCAG 1.4.1, never color alone). Both buildGalleryTile's
-   corner badge and buildLightboxMeta's meta badge share this "badge badge--
-   {kind}" markup (search.js buildGallerySearcherBadge); only the tile corner
-   variant is positioned absolutely, scoped via `.tile > .badge` so this never
-   clobbers the sitewide `.badge` utility class used elsewhere (facet counts,
-   active-filter chips) that shares the same bare class name. */
-.tile > .badge,
-.lightbox__meta .badge {
-  display: inline-flex;
-  align-items: center;
-  gap: .3rem;
-  padding: .18rem .5rem;
-  border-radius: var(--df-radius-pill);
-  font-size: .7rem;
-  font-weight: 700;
-  line-height: 1.4;
-}
-.tile > .badge {
-  position: absolute;
-  top: .5rem;
-  left: .5rem;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, .25);
-}
-.lightbox__meta .badge { margin-bottom: .5rem; }
-.badge--keyword { color: var(--mm-keyword-text); background: var(--mm-keyword-subtle); }
-.badge--visual  { color: var(--mm-visual-text);  background: var(--mm-visual-subtle); }
-.badge--blend   { color: var(--mm-blend-text);   background: var(--mm-blend-subtle); }
-
 /* ===== Storefront: count-free filter sidebar ========================== */
-.facet-cap {
-  font-size: .78rem; line-height: 1.5; color: var(--df-stone-700);
-  background: var(--df-stone-100);
-  border-left: 3px solid var(--df-stone-300);
-  border-radius: var(--df-radius-sm);
-  padding: .6rem .75rem; margin-bottom: .9rem;
-}
-.facet-cap.cap--visual {
-  border-left-color: var(--mm-visual);
-  background: var(--mm-visual-subtle);
-  color: var(--mm-visual-text);
-}
-.facet-cap.cap--mixed {
-  border-left-color: var(--mm-blend);
-  background: var(--mm-blend-subtle);
-  color: var(--mm-blend-text);
-}
 .filter-group { padding: .6rem 0; border-top: 1px solid var(--bs-border-color); }
 .filter-group:first-of-type { border-top: 0; padding-top: 0; }
 .filter-group__title { font-size: .8rem; font-weight: 700; color: var(--df-stone-700); margin-bottom: .4rem; }
@@ -1394,118 +1274,6 @@ li[id^="result"].result--keyword {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .3), 0 1px 2px rgba(0, 0, 0, .35);
 }
 
-/* ===== Storefront: lightbox overlay (A3 markup, A7 visual polish) ======
-   Fullscreen dark overlay: centered image, edge nav buttons, and a
-   metadata panel (title / source link / facts / searcher badge / actions).
-   The DOM is fixed by A3 (index.html + search.js) — this only styles it. */
-.lightbox[hidden] { display: none; } /* explicit belt-and-braces: some resets neutralize native [hidden] */
-.lightbox {
-  position: fixed;
-  inset: 0;
-  z-index: 1060; /* above Bootstrap's modal (1055) and offcanvas (1045) layers */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(15, 23, 42, .92); /* var(--df-stone-900) at ~92% */
-  padding: 2.5rem 4.5rem;
-}
-/* Fade in on the hidden -> visible transition only. Setting the [hidden]
-   attribute back to its current value (e.g. openLightbox() during Next/Prev,
-   which leaves the lightbox open) is a no-op mutation, so this never
-   re-triggers mid-session — see search.js openLightbox(). */
-.lightbox:not([hidden]) { animation: mm-lightbox-fade .18s ease; }
-@keyframes mm-lightbox-fade { from { opacity: 0; } to { opacity: 1; } }
-
-.lightbox__figure {
-  margin: 0;
-  max-width: 100%;
-  max-height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1rem;
-  animation: mm-lightbox-pop .2s ease;
-}
-@keyframes mm-lightbox-pop {
-  from { transform: scale(.97); opacity: 0; }
-  to   { transform: scale(1);   opacity: 1; }
-}
-.lightbox__img {
-  max-width: 100%;
-  max-height: 68vh;
-  object-fit: contain;
-  background: var(--df-stone-800);
-  border-radius: var(--df-radius);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, .45);
-}
-.lightbox__meta {
-  max-width: min(90vw, 640px);
-  max-height: 24vh;
-  overflow-y: auto;
-  color: var(--df-on-primary);
-  text-align: center;
-}
-.lightbox__title { font-size: 1.05rem; font-weight: 700; margin: 0 0 .4rem; color: var(--df-on-primary); }
-.lightbox__link {
-  display: inline-block;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--df-stone-200);
-  margin-bottom: .4rem;
-}
-.lightbox__link:hover { color: #fff; }
-.lightbox__facts { font-size: .82rem; color: var(--df-stone-300); margin-bottom: .4rem; }
-.lightbox__sep { margin: 0 .4rem; }
-.lightbox__actions { display: flex; gap: 1rem; justify-content: center; font-size: .85rem; }
-.lightbox__actions .lightbox__action { color: var(--df-on-primary); text-decoration: underline; }
-
-.lightbox__close,
-.lightbox__nav {
-  position: fixed;
-  border: 0;
-  background: rgba(255, 255, 255, .12);
-  color: var(--df-on-primary);
-  line-height: 1;
-  cursor: pointer;
-  border-radius: var(--df-radius-pill);
-  transition: background-color .15s ease, transform .15s ease;
-}
-.lightbox__close:hover,
-.lightbox__nav:hover { background: rgba(255, 255, 255, .26); }
-.lightbox__close:hover { transform: scale(1.06); }
-.lightbox__close:focus-visible,
-.lightbox__nav:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
-.lightbox__nav[aria-disabled="true"] { opacity: .35; pointer-events: none; }
-.lightbox__close {
-  top: 1rem;
-  right: 1rem;
-  width: 2.5rem;
-  height: 2.5rem;
-  font-size: 1.5rem;
-}
-.lightbox__nav {
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3rem;
-  height: 3rem;
-  font-size: 2rem;
-}
-.lightbox__nav:hover { transform: translateY(-50%) scale(1.06); }
-.lightbox__prev { left: 1rem; }
-.lightbox__next { right: 1rem; }
-
-@media (max-width: 767.98px) {
-  .lightbox { padding: 4.5rem 1rem 1rem; }
-  .lightbox__close { top: .5rem; right: .5rem; width: 2.25rem; height: 2.25rem; font-size: 1.25rem; }
-  .lightbox__nav { width: 2.5rem; height: 2.5rem; font-size: 1.6rem; }
-  .lightbox__prev { left: .5rem; }
-  .lightbox__next { right: .5rem; }
-  .lightbox__img { max-height: 52vh; }
-  .lightbox__meta { max-width: 100%; max-height: 30vh; }
-}
-
 /* ===== Reduced motion: freeze every transition/animation/keyframe in this
    theme not already covered by an earlier @media (prefers-reduced-motion)
    block (search: "prefers-reduced-motion" for the others — hero pill glow,
@@ -1518,9 +1286,4 @@ li[id^="result"].result--keyword {
   .tile:hover, .tile:focus-within { transform: none; }
   .tile__img { transition: none; }
   .tile:hover .tile__img, .tile:focus-within .tile__img { transform: none; }
-  .lightbox:not([hidden]) { animation: none; }
-  .lightbox__figure { animation: none; }
-  .lightbox__close, .lightbox__nav { transition: none; }
-  .lightbox__close:hover { transform: none; }
-  .lightbox__nav:hover { transform: translateY(-50%); }
 }
