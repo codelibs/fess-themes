@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // FAQ-specific pure helpers for the HelpDesk theme.
 //
-// DOM-free on purpose: scripts/test-helpdesk-helpers.mjs imports this under
+// DOM-free on purpose, so these helpers can be imported and unit-tested under
 // plain node (no browser, no jsdom). Keep DOM work in search.js/app.js.
 
 /**

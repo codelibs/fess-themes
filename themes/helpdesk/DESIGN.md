@@ -246,10 +246,12 @@ render than from a custom display face.)
 ## Facet sidebar: kept deliberately, mostly redundant
 
 `#facet-body` (desktop sidebar), `#facet-body-mobile`, and `#facetOffcanvas`
-(the mobile offcanvas panel) are present in `index.html` and are populated by
-the unmodified `search.js` facet-rendering code. They are **required element
-IDs** — `scripts/verify-theme.sh` fails a theme copy that drops any of them
-— so they are not removed here even though, in this theme's expected
+(the mobile offcanvas panel) are present in `index.html` and are wired by id:
+the unmodified `search.js` facet-rendering code resolves `#facet-body` (:1530)
+and `#facet-body-mobile` (:1541, :1594) with `getElementById`, and the toolbar
+button's `data-bs-target="#facetOffcanvas"` is resolved by `compat.js`'s
+Offcanvas shim. Dropping any of them leaves that shared code addressing
+nothing, so they are not removed here even though, in this theme's expected
 deployment shape, they add little:
 
 - A FAQ site is expected to run with `query.facet.fields=label` (see the

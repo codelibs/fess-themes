@@ -140,8 +140,7 @@ function buildGoUrl(originalUrl, docId, queryId, order, rt) {
 
 // plainTitle() moved to helpdesk.js: it decodes the closed set of HTML
 // entities the server emits in content_title (so aria-label matches the
-// visible title) and is DOM-free, so it lives with the other pure helpers
-// and is covered by scripts/test-helpdesk-helpers.mjs under plain Node.
+// visible title) and is DOM-free, so it lives with the other pure helpers.
 
 function buildResultCard(d, queryId, order) {
   // Tag-parity with searchResults.jsp result item:

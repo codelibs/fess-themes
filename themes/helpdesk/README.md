@@ -82,8 +82,7 @@ carry this theme's real deltas (the accordion render path, best-bet card,
 home category tiles), and `assets/helpdesk.js` is new — a small, DOM-free
 module of FAQ-specific helpers (`answerHtml`, `titleHtml`, `hasCache`,
 `cacheHref`, `plainTitle`, `bestBets`), kept separate from `search.js` so it
-can be unit tested under plain Node (`scripts/test-helpdesk-helpers.mjs`)
-with no browser or DOM shim required.
+can be unit tested under plain Node with no browser or DOM shim required.
 
 ## Bootstrap compatibility shim (`assets/compat.js`)
 
