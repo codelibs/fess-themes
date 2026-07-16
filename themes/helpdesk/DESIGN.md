@@ -19,9 +19,25 @@ third-party artifact.
 
 ## Design tokens (`--hd-*`)
 
-All tokens are defined once in `assets/styles.css`'s `:root` and consumed
-throughout the stylesheet — there are no hardcoded hex values outside the
-token block.
+All tokens are defined once in `assets/styles.css`'s `:root` (lines 18–89) and
+consumed throughout the stylesheet, with two classes of exception — 33 hex
+literals do appear outside the token block:
+
+- **`#fff`, 22 occurrences** — foreground text sitting on an already-colored
+  fill (`.btn-primary`, `.btn-success`, `.df-tooltip`, …), where the literal
+  means "the light end of the scale" rather than a palette choice.
+- **Eight derived shades that have no token of their own, 11 occurrences** —
+  hover darkenings and readable text tints of colors that *are* tokenized:
+  `#15803D` (`.btn-success:hover`, :383), `#B91C1C` (`.btn-danger:hover` :386
+  and `.btn-outline-danger:hover` :395), `#FACC15`
+  (`.warning-indicator .nav-link:hover`, :584), `#60A5FA` (the light stop of
+  the `.chat-welcome-icon` gradient, :885), and the four alert text colors
+  `#1E40AF` / `#166534` / `#854D0E` / `#991B1B` (:517–520).
+
+All eight shades are inherited verbatim, in the same rules, from the
+`docuforge` baseline this theme was built from (`docuforge/assets/styles.css`
+lines 377, 380, 389, 511–514, 578, 858). Promoting each to a `--hd-*` token is
+an open cleanup, not a deliberate design position.
 
 ### Colors
 
@@ -137,8 +153,13 @@ to `description.innerHTML` — a different file from this theme's
   passed through `format.js sanitizeHtml()` before it reaches the DOM — see
   `bestBets()` in `assets/helpdesk.js`)
 - `.hd-categories` / `.hd-category-tile` — the home-view category tiles, built
-  from `/api/v2/labels` (role-filtered, localized; see `renderHomeCategories()`
-  in `assets/app.js`)
+  from `/api/v2/labels` (see `renderHomeCategories()` in `assets/app.js`). That
+  endpoint is not simply "every registered label": `LabelsHandler` passes
+  `request.getLocale()` into `LabelTypeHelper.getLabelTypeItemList()`
+  (`LabelTypeHelper.java:126-140`), which filters on locale **and** virtual
+  host before the role check. A label registered with an explicit locale is
+  therefore hidden from browsers asking for a different language; a label with
+  no locale set matches every request (`matchLocale()`, :178-187).
 
 ---
 
@@ -155,10 +176,15 @@ Following the same pattern documented in this repository's `mosaic` theme
   interrupting the user: `#results-status`, `#results-notification`,
   `#related-queries`, `#similar-doc-banner`, and the featured-answer section
   (`#related-content[aria-live="polite"]`) all update this way after a search.
-- **`prefers-reduced-motion`.** All animated transitions in `styles.css` are
-  wrapped in `@media (prefers-reduced-motion: reduce)` blocks and collapse to
-  their static end-state; the accordion's clamp/unclamp is a layout change,
-  not an animation, so it is unaffected either way.
+- **`prefers-reduced-motion`.** Every transition in `styles.css` that actually
+  moves something is neutralized in an `@media (prefers-reduced-motion: reduce)`
+  block (`styles.css:779` and `:903`): the offcanvas panel's `transform`
+  (:659 → :782), the search-options drawer's `right` (:770 → :781), and the
+  modal dialog's `transform` (:630 → :783). The transitions still running under
+  `reduce` are color, opacity, and box-shadow fades that move nothing (`.btn`
+  :369, `.form-control` :434, `.page-item .page-link` :549, `.modal-backdrop`
+  :647, `.offcanvas-backdrop` :670). The accordion's clamp/unclamp is a layout
+  change, not an animation, so it is unaffected either way.
 
 ---
 
@@ -170,7 +196,7 @@ touching this theme's modal/dropdown/offcanvas behavior. Two reasons:
 1. **It has no `compat.js`.** The bundled `bootstrap` theme loads the real
    `/js/bootstrap.min.js` + `/js/popper.min.js` from Fess core. This theme
    (like every theme in this repository derived from `docuforge`) ships
-   **no Bootstrap** — `assets/compat.js` is a ~9 KB shim that implements only
+   **no Bootstrap** — `assets/compat.js` is a ~13 KB shim that implements only
    the subset of the `window.bootstrap` API (`Modal`, `Collapse`, `Dropdown`,
    `Offcanvas`, `Tooltip`) the shared SPA modules call.
 2. **`compat.js` dispatches no `*.bs.modal` events.** The bundled theme's

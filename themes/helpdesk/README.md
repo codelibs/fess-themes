@@ -22,7 +22,7 @@ Activate it by setting `theme.default=helpdesk` in the admin UI
 | **Inline accordion answers** | Click a result and its excerpt expands in the results list itself (`.hd-answer` / `.hd-answer-toggle`); the clamp is CSS-only, so expanding costs no request. See `DESIGN.md` for the accessibility contract. |
 | **"View original page"** | Always shown when a cache exists, independent of whether there is an inline excerpt to expand — the only path back to the source for image-only or near-empty pages. |
 | **Featured answer** | An admin-authored "best bet" card (`/admin/relatedcontent/`) sourced from `related_contents` and sanitized before render. |
-| **Category tiles** | The home view renders one tile per registered label (`/api/v2/labels`), linking straight into `?q=&fields.label=<value>` category browsing. |
+| **Category tiles** | The home view renders one tile per label that `/api/v2/labels` returns, linking straight into `?q=&fields.label=<value>` category browsing. That endpoint filters by role, by virtual host, **and by the request's `Accept-Language`** — see "Known limitations". |
 | **Optional AI escalation** | The existing RAG chat view (gated by the `rag_chat_enabled` feature flag) is reused unmodified as an escalation path for questions the FAQ excerpts don't answer. |
 
 ⚠️ **This theme does not work correctly on stock Fess defaults.** See
@@ -80,8 +80,8 @@ by overwriting one theme's file with another's — an overwrite would clobber
 whichever theme happens to pick up a change first. `search.js` and `app.js`
 carry this theme's real deltas (the accordion render path, best-bet card,
 home category tiles), and `assets/helpdesk.js` is new — a small, DOM-free
-module of FAQ-specific helpers (`answerHtml`, `titleHtml`, `plainTitle`,
-`cacheHref`, `bestBets`), kept separate from `search.js` specifically so it
+module of FAQ-specific helpers (`answerHtml`, `titleHtml`, `hasCache`,
+`cacheHref`, `plainTitle`, `bestBets`), kept separate from `search.js` so it
 can be unit tested under plain Node (`scripts/test-helpdesk-helpers.mjs`)
 with no browser or DOM shim required.
 
@@ -134,7 +134,10 @@ query.highlight.boundary.position.detect=false
 query.highlight.no.match.size=500
 
 # Raises the floor for the digest fallback path above. Requires a re-crawl —
-# it only affects content indexed after the change.
+# it only affects content indexed after the change. NOTE: this covers the
+# HTML/web crawl only. If the FAQ is published as PDF/Office files, raise
+# crawler.document.file.max.digest.length (default 200) as well — see known
+# limitation 6.
 crawler.document.html.max.digest.length=500
 ```
 
@@ -196,12 +199,59 @@ above:
    deployed instance with no query history, the section renders nothing and
    is hidden entirely, not shown empty.
 5. **`query.highlight.fragment.size` is a global server setting**, not
-   per-theme or per-request. Raising it increases the size of every search
+   per-theme. Raising it increases the size of every search
    response, because more highlighted text is generated and transferred for
    every hit, on every theme active on the server — not just this one. The
    accordion's CSS clamp only affects what is **visually** shown; it does
    not reduce what is fetched over the network, so tune `fragment.size`
    conservatively even though the UI hides the excess.
+
+   It is not quite per-request-fixed, though.
+   `V2JsonRequestParams.getHighlightInfo()`
+   (`api/v2/handlers/V2JsonRequestParams.java:349-350`) delegates to
+   `ViewHelper.createHighlightInfo()` (`helper/ViewHelper.java:397-419`), which
+   reads a `screen_width` request parameter;
+   when it is below 768, `updateHighlightInfo()` (`:428-436`) scales
+   `fragmentSize` by `width/768`, floored at 50%, and **caches the width in the
+   HTTP session** (`:406`). This theme never sends `screen_width`, but the
+   session is shared with any other UI on the same server — a session that
+   picked the parameter up from the JSP UI on a phone silently halves this
+   theme's fragments too, for the life of that session. It can only ever shrink,
+   and only to 50%, so the 1000-vs-445-character headroom above survives it.
+   The other three settings have no per-request path at all and are strictly
+   global: `no.match.size` (`SearchEngineClient.java:2352`),
+   `boundary.position.detect` (`ViewHelper.java:364`) and `terminal.chars`
+   (`ViewHelper.java:227`) are read straight from the server config.
+6. **`crawler.document.html.max.digest.length` only covers the HTML/web
+   crawl.** It is read by `FessXpathTransformer` (`:548`), which handles
+   web-crawled pages. File-crawled documents (PDF, Office, plain text) take a
+   different path — `AbstractFessFileTransformer` (`:280`) reads
+   **`crawler.document.file.max.digest.length`**, whose default is **200**
+   (`fess_config.properties:409`). An FAQ published as PDFs is therefore
+   untouched by the setting documented above, and needs the `file` variant
+   raised instead. Both are index-time settings: changing either requires a
+   re-crawl.
+7. **Opening a cached page can return 500 on Fess 15.7.** If the query
+   contains a `$` followed by a digit — a price like `$12` in a billing FAQ is
+   the realistic case — `ViewHelper.replaceHighlightQueries()` passes the
+   replacement to `Matcher.replaceAll()` unquoted, so `$1` is read as a group
+   reference into a pattern with no groups and throws, which the cache handler
+   turns into a 500. Search itself is unaffected (it is token-based, so `$12`
+   matches fine and the results render); only "View original page" fails, which
+   is this theme's headline feature and its documented fallback for every
+   answer the accordion cannot render. Fixed upstream by
+   [codelibs/fess#3186](https://github.com/codelibs/fess/pull/3186), which
+   landed on `master` (15.8.0-SNAPSHOT) **after** the `fess-15.7.0` tag — so
+   the bug is live on `theme.yml#minFessVersion: "15.7"`. There is no
+   theme-side workaround; it needs a Fess ≥ 15.8 build.
+8. **Category tiles are not "every registered label".** `/api/v2/labels`
+   filters the label set by role, by virtual host, **and by locale**
+   (`LabelTypeHelper.getLabelTypeItemList()`, `:126-140`), using the request's
+   `Accept-Language` (`LabelsHandler.java:65`). A label registered with an
+   explicit locale of `ja` will not appear for a browser asking for `en`, so a
+   multilingual FAQ can legitimately show different tiles — or none — to
+   different visitors. A label with no locale set matches every request, which
+   is why this is invisible on a single-locale deployment.
 
 ---
 
