@@ -15,6 +15,7 @@
   "facet.filter_button": "Filtry",
   "facet.clear": "Wyczyść",
   "facet.empty": "Brak aspektów — wykonaj wyszukiwanie.",
+  "facets.empty": "Brak dostępnych filtrów dla tego wyszukiwania.",
   "facet.not_found": "No matching filters.",
   "pagination.next": "Dalej",
   "pagination.prev": "Wstecz",
@@ -349,5 +350,10 @@
   "search.sort.relevance": "Relevance",
   "search.density": "Density",
   "search.density_comfortable": "Comfortable",
-  "search.density_compact": "Compact"
+  "search.density_compact": "Compact",
+  "facet.repository": "Repozytorium",
+  "facet.language": "Język",
+  "facet.organization": "Organizacja",
+  "facet.path": "Ścieżka / Nazwa pliku",
+  "chip.remove_filter": "Usuń filtr {field}"
 }

@@ -355,15 +355,5 @@
   "facet.language": "Language",
   "facet.organization": "Organization",
   "facet.path": "Path / Filename",
-  "ask.ai_title": "Ask AI",
-  "result.files_count": "{count} files",
-  "result.open_in_repository": "Open in repository",
-  "search.qualifier_hint": "Tip: use repo: org: path: file: lang: qualifiers",
-  "search.qualifier_repo": "Filter by repository",
-  "search.qualifier_org": "Filter by organization",
-  "search.qualifier_path": "Filter by path",
-  "search.qualifier_file": "Filter by filename",
-  "search.qualifier_lang": "Filter by language",
-  "chip.remove": "Remove filter",
   "chip.remove_filter": "Remove {field} filter"
 }

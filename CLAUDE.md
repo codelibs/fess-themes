@@ -12,6 +12,24 @@ artifact, served at `/themes/<name>/`.
 
 See `README.md` for the theme list, repository layout, and install instructions.
 
+## Commands
+
+```bash
+./scripts/package.sh <name> [<name> ...]   # → dist/<name>-<version>.zip
+./scripts/package.sh --all                 # every theme under themes/
+```
+
+`zip` is required; `yq` is used if present, else the `^version:` grep fallback (below).
+The script checks only that the theme dir, `theme.yml`, and a non-empty version exist — it
+does **not** validate the version against the server's SemVer pattern, so a malformed
+version packages fine and only fails at install with `INVALID_VERSION`.
+
+**There is no build, no CI, no test runner, and no dev server.** A theme cannot be
+previewed from `file://`: it is an SPA on absolute `/themes/<name>/` paths calling
+`/api/v2/*`, so it only runs when served by Fess. The loop is package → upload at
+**Admin → Theme** (`/admin/theme/`) → activate, or set `theme.default=<name>` in
+`fess_config.properties` against a running Fess 15.7+.
+
 ## Theme versioning
 
 **Every theme carries its own `version` in `themes/<name>/theme.yml`. Bump it in the same
@@ -68,14 +86,37 @@ and in `themes/<name>/README.md` and update them to match.
 
 ## Shared core files
 
-Several themes carry byte-identical copies of shared core modules — most notably
-`assets/format.js` (the HTML sanitizer), which also has a counterpart in the `bootstrap`
-reference theme in the `fess` repository. Some theme READMEs assert byte-identity with
-that reference copy.
+Every theme carries its own copy of the same core modules. The copies are identical
+**except for the per-theme module comment on line 2** — they are not byte-identical, so a
+plain `md5` reports a difference for every theme and tells you nothing.
+
+Identical across all 8 themes (line 2 aside):
+
+```
+advance.js  cache.js  error.js  format.js  markdown.js  profile.js  router.js
+```
+
+Identical across 7, with `codesearch` diverged: `api.js`, `auth.js`.
+`chat.js` splits 6 / `codesearch` / `docsearch`.
+`compat.js` / `help.js` / `i18n.js` differ only by name-bound `/themes/<name>/` paths.
+`assets/logo.png` and `assets/logo-head.png` are byte-identical across all 8.
+
+`codesearch` is the usual outlier — it is the oldest lineage and its `theme.yml` also omits
+the `author` / `description` / `license` / `homepage` the other 7 carry.
+
+`assets/format.js` (the HTML sanitizer) has a 9th copy in the `bootstrap` reference theme
+of the `fess` repo (`src/main/webapp/themes/bootstrap/assets/format.js`), and some theme
+READMEs assert identity with it.
 
 **When patching a shared core file, patch every copy in the same PR and bump every
-affected theme**, otherwise the identity claims silently become false. Copies are expected
-to differ only in a per-theme module comment; verify with a hash over the rest.
+affected theme**, otherwise the identity claims silently become false. Nothing enforces
+this — there is no CI. Verify with a hash that ignores the comment line:
+
+```bash
+for f in themes/*/assets/format.js ../fess/src/main/webapp/themes/bootstrap/assets/format.js; do
+  printf '%s  %s\n' "$(sed '2d' "$f" | md5 -q)" "$f"
+done | sort   # a single distinct hash = all copies in sync
+```
 
 ## Conventions
 
@@ -84,5 +125,28 @@ to differ only in a per-theme module comment; verify with a hash over the rest.
   script for FOUC-safe theming.
 - Asset paths inside a theme are absolute and name-bound (`/themes/<name>/assets/...`), so
   renaming a theme means updating `theme.yml#name`, `#displayName`, and every path.
-- i18n lives in `i18n/messages.<locale>.json`; keep key parity across the locales a theme
-  declares in `theme.yml#supportedLocales`.
+- i18n lives in `i18n/messages.<locale>.json`. Every theme ships **16** message bundles and
+  **8** `help/<locale>.json` bundles, but 7 of the 8 themes declare only 8 locales in
+  `theme.yml#supportedLocales` (`codesearch` declares all 16) — the undeclared bundles ship
+  but the server never lists them. Keep key parity across *every shipped bundle*, not just
+  the declared ones. `help.js` falls back to `help/en.json` for locales with no help bundle.
+- **A missing i18n key renders as the raw key, not as English.** `i18n.js` loads exactly one
+  bundle and `t()` returns `messages[key] || key`; the English fallback only fires when the
+  whole bundle fails to fetch, never per key. So a key present in `messages.en.json` but
+  absent from `messages.de.json` puts the literal text `facets.empty` on the page for German
+  users. This is why parity is load-bearing rather than cosmetic — check it before shipping.
+
+## Gotchas
+
+- **"No Bootstrap" means a shim, not an absence.** `assets/compat.js` re-implements the
+  Bootstrap 5 JS API (Modal / Collapse / Dropdown / Offcanvas / Tooltip) onto
+  `window.bootstrap`, because the SPA modules still use `data-bs-*` attributes and
+  `getOrCreateInstance()`. It is a classic `defer` script and **must** run before `app.js`
+  (`type="module"`) — see the load-order comment in any `index.html`. Break it and the
+  login modal, facet offcanvas, and search-options drawer break in every theme.
+- **`thumbnail.png` ships.** Only `README.md` and `DESIGN.md` are excluded from the ZIP, so
+  a thumbnail change needs a version bump like any other shipped file. Constraints:
+  ≤512KB, ≤512×512, declared as `theme.yml#thumbnail`.
+- **New themes are copied from `docuforge`**, the de-facto baseline. The most common
+  copy-paste defect is a leftover `/themes/<baseline>/` path or baseline brand string in
+  the copy — grep for both (case-insensitively) before opening the PR.

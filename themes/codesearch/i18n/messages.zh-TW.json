@@ -15,6 +15,7 @@
   "facet.filter_button": "篩選",
   "facet.clear": "清除",
   "facet.empty": "暫無分面 — 請執行搜尋。",
+  "facets.empty": "此搜尋沒有可用的篩選條件。",
   "facet.not_found": "No matching filters.",
   "pagination.next": "下一頁",
   "pagination.prev": "上一頁",
@@ -349,5 +350,10 @@
   "search.sort.relevance": "Relevance",
   "search.density": "Density",
   "search.density_comfortable": "Comfortable",
-  "search.density_compact": "Compact"
+  "search.density_compact": "Compact",
+  "facet.repository": "存放庫",
+  "facet.language": "語言",
+  "facet.organization": "組織",
+  "facet.path": "路徑 / 檔案名稱",
+  "chip.remove_filter": "移除{field}篩選條件"
 }

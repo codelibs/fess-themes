@@ -573,10 +573,10 @@ function renderFacets(env) {
 
   // Mapping from display label to fess field name
   const GROUPS = [
-    { label: "Repository",    field: "repository" },
-    { label: "Language",      field: "filetype" },
-    { label: "Organization",  field: "organization" },
-    { label: "Path/Filename", field: "filename" },
+    { label: t("facet.repository"),   field: "repository" },
+    { label: t("facet.language"),     field: "filetype" },
+    { label: t("facet.organization"), field: "organization" },
+    { label: t("facet.path"),         field: "filename" },
   ];
 
   // Clear everything except a .rail-title heading if present
@@ -689,13 +689,19 @@ function renderFacets(env) {
   }
 }
 
-/** Display label for a fess field name. */
-const FACET_FIELD_LABELS = {
-  repository:   "Repository",
-  filetype:     "Language",
-  organization: "Organization",
-  filename:     "Path/Filename",
-};
+/**
+ * Display labels for fess field names, keyed by field.
+ * Resolved per call rather than held in a module-level constant: this module is
+ * imported before app.js awaits i18n.init(), so t() would return raw keys here.
+ */
+function facetFieldLabels() {
+  return {
+    repository:   t("facet.repository"),
+    filetype:     t("facet.language"),
+    organization: t("facet.organization"),
+    filename:     t("facet.path"),
+  };
+}
 
 /**
  * Render removable qualifier chips in #active-chips (inserted before #results).
@@ -729,8 +735,10 @@ function renderActiveChips() {
   }
   chips.hidden = false;
 
+  const fieldLabels = facetFieldLabels();
+
   for (const q of qualifiers) {
-    const fieldLabel = FACET_FIELD_LABELS[QUALIFIER_MAP[q.key] || q.key] || q.key;
+    const fieldLabel = fieldLabels[QUALIFIER_MAP[q.key] || q.key] || q.key;
 
     const chip = document.createElement("span");
     chip.className = "active-chip";
@@ -743,7 +751,7 @@ function renderActiveChips() {
     removeBtn.type = "button";
     removeBtn.className = "chip-remove";
     removeBtn.textContent = "×"; // XSS-safe: textContent
-    removeBtn.setAttribute("aria-label", "Remove filter");
+    removeBtn.setAttribute("aria-label", t("chip.remove_filter", { field: fieldLabel }));
 
     removeBtn.addEventListener("click", () => {
       const qi = document.getElementById("query-input");
