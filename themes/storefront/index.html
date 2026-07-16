@@ -152,9 +152,9 @@
             <div class="col text-center searchFormBox">
               <h1 class="mainLogo">
                 <img src="/themes/storefront/assets/logo.png" alt="" data-i18n-alt="page.heading" class="home-logo">
-                <span class="storefront-hero-title" data-i18n="home.hero_title">Search by meaning or by keyword.</span>
+                <span class="storefront-hero-title" data-i18n="home.hero_title">Search products by name, brand, or category.</span>
               </h1>
-              <p class="storefront-hero-sub" data-i18n="home.hero_sub">Search by keywords or ask in full sentences — Storefront matches by both keyword and meaning, and shows how each result was found.</p>
+              <p class="storefront-hero-sub" data-i18n="home.hero_sub">Every result is a product card — photo, price, rating, and stock — not a page of text.</p>
               <!-- Notification banner (parity index.jsp .notification) — rendered by
                    app.js renderNotifications() from config.notifications.search_top. -->
               <div class="notification" id="home-notification" role="status" aria-live="polite"></div>
@@ -178,7 +178,7 @@
                         id="home-suggest-dropdown" role="listbox" aria-label="Search suggestions"></ul>
                   </div>
                 </div>
-                <p class="storefront-hero-hint" data-i18n="home.hero_hint">Ask a question, or search by keywords.</p>
+                <p class="storefront-hero-hint" data-i18n="home.hero_hint">Try a product name, brand, or category.</p>
                 <!-- Popular words (parity index.jsp:140-156). Hidden in this theme's
                      hero via CSS; element kept so app.js renderer never breaks. -->
                 <div class="clearfix">
@@ -197,31 +197,30 @@
         </div>
       </div>
       <!-- Search-mode preview cards — 3 educational cards straddling the hero →
-           light boundary (source-colored icon tiles), previewing the
-           Keyword / Visual / Blend badges users will see on results. Purely
-           educational; renders regardless of whether the `searcher` field is
-           exposed by the backend. -->
+           light boundary (source-colored icon tiles), previewing the product
+           grid's price-first behavior: every card shows price/rating/stock,
+           price facets are counted bands, and results can be sorted by price. -->
       <div class="storefront-preview-cards">
-        <div class="storefront-preview storefront-preview--kw">
+        <div class="storefront-preview storefront-preview--price">
           <div class="storefront-preview__head">
-            <span class="storefront-preview__icon" aria-hidden="true"><i class="fa fa-search"></i></span>
-            <span class="storefront-preview__title" data-i18n="searcher.keyword">Keyword</span>
+            <span class="storefront-preview__icon" aria-hidden="true"><i class="fa fa-tag"></i></span>
+            <span class="storefront-preview__title" data-i18n="home.preview_price_title">Prices at a glance</span>
           </div>
-          <p class="storefront-preview__desc" data-i18n="searcher.title_keyword">Matched by keywords (full-text search)</p>
+          <p class="storefront-preview__desc" data-i18n="home.preview_price_desc">Every result shows price, rating, and stock.</p>
         </div>
-        <div class="storefront-preview storefront-preview--vi">
+        <div class="storefront-preview storefront-preview--bands">
           <div class="storefront-preview__head">
-            <span class="storefront-preview__icon" aria-hidden="true"><i class="fa fa-image"></i></span>
-            <span class="storefront-preview__title" data-i18n="searcher.visual">Visual</span>
+            <span class="storefront-preview__icon" aria-hidden="true"><i class="fa fa-filter"></i></span>
+            <span class="storefront-preview__title" data-i18n="home.preview_bands_title">Narrow by price</span>
           </div>
-          <p class="storefront-preview__desc" data-i18n="searcher.title_visual">Matched by image similarity (visual search)</p>
+          <p class="storefront-preview__desc" data-i18n="home.preview_bands_desc">Price bands show how many products fall in each range.</p>
         </div>
-        <div class="storefront-preview storefront-preview--bl">
+        <div class="storefront-preview storefront-preview--sort">
           <div class="storefront-preview__head">
-            <span class="storefront-preview__icon" aria-hidden="true"><i class="fa fa-bolt"></i></span>
-            <span class="storefront-preview__title" data-i18n="searcher.blend">Blend</span>
+            <span class="storefront-preview__icon" aria-hidden="true"><i class="fa fa-sort"></i></span>
+            <span class="storefront-preview__title" data-i18n="home.preview_sort_title">Sort by price</span>
           </div>
-          <p class="storefront-preview__desc" data-i18n="searcher.title_blend">Matched by both keyword and visual similarity</p>
+          <p class="storefront-preview__desc" data-i18n="home.preview_sort_desc">Cheapest first, or best rated.</p>
         </div>
       </div>
     </section>

@@ -1033,7 +1033,8 @@ legend { display: none; }
 #home-view .storefront-hero .notification { color: #c9cdf0; }
 
 /* Search-mode preview cards — three cards straddling the hero → light boundary,
-   previewing the Keyword / Visual / Blend badges shown on results. */
+   previewing the product grid's price/rating/stock cards, price-band facet
+   counts, and price sort. */
 #home-view .storefront-preview-cards {
   max-width: 900px; margin: -44px auto 0; position: relative; z-index: 5;
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; padding: 0 22px;
@@ -1048,9 +1049,9 @@ legend { display: none; }
   flex: 0 0 auto; color: #fff;
 }
 #home-view .storefront-preview__icon .fa { font-size: .8rem; }
-#home-view .storefront-preview--kw .storefront-preview__icon { background: var(--mm-keyword); }
-#home-view .storefront-preview--vi .storefront-preview__icon { background: var(--mm-visual); }
-#home-view .storefront-preview--bl .storefront-preview__icon { background: var(--mm-blend); }
+#home-view .storefront-preview--price .storefront-preview__icon { background: var(--mm-keyword); }
+#home-view .storefront-preview--bands .storefront-preview__icon { background: var(--mm-visual); }
+#home-view .storefront-preview--sort .storefront-preview__icon { background: var(--mm-blend); }
 #home-view .storefront-preview__title { color: var(--df-stone-900); }
 #home-view .storefront-preview__desc { margin: 0; font-size: .82rem; color: var(--df-stone-500); line-height: 1.55; }
 

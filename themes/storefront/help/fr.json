@@ -2,8 +2,8 @@
   "sections": [
     {
       "id": "gallery",
-      "title": "Vue galerie",
-      "html": "<p>Les résultats de recherche s'affichent par défaut sous forme de galerie de vignettes. Cliquez sur une vignette (ou appuyez sur Entrée/Espace lorsqu'elle est sélectionnée) pour ouvrir l'image en pleine taille dans la visionneuse, puis utilisez les boutons flèches ou les touches flèche gauche/droite pour naviguer. Utilisez le bouton grille/liste au-dessus des résultats pour revenir à tout moment à la vue en liste classique.</p><p>Lorsque cette installation de Fess est configurée pour la recherche multimodale, certains résultats peuvent afficher un petit badge — <strong>Mot-clé</strong> (trouvé par le texte), <strong>Visuel</strong> (trouvé par similarité d'image) ou <strong>Mixte</strong> (trouvé par les deux) — indiquant comment chaque résultat a été trouvé. Si aucun badge ne s'affiche, la recherche fonctionne normalement.</p>"
+      "title": "Grille de produits",
+      "html": "<p>Les résultats de recherche s'affichent par défaut sous forme de grille de fiches produit : une photo, le nom du produit, le prix, la note en étoiles et la disponibilité en stock — volontairement sans extrait de texte, afin que vous puissiez parcourir les images et les prix plutôt que lire du texte. Cliquez sur une fiche pour ouvrir sa page produit.</p><p>Dans la barre latérale, les filtres de prix et les autres filtres affichent une barre à côté de chaque option, dont la taille est relative au nombre le plus élevé de ce groupe, ce qui permet de voir d'un coup d'œil quelle tranche de prix compte le plus de résultats. Utilisez le tri au-dessus des résultats pour changer l'ordre, par exemple par prix.</p>"
     },
     {
       "id": "basic",

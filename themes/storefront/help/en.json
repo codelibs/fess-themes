@@ -2,8 +2,8 @@
   "sections": [
     {
       "id": "gallery",
-      "title": "Gallery View",
-      "html": "<p>Search results are shown as a thumbnail gallery by default. Click a tile (or press Enter/Space when it is focused) to open the full-size image in the preview viewer, and use the arrow buttons or Left/Right arrow keys to browse. Use the grid/list button above the results to switch to a traditional list view at any time.</p><p>When this Fess deployment is configured for multimodal search, some results may show a small badge — <strong>Keyword</strong> (matched by text), <strong>Visual</strong> (matched by image similarity), or <strong>Blend</strong> (matched by both) — showing how each result was found. If badges are not shown, search still works normally.</p>"
+      "title": "Product Grid",
+      "html": "<p>Search results are shown as a grid of product cards: a photo, the product name, price, star rating, and stock availability — deliberately with no text snippet, so you can scan pictures and prices rather than read prose. Click a card to open its product page.</p><p>In the sidebar, price and other filters draw a bar next to each option, sized relative to the largest count in that group, so you can see at a glance which band has the most matches. Use the sort control above the results to change the order, for example by price.</p>"
     },
     {
       "id": "basic",

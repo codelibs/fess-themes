@@ -1,154 +1,202 @@
-# Mosaic — Fess Static Theme (Multimodal Gallery Search)
+# Storefront — Fess Static Theme (EC / Product Search)
 
-Mosaic is a **self-contained**, thumbnail-first Fess static theme built for **multimodal search**: text→image (CLIP-style) visual matching blended with keyword/BM25 full-text search over a mixed document/image corpus. Results are presented as a photo-gallery grid rather than a plain link list, with a full-size lightbox viewer for previewing hits in place.
+Storefront is a **self-contained** Fess static theme for **product search**: each result is
+a card with a photo, price, rating and stock — and deliberately **no text snippet**. Facet
+counts are drawn as proportional bars, so a price band shows how many products fall in it at
+a glance.
 
-Mosaic is designed for stacks such as `docker-multimodalsearch` (Fess + a multimodal search plugin + a CLIP embedding server), but it degrades gracefully to a perfectly usable general-purpose search theme on a stock Fess deployment with no multimodal configuration at all.
+It is derived from the `mosaic` theme, whose thumbnail grid, lazy-loading and no-image
+fallback are what a product grid needs. Mosaic's multimodal parts — searcher badges,
+composition band, lightbox and the list view — are not present here.
 
 ## Installation
 
 ```bash
 cd repos/fess-themes
-./scripts/package.sh mosaic
-# Produces dist/mosaic-<version>.zip
+./scripts/package.sh storefront
+# Produces dist/storefront-<version>.zip
 ```
 
 Upload the ZIP via **Admin > Theme** (`/admin/theme/`) in the Fess admin console, or set
 
 ```properties
-theme.default=mosaic
+theme.default=storefront
 ```
 
 in `fess_config.properties` (or as a Java system property) and restart Fess.
 
 ## What it is
 
-- **Gallery grid** — search results render as square thumbnail tiles (`ul.gallery` / `li.tile`) by default, so a corpus of images/documents can be scanned at a glance rather than read line by line.
-- **Grid / list toggle** — a persistent `#view-toggle` control switches between the gallery grid and a traditional list of result cards; the choice is remembered per browser via `localStorage("mosaic.view")`.
-- **Lightbox viewer** — clicking (or pressing Enter/Space on) a tile opens a full-screen overlay with the larger image, title, source link, facts (type/size/date/score), a searcher badge when available, and Prev/Next navigation across the current result page. It is a focus-trapped, `aria-modal="true"` dialog, closable via the close button, `Esc`, or backdrop click, and restores focus to the tile that opened it.
-- **Multimodal home hero** — the `#home-view` opens on a dark, full-bleed band with a decorative canvas animation and a typewriter-animated search placeholder (see "Home hero" below), instead of a plain logo-and-search-box.
+- **Product cards** — results render as tiles carrying photo, name, price, star rating,
+  stock badge and brand. There is no `content_description` snippet: a shopper scanning a
+  grid reads the price and the picture, and a prose fragment of the product page is noise.
+  Every other theme in this repository renders a document; a product is not one.
+- **Count bars** — each facet-query group (a price band group, Updated, Size, anything the
+  server defines) is drawn as bars proportional to its real counts, with the count beside
+  it, instead of a bare numeric badge.
+- **Price-aware sorting** — sort by price or rating, driven by the server's `sort_options`.
+- **Grid only** — there is no grid/list toggle. Grid *is* the thesis.
 
 ## Requirements / Configuration
 
-Mosaic works on any Fess 15.7+ install with zero extra configuration — it is a valid general-purpose theme on its own. The searcher-provenance features described below only activate when the backend is additionally configured for multimodal/hybrid search:
+These are **required**, not suggestions. The theme cannot detect a missing one, and does not
+pretend to.
+
+### The index mapping must be supplied externally
+
+Fess has no `*_i` / `*_d` dynamic-suffix convention — a numeric price does not become a
+number by naming it. Supply a mapping that types the fields (`price` as `double`, `rating`
+as `float`, `availability` / `brand` / `category` as `keyword`) by mounting an
+`fess_indices/_<type>/fess/doc.json` and setting `search_engine.type=<type>`.
+
+There is no workaround via `.keyword`: **`sort=price.keyword` is impossible**, because the
+sort value is split on `.` and the second token is read as the order. The field has to be
+sortable at the top level, which means the mapping is mandatory rather than tidy.
+
+### `fess_config.properties`
 
 ```properties
-query.additional.api.response.fields=searcher
+query.additional.response.fields=price,rating,availability,brand,category
+query.additional.api.response.fields=price,rating,availability,brand,category
+query.additional.search.fields=price,rating,availability,brand,category
+query.additional.facet.fields=availability,brand,category
+query.additional.sort.fields=price,rating
+query.additional.not.analyzed.fields=availability,brand,category
+query.facet.fields=label,brand,category,availability
 ```
 
-(note: the `.api.` variant of the property, since the theme reads the field from the `/api/v2/search` JSON response) **plus** hybrid rank fusion enabled on the server (e.g. a multimodal search plugin performing keyword + CLIP-vector rank fusion, such as in the `docker-multimodalsearch` stack). When either piece is missing, the `searcher` field is simply absent from every hit and Mosaic **silently omits** every provenance-driven element (badges, composition band, colored card spine, filter-sidebar caption) — the theme still functions as a normal search UI, just without the extra context.
+Each list fails differently, and one of them fails **silently**:
 
-## Searcher badges: Keyword / Visual / Blend
+- `api.response.fields` — without it the card has nothing to draw.
+- **`search.fields` — omit `price` and `price:[0 TO 999]` does not error.** The field name is
+  dropped and the bare range text is match-phrased against the default fields, returning
+  wrong results. Nothing in the response distinguishes that from a correct range facet that
+  legitimately matched nothing.
+- `facet.fields` — else `SearchQueryException("Invalid facet field")`.
+- `sort.fields` — else `InvalidQueryException`.
+- `not.analyzed.fields` — keyword fields only; numeric fields must not be listed.
 
-When a hit carries the `searcher` field, Mosaic classifies it into one of three kinds and surfaces it consistently everywhere the result appears:
+### Price bands
 
-| Kind | Meaning | Source values |
-|---|---|---|
-| **Keyword** | Matched by full-text/BM25 search only | `default` |
-| **Visual** | Matched by image similarity (CLIP-style vector search) only | `multi_modal` |
-| **Blend** | Matched by both keyword and visual similarity | `default` + `multi_modal` |
+The bands are configuration, not code — the theme renders whatever the server sends, so a
+¥100 shop and a car dealer differ only by this block:
 
-Every badge is an icon **and** a visible text label (never color alone — see Accessibility). It appears as:
+```properties
+query.facet.queries=\
+Price:\
+¥0〜999=price:[0 TO 999]\t\
+¥1,000〜2,999=price:[1000 TO 2999]\t\
+¥3,000〜5,999=price:[3000 TO 5999]\t\
+¥6,000〜9,999=price:[6000 TO 9999]\t\
+¥10,000〜=price:[10000 TO *]\n
+```
 
-- a small pill badge in the top-left corner of a gallery tile, and in the lightbox metadata panel;
-- a pill badge to the right of the title, a colored 3px left border on the card, and a one-line "Matched by …" caption, in list view;
-- a **Search Composition band** (`#search-composition`) above the results, summarizing the page's retrieval mix as a total count, a plain-language verdict ("A balanced blend…", "Mostly visual matches", "Mostly keyword matches"), a proportional 3-segment bar, and a count-free color legend. Hidden whenever no hit on the page carries a known searcher kind.
-- a **mode-aware caption** at the top of the filter sidebar, explaining that clicking a filter narrows the full fused result set, not just the keyword branch.
+A label that does not start with `labels.` is rendered verbatim, so changing the bands needs
+no i18n plumbing. **The value is read once at boot — changing it requires a restart.**
 
-The home page also shows three static "preview cards" (Keyword / Visual / Blend) that explain the badge vocabulary up front, regardless of whether the backend exposes `searcher` — these are purely educational and always render.
+### Thumbnails
 
-### Count-free filter sidebar
+**`thumbnail.enabled=true` is a SYSTEM property (`system.properties`), default `false`** —
+not a `fess_config` key. Without it no product image ever renders and every card falls back
+to an icon. `thumbnail.crawler.enabled` is already `true` in stock Fess, so setting it
+changes nothing.
 
-The sidebar's filter groups (file type, updated, size) are sourced from the query-independent `GET /api/v2/ui/config` endpoint rather than from the search response's facet buckets, so they stay populated even for visual-only queries that return no BM25 facet counts. No per-option counts are shown, since a hybrid deployment's aggregation counts only reflect the keyword branch and would otherwise be misleading.
+Fess takes the image from `<meta property="og:image">`, then the first `<img>` clearing the
+generator's minimum size (100×100) and aspect ratio (≤ 3.0).
 
-### Quote-on-filter behavior
+### Extracting the attributes from crawled HTML
 
-When multimodal search is active (i.e. the deployment has ever returned a `searcher` field) and a multi-word free-text query is combined with an active filter, Mosaic sends the query as a single quoted phrase. This mirrors what the search plugin already does automatically for an unfiltered multi-word query, and works around an HTTP 400 (duplicate `content_vector` inner-hits) that a filter otherwise triggers. It is skipped for empty queries, single tokens, already-quoted phrases, and advanced queries (`field:`/`AND`/`OR`/`NOT`).
+Use a Web crawl config's **config parameters**. `field.xpath.*` pulls the raw string and
+`field.script.*` post-processes it; the script's return value is stored **un-stringified**,
+so a Groovy script returning a number puts a real number in the document:
 
-## Thumbnails
+```
+field.xpath.price=//*[@itemprop='price']
+field.script.price=value == null ? null : Double.parseDouble(value.replaceAll('[^0-9.]',''))
+field.xpath.availability=//*[@itemprop='availability']/@href
+field.script.availability=value == null ? null : value.replaceAll('.*/','')
+```
 
-Gallery tiles and the JSP-parity list-view thumbnail both load images from the same-origin `/thumbnail/?docId=&queryId=` endpoint, lazily via `IntersectionObserver` (native `loading="lazy"` is intentionally not also set, to avoid double-gating). Because thumbnail generation can be an asynchronous server-side job, a failed load is retried with a backoff schedule of **2s → 5s → 15s → 30s**; once every retry is exhausted, the tile converts to a typed file-icon placeholder (`.tile--noimg`) instead of showing a broken-image glyph.
+Three things that will otherwise cost you an afternoon:
 
-The **lightbox** prefers the crawled full-resolution image over the thumbnail: it uses the hit's `url_link` when the hit's mimetype starts with `image/` **and** the URL is displayable under the theme's CSP — that is, its scheme is `https:`, **or** it resolves to the page's own origin (same-origin `http:` URLs are also allowed; only bare cross-origin `http:` is excluded, since the CSP's `img-src` has no plain `http:` source). In every other case (non-image hit, unsafe/cross-origin `http:` URL, or missing `url_link`) the lightbox falls back to the same `/thumbnail/?docId=&queryId=` endpoint the gallery tile uses.
+- **The Groovy binding is `value`**, never the field name. A wrong name is not a silent
+  null — it throws, and the whole document is dropped from the index.
+- **JSON-LD is unreachable from the web-crawl path.** `FessXpathTransformer` never calls an
+  extractor, so `schema.org` JSON-LD is invisible however much of it the page carries. Use
+  XPath against ordinary DOM; `itemprop` attributes work.
+- **The XPath helper concatenates every matching node** rather than taking the first. Two
+  `itemprop="price"` elements on one page silently yield `¥1,280¥999`.
 
-## Home hero
+## Known limitations
 
-The `#home-view` route opens with a full-bleed dark band (`.mosaic-hero`) containing a decorative `<canvas>` (`assets/home-hero.js`) that visualizes a shared text/image embedding space: short text-token chips stream in from the left (colored with `--mm-keyword`), small image tiles stream in from the right (`--mm-visual`), and both drift toward a central pulsing "shared embedding" node (`--mm-blend`). Colors are read live from the theme's CSS custom properties, with hardcoded fallbacks. The canvas runs on `requestAnimationFrame`, is paused whenever the home view is not visible or the tab is backgrounded, and renders a single static frame (no animation) under `prefers-reduced-motion`.
+- **The price is formatted as yen (`¥`), hardcoded.** There is no currency model; a non-yen
+  shop needs a change in `assets/storefront.js`.
+- **`availability` is matched on the bare tails `InStock` / `OutOfStock`.** The crawl must
+  strip the `https://schema.org/` prefix (the example above does). Any other value renders
+  no badge rather than an invented one.
+- **A non-numeric `price` renders nothing.** Deliberate: a string means the mapping or the
+  response fields are misconfigured, and rendering it raw would hide that.
+- **A missing rating omits the star row** rather than showing five empty stars — an empty
+  row would imply a real zero. A genuine `0` rating does render five empty stars.
+- No cart, no comparison tray, no personalisation. This is a search theme.
 
-Layered over the canvas is the real search box, restyled as a glowing pill (`.mosaic-hero-pill`) whose glow breathes gently between the keyword and blend hues. The `#contentQuery` input's `placeholder` (never its value) is animated with a typewriter effect that cycles through four localized example queries (`home.example_1..4`); it yields to the user the moment they type a non-empty value (mere focus does **not** stop it, so an empty focused box keeps showing the animated example) and resumes on blur-while-empty. Under `prefers-reduced-motion`, the first example is shown statically instead.
+## Counts are BM25-only — read this before porting the count bars
 
-Below the hero, three preview cards straddle the hero/light boundary, introducing the Keyword / Visual / Blend badge vocabulary (see above) before the user has even searched.
+The bars are driven by real `facet.query` counts from the server, and those counts come from
+the BM25 branch only. That is precisely why `mosaic` and `semanticlens` ship **count-free**
+facet sidebars: under a semantic or visual search their counts go empty or misleading.
+Storefront is keyword-only, so the counts are always accurate here.
+
+**Do not port count bars into a semantic or multimodal theme without solving that first** —
+you will ship empty bars. (For the record, the counts cost one request, not N: every band
+goes out as a repeated `facet.query` parameter on the same search call.)
+
+## Why bars, and why not a histogram
+
+A histogram implies a distribution over disjoint buckets. Fess's own shipped `timestamp`
+facet is cumulative and overlapping (`[now/d-1d TO *]`, `[now/d-7d TO *]`, …), and a theme
+cannot tell disjoint bands from cumulative ones by parsing the query string. So the theme
+does not try to: it draws **every** facet-query group as bars proportional to their counts,
+which is truthful either way. For a disjoint band set — which a price facet is — the result
+is a distribution anyway, for free, with no inference.
 
 ## Content Security Policy
 
-Mosaic ships a tightened CSP (see `<meta http-equiv="Content-Security-Policy">` in `index.html`):
+`StaticThemeResponder` serves `index.html` under a strict CSP, and the page's own meta CSP
+intersects with it:
 
 ```
 default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline';
-font-src 'self'; img-src 'self' data: https:; connect-src 'self';
-frame-src blob:; child-src blob:; base-uri 'self'
+img-src 'self' data:; connect-src 'self'; frame-src blob:; child-src blob:;
+frame-ancestors 'none'; base-uri 'self'
 ```
 
-`img-src 'self' data: https:` is **intentionally widened** beyond the otherwise-strict `'self'` so the lightbox and gallery tiles can display crawled images served over HTTPS from third-party origins (a same-origin-only policy would break visual search on any multi-domain corpus). Every other directive stays strict:
+So: no external fonts (there is no `font-src`, and `default-src 'self'` catches it), no CDN,
+no inline `<script>`, no `on*=` handlers. Font Awesome is served by Fess itself from
+`/css/font-awesome.min.css`, which is same-origin and therefore allowed.
 
-- `script-src 'self'` — no inline JavaScript anywhere in the theme, no `unsafe-eval`.
-- `style-src 'self' 'unsafe-inline'` — the one relaxation beyond `script-src`, required because `search.js` sets a handful of inline style properties at runtime (e.g. the composition band's proportional bar segment widths); no external stylesheet host is ever referenced.
-- `font-src 'self'` — **system fonts only**; there is no `<link>`/`@import` to Google Fonts or any other web-font host anywhere in the theme, so this directive requires no relaxation.
-- `connect-src 'self'` — all API calls are same-origin.
-- `frame-src blob:` / `child-src blob:` — needed for the cache viewer's sandboxed iframe.
+Per-element styling goes through `.style.*` or a CSS custom property: the theme ships no
+literal `style="` attribute, and the bar widths are set with `setProperty("--bar-w", …)`.
 
-## Accessibility
+## Shared core
 
-- Every searcher badge renders an icon **and** a visible text label — color is never the sole signal (WCAG 1.4.1). Screen readers get a matching `aria-label`/`title`.
-- The Search Composition band and results-status line use `aria-live="polite"` so assistive technology is informed of updates without interrupting.
-- The lightbox is a focus-trapped `role="dialog" aria-modal="true"` overlay with a logical tab order, Escape-to-close, and focus restoration on close.
-- All motion (hero canvas, search-pill glow, tile hover/lift, lightbox fade/pop, skeleton shimmer) is disabled or reduced to a single static state under `prefers-reduced-motion: reduce`.
+`assets/format.js` (the HTML sanitizer) is shared core and carries the `DROP_WITH_CONTENT`
+guard, which drops raw-text elements whole instead of unwrapping them. Every theme in this
+repository — and the bundled `bootstrap` reference theme in the `fess` repo — carries the
+same copy, identical but for the per-theme comment on line 2.
 
-## Graceful degradation
+**Port any change to it into every copy in the same PR; never overwrite one theme's copy
+with another's.** Nothing enforces this — CI checks locale bundles only.
 
-On a Fess deployment without `query.additional.api.response.fields=searcher` and/or without hybrid rank fusion, the `searcher` field never appears on a hit. Mosaic then renders with **zero badges, no composition band, no colored card spine/caption, and no quote-on-filter rewriting** — the gallery grid, lightbox, view toggle, and every other core feature keep working exactly the same, so Mosaic remains a fully valid theme for a plain keyword-search Fess install.
-
-## Design tokens (source-of-match palette)
-
-Mosaic's badges, tile corners, card spines, and the composition bar all key off three CSS custom properties defined in `assets/styles.css`:
-
-| Token | Base | Subtle bg | Text | Meaning |
-|---|---|---|---|---|
-| `--mm-keyword` | `#D97706` | `#FEF3E2` | `#9A5A05` | Matched by keyword/BM25 only — amber |
-| `--mm-visual` | `#7C3AED` | `#F1E9FE` | `#5B21B6` | Matched by image similarity only — violet |
-| `--mm-blend` | `#0D9488` | `#DCF5F1` | `#0B6B62` | Matched by both — teal |
-
-See `DESIGN.md` for the full design rationale, neutral surface tokens, and component inventory.
-
-## Layout
-
-```
-mosaic/
-├── theme.yml             # manifest (kind: StaticTheme, name: mosaic)
-├── index.html             # SPA shell — semantic HTML5, no Bootstrap
-├── thumbnail.png          # shown in /admin/theme/ (placeholder gallery-grid graphic)
-├── assets/
-│   ├── compat.js           # Bootstrap-JS-API shim (Modal/Collapse/Dropdown/Offcanvas/Tooltip)
-│   ├── styles.css          # self-contained Mosaic stylesheet (--mm-*/--df-* tokens)
-│   ├── app.js               # entry point / router wiring
-│   ├── search.js            # search, gallery/lightbox, searcher badges, composition band
-│   ├── home-hero.js         # multimodal-convergence canvas + typewriter placeholder
-│   ├── logo.png             # home hero logo (placeholder art)
-│   └── logo-head.png        # header brand logo (placeholder art)
-├── i18n/
-│   ├── messages.en.json     # English (includes searcher.*, composition.*, sidebar.* keys)
-│   ├── messages.ja.json     # Japanese
-│   └── …                    # 14 more locales (16 total)
-└── help/                    # help page content, one JSON per supported locale
-```
-
-> **Note:** `logo.png`, `logo-head.png`, and `thumbnail.png` are placeholder graphics; real Mosaic branding art and a genuine product screenshot are a follow-up task.
-
-## Customise / repackage
+## Verifying
 
 ```bash
-cd repos/fess-themes
-./scripts/package.sh mosaic
-# Produces dist/mosaic-<version>.zip
+node scripts/verify-bundles.mjs storefront
 ```
 
-Upload the ZIP via `/admin/theme/` or place it in Fess's theme directory. `README.md` and `DESIGN.md` are excluded from the packaged ZIP.
+That checks the **locale-bundle contract only**: a bundle for every locale `assets/i18n.js`
+serves, key parity across all of them, and help section-id parity. It does not check element
+ids, baseline leaks, or behaviour — verify those by hand and by running the theme.
+
+A theme cannot be previewed from `file://`: it is an SPA on absolute `/themes/storefront/`
+paths calling `/api/v2/*`, so it only runs when served by Fess 15.7+.

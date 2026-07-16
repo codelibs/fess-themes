@@ -1,12 +1,30 @@
-# Mosaic Design System
+# Storefront Design System
 
 ## Concept
 
-Mosaic's core idea is **"see your whole corpus at a glance."** Where a conventional search theme answers a query with a scrollable list of links, Mosaic answers with a thumbnail gallery — a mosaic of tiles the eye can scan the way it scans a photo grid or a contact sheet. This framing fits its target use case: multimodal search over a mixed corpus, where a meaningful fraction of results are images (or documents best recognized by their preview) and where a query can be matched by what it *looks like* (CLIP-style visual similarity) as much as by what it *says* (keyword/BM25).
+Storefront's core idea is **"a result is a product, not a document."**
 
-The name reflects that duality: individual tiles (keyword hits, visual hits, blended hits) assembling into one coherent picture of "what this deployment knows," with each tile's border/badge honestly labeling how it got there.
+Every other theme in this repository answers a query with a *document*: a title, a prose
+snippet, a URL. That is the right shape for a docs site, a code search or an FAQ. It is the
+wrong shape for a catalogue. A shopper scanning results does not read a fragment of the
+product page — they look at the picture and the price, and decide. So the product card
+carries a photo, name, price, star rating, stock badge and brand, and **carries no snippet
+at all**. Deleting the snippet is the theme, not an omission.
+
+The second idea follows from the first: once results are products, the interesting axis is
+**price**. So facet counts are not numeric badges but **bars proportional to their counts** —
+a price band's bar shows, without reading, where the catalogue actually sits.
+
+Derived from `mosaic`, whose thumbnail grid, lazy-loading and no-image fallback are exactly
+what a product grid needs. Mosaic's multimodal apparatus — searcher badges, composition
+band, lightbox, list view — was removed rather than adapted: none of it means anything for a
+keyword-only product search, and a badge saying "matched visually" on a catalogue would be a
+lie.
 
 ## Palette
+
+Inherited from the `docuforge` lineage and left alone: the product photos are what should
+carry the visual interest, so the chrome stays quiet.
 
 | Token | Hex | Role |
 |---|---|---|
@@ -15,99 +33,129 @@ The name reflects that duality: individual tiles (keyword hits, visual hits, ble
 | Secondary / links (`--df-secondary`) | `#0369A1` | Link text, secondary actions, focus indicators |
 | Page background (`--df-bg`) | `#FAFBFF` | Body background — cool near-white |
 | Card surface (`--df-surface`) | `#FFFFFF` | Result cards, panels, modals, tiles |
-| Neutral stone-100 (`--df-stone-100`) | `#F4F6FB` | Sidebar, tile caption border, skeleton background |
 | Neutral stone-200 (`--df-stone-200`) | `#E2E8F0` | Card and panel borders |
-| Neutral stone-500 (`--df-stone-500`) | `#64748B` | Muted icons/secondary text |
+| Neutral stone-500 (`--df-stone-500`) | `#64748B` | Muted icons / secondary text |
 | Neutral stone-900 (`--df-stone-900`) | `#0F172A` | Headings, dark header background |
 
-The neutral palette is a cool slate, deliberately kept out of the badges/tiles/spines themselves — the gallery grid and its provenance colors are what carry visual interest; the surrounding chrome (header, sidebar, cards) stays quiet so the thumbnails read as a real media gallery rather than a colorful dashboard.
+Product-specific tokens add to it rather than replace it:
 
-## Source-of-match color system
+| Token | Role |
+|---|---|
+| `--sf-bar-track` | The unfilled track behind a count bar |
+| `--sf-bar-fill` | The filled portion of a count bar |
+| `--df-success` / `--df-success-subtle` | In-stock badge |
+| `--df-error` / `--df-error-subtle` | Out-of-stock badge |
+| `--df-warning` | Star fill |
 
-Every place Mosaic surfaces *how* a result was found — gallery tile corner badge, lightbox metadata badge, list-mode badge pill, list-mode card left spine, the composition bar, and the filter-sidebar caption — draws from the same three CSS custom properties, defined once in `assets/styles.css`'s `:root`. Each is a base/subtle-background/accessible-text triple:
+## The product card
 
-| Kind | CSS variable | Base | Subtle bg | Text | Meaning |
-|---|---|---|---|---|---|
-| Keyword | `--mm-keyword` | `#D97706` | `#FEF3E2` | `#9A5A05` | Matched by BM25/keyword search only — amber |
-| Visual | `--mm-visual` | `#7C3AED` | `#F1E9FE` | `#5B21B6` | Matched by image similarity (CLIP-style vector search) only — violet |
-| Blend | `--mm-blend` | `#0D9488` | `#DCF5F1` | `#0B6B62` | Matched by both keyword and visual similarity — teal |
+`buildGalleryTile()` in `assets/search.js`. Structure:
 
-Amber for Keyword (warm, concrete, familiar — "found the words"), violet for Visual (evocative of vision/perception), and teal for Blend (a synthesis of the other two, reused as the hero's central "shared embedding" node color). The three hues remain visually distinct across the most common forms of color-vision deficiency, and are never the *only* signal — see Accessibility below.
+```
+li.tile
+  img.tile__img            ← lazy, via attachThumb(); or buildTileIcon() when absent
+  a                        ← wraps image + name; href is the /go/ click-logging redirect
+  div.tile__cap
+    span.tile__title       ← product name (highlight tags stripped)
+    span.sf-price          ← formatPrice(); omitted entirely when non-numeric
+    span.sf-stars          ← ratingStars(); omitted entirely when there is no rating
+    span.sf-avail          ← availabilityLabel(); omitted when the value is unrecognised
+    span.sf-brand          ← raw brand text
+```
 
-## Structure: gallery / tile / lightbox / hero
+Three decisions worth keeping:
 
-Mosaic's result-facing UI is built from four layered components:
+- **The card must never collapse.** It uses mosaic's *grid* no-image strategy — retry with
+  backoff, then swap in a typed icon — rather than docuforge's list-card strategy of hiding
+  the image on error. An image-less product still has to show its price.
+- **Every field gates independently.** No rating means no star row (five empty stars would
+  imply a real zero); an unrecognised availability means no badge rather than an invented
+  status; a non-numeric price renders nothing, because a string there means the deployment
+  is misconfigured and rendering it raw would hide that.
+- **The anchor goes through `/go/`**, not the raw URL, or Fess's click-through counting
+  silently stops working.
 
-1. **Gallery** (`ul.gallery`) — a responsive CSS grid (`repeat(auto-fill, minmax(160px, 1fr))`) of tiles; this is the default result view (`state.viewMode = "grid"`), backed by the same `<ul id="results">` element the traditional list view (`ul.list-unstyled.results--list`) reuses when the user toggles to list mode.
-2. **Tile** (`li.tile`) — a square thumbnail (`aspect-ratio: 1/1`, `object-fit: cover`) with a caption strip below it and an optional searcher badge pinned to the top-left corner. Tiles lift and their image scales up slightly on hover/focus; a `.tile--noimg` variant substitutes a typed file icon when there is no usable thumbnail.
-3. **Lightbox** (`#lightbox`) — a fixed, full-viewport dark overlay opened by activating a tile. It shows the largest available image, a metadata panel (title, source link, facts, searcher badge, cache action), and Prev/Next buttons that step through the current result page. It is a proper modal dialog: focus-trapped, restores focus to the originating tile on close, and fades/pops in on open.
-4. **Hero** (`.mosaic-hero`, home view only) — see below.
+The card's values all go through `el({text})` / `img.alt` — textContent, never `innerHTML`
+with document data.
 
-## The multimodal hero
+## Pure helpers: `assets/storefront.js`
 
-### Concept
+Price, rating and availability formatting live in a DOM-free module, so the logic is pure
+and can be exercised under plain Node with no DOM shim:
 
-The home view's full-bleed dark band visualizes Mosaic's core mechanism directly: a **shared embedding space** where short text tokens and small image tiles are two representations of the same kind of thing, converging on one point.
+| Export | Contract |
+|---|---|
+| `formatPrice(hit, locale)` | `""` unless `price` is a finite, non-negative number |
+| `ratingStars(hit)` | `null` when absent or negative; else `{full, half, empty}` with `full + (half?1:0) + empty === 5` |
+| `availabilityLabel(hit)` | `"in_stock"` / `"out_of_stock"`, else `null`; caller joins `t("product." + label)` |
+| `hasImage(hit, features)` | the thumbnail gate — the doc has one *and* the feature is on |
+| `barWidths(counts)` | integer percentages of the group's largest count; all-zero rather than dividing by zero |
 
-### Implementation (what the code actually does)
+The module ships; its test does not. That matches `helpdesk`, and the repository has no test
+runner by design.
 
-`assets/home-hero.js` drives a `<canvas>` (`#mosaic-hero-canvas`) with two independent particle streams, driven by `requestAnimationFrame`:
+## Count bars, and why not a histogram
 
-- **Text tokens** — small pill shapes — spawn off-screen on the **left** edge and drift toward the canvas center with an ease-out curve, colored with `--mm-keyword`.
-- **Image tiles** — small rounded squares with a corner highlight dot (evoking a lens/aperture glint) — spawn off-screen on the **right** edge and drift toward the center, colored with `--mm-visual`.
-- Both streams fade in on spawn, wobble slightly as they travel, shrink slightly as they approach, and fade out as they merge into a **central pulsing node**, colored with `--mm-blend` and rendered with a soft radial glow.
+`barWidths()` scales each count against the largest in its group; `renderFacetQueryViews()`
+sets the width from JS with `setProperty("--bar-w", …)` and CSS draws it via
+`.sf-facet-bar::before { width: var(--bar-w, 0%) }`.
 
-Colors are read live from the theme's `--mm-keyword` / `--mm-visual` / `--mm-blend` custom properties via `getComputedStyle`, with hardcoded hex fallbacks, so the hero always matches the badge/tile/spine palette even if the tokens are customized. There is no WebGL, no image assets, and no external library — it is a small hand-rolled particle system (~20–64 particles, scaled to the hero's area) using canvas primitives only.
+**They are count bars, not a histogram, and that distinction is load-bearing.** A histogram
+implies a distribution over disjoint buckets. Fess's own shipped `timestamp` facet is
+cumulative and overlapping (`[now/d-1d TO *]`, `[now/d-7d TO *]`, …), and a theme cannot
+tell disjoint bands from cumulative ones by parsing the query string. A bar proportional to
+a *count* is truthful either way — and for a disjoint band set, which a price facet is, it
+happens to also be a distribution. So the theme infers nothing and draws every group the
+same way.
 
-Layered over the canvas, the real `#contentQuery` search input is restyled as a glowing pill whose box-shadow gently breathes between the keyword (amber) and blend (teal) hues via a CSS `@keyframes` animation — a second, purely-CSS echo of the same "signals converging" idea.
+The bands themselves come from the server (`query.facet.queries` → `/api/v2/ui/config`'s
+`facet_views`), joined against `facet_query` counts from the search response. The theme
+renders `label_key`/`value` pairs it has never seen, so it stays generic: a ¥100 shop and a
+car dealer differ only by a properties file.
 
-### Typewriter placeholder
+**Counts are BM25-only.** That is why `mosaic` and `semanticlens` deliberately ship
+count-free sidebars — under a semantic or visual search their counts go empty or misleading.
+Storefront is keyword-only, so re-requesting `facet.query` here is correct rather than a
+regression. Note mosaic's own design doc justifies count-free facets with an "N fan-out
+requests" cost that does not exist: the bands go out as repeated `facet.query` parameters on
+a single call.
 
-`home-hero.js` also animates the `placeholder` attribute of `#contentQuery` (never its `.value`, so it can never corrupt real user input), cycling through four localized example queries (`home.example_1..4`, e.g. *"a red sports car at sunset"*, *"snow-capped mountains"*). It types and deletes each phrase with a small per-character delay and a hold at full length. It yields to the user the instant they type a non-empty value into the box — but **mere focus does not stop it**, so an empty, focused input keeps showing the animated example, which is what makes the effect visible on first load. It resumes when the input is blurred while still empty.
+## Structure
 
-### Performance and accessibility
-
-- The canvas's `requestAnimationFrame` loop is started only in `setActive(true)` (called by `app.js`'s `showView()` when the home route is active) and is stopped via `cancelAnimationFrame` both when the home view is hidden and whenever `document.visibilitychange` reports the tab is backgrounded — zero CPU/battery cost while the user is anywhere else in the app.
-- Under `prefers-reduced-motion: reduce`, the canvas renders exactly one static frame (no `requestAnimationFrame` loop is ever scheduled), the typewriter is replaced with a single static example string, and the search-pill glow animation is disabled in CSS.
-- The canvas is `aria-hidden="true"`; it is purely decorative, and the real, always-present `#contentQuery` input carries the actual accessible search semantics.
-- No inline scripts are used anywhere; `home-hero.js` is a standard ES module imported by `app.js`, satisfying the theme's `script-src 'self'` CSP with no relaxation.
+- **Home** — hero with the search box, plus three cards stating what the theme does (prices
+  at a glance / narrow by price / sort by price). They describe real behaviour; the block
+  they replaced advertised Keyword/Visual/Blend badges that this theme does not have.
+- **Results** — `ul.gallery` of `li.tile` product cards. **Grid only.** There is no
+  grid/list toggle: the list view rendered document cards with snippets, one click away and
+  persisted in `localStorage`, which contradicted the whole premise.
+- **Sidebar** — label facets plus facet-query groups drawn as count bars.
 
 ## Accessibility
 
-- **Icon + text, never color alone (WCAG 1.4.1).** Every searcher badge — gallery tile corner badge, lightbox meta badge, and list-mode pill — renders a Font Awesome icon (`aria-hidden="true"`) together with a visible, localized text label, and carries a matching `aria-label`/`title` for assistive technology. The list-mode "Matched by …" microcopy line is text-only by construction.
-- **`aria-live` for compositional/dynamic updates.** The Search Composition band (`role="note" aria-live="polite"`) and the results-status line (`aria-live="polite"`) announce their content after each search without interrupting the user; the lightbox is `role="dialog" aria-modal="true"` with a maintained tab order and focus restored to the triggering tile on close.
-- **`prefers-reduced-motion` handling.** Every animated element in the theme — the hero canvas and search-pill glow, tile hover lift/image zoom, lightbox fade/pop, skeleton-loading shimmer, and the search-options drawer/offcanvas/modal transitions — is disabled or collapsed to a static equivalent under `(prefers-reduced-motion: reduce)`. This is handled independently in both `styles.css` (`@media (prefers-reduced-motion: reduce)` blocks) and `home-hero.js` (checks `window.matchMedia` directly and reacts live to runtime changes via the media query's `change` event).
+- The star row carries an `aria-label` with the numeric rating; the stars themselves are
+  decorative. A rating that renders as shapes and nothing else is invisible to a screen
+  reader.
+- Tiles are plain anchors, so they are keyboard-focusable and activatable without any
+  `tabIndex`/`role` scaffolding (that scaffolding existed only to open the removed lightbox).
+- Stock state is conveyed by text, not colour alone.
 
-## Graceful degradation
+## Content Security Policy
 
-The `searcher` field is only present on a hit when the backend has both `query.additional.api.response.fields=searcher` set **and** hybrid rank fusion actually active (e.g. a multimodal plugin blending keyword and CLIP-vector search). Every provenance-driven element in the theme is written to check for this field's presence and silently omit itself when absent:
+`style-src` permits `'unsafe-inline'`, so a literal `style="width:42%"` would render — the
+theme does not use one. No theme in this repository ships a literal `style=` attribute, and
+per-element styling goes through `.style.*` or a custom property. Bar widths follow that
+convention.
 
-- `searcherBadgeKind()` returns `null` for a hit with no `searcher` data → no corner badge, no list-mode badge, no colored card spine, no "Matched by …" microcopy for that hit.
-- `renderComposition()` hides the Search Composition band entirely (`d-none`) when **no** hit on the page carries a known searcher kind.
-- The filter-sidebar's mode-aware caption (`.facet-cap`) is only rendered when the page tally has at least one classified hit.
-- The quote-on-filter query rewrite is gated on `semanticSeen` (a sticky flag set the first time any hit ever carries a `searcher` value in the current session), so a keyword-only deployment's queries are never rewritten.
+Font Awesome is served by Fess from `/css/font-awesome.min.css` (same-origin, allowed). Only
+icons that Fess's copy actually defines are usable — `fa-sliders` and `fa-sort-amount-asc`,
+for instance, are not there.
 
-The gallery grid, lightbox, and grid/list toggle are **not** gated on `searcher` at all — they work identically with or without multimodal search configured, using the plain thumbnail endpoint and standard result fields. This means Mosaic is a fully valid, visually coherent theme on a stock Fess install with no multimodal plugin at all; the searcher badges are a progressive enhancement, not a hard dependency.
+## Out of scope
 
-## Component inventory
-
-- **`.gallery` / `.tile` / `.tile--noimg`** — the grid-mode result list and its tiles, with the no-thumbnail fallback variant
-- **`.view-toggle` / `.view-toggle__btn`** — the persistent grid/list toggle above the results, synced to `localStorage("mosaic.view")`
-- **`#lightbox` / `.lightbox__*`** — the full-screen preview overlay and its close/prev/next controls and metadata panel
-- **`.mosaic-hero` / `.mosaic-hero-canvas` / `.mosaic-hero-pill`** — the home view's multimodal-convergence hero band
-- **`.mosaic-preview-cards` / `.mosaic-preview--{kw,vi,bl}`** — the three educational Keyword/Visual/Blend cards below the hero
-- **`.mm-brandmark`** — a small four-quadrant conic-gradient "mosaic tile" glyph in the header brand link (pure CSS, no image request), combining the three source-of-match hues with the secondary accent
-- **`.searcher-badge` / `.searcher-badge--{keyword,visual,blend}`** — list-mode badge pill
-- **`.badge.badge--{keyword,visual,blend}`** — gallery-tile / lightbox-meta badge (distinct markup/CSS namespace from the list-mode pill, styled independently)
-- **`li.result--{keyword,visual,blend}`** — list-mode result root, drives the 3px colored left spine
-- **`.result-why` / `.result-why--{keyword,visual,blend}`** — per-card "Matched by …" microcopy line
-- **`#search-composition` / `.comp-*`** — the Search Composition band (lead count, verdict, proportional bar, legend)
-- **`.filter-opt` / `.filter-chk`** — count-free clickable filter rows and their checkbox indicators in the sidebar
-- **`.facet-cap` / `.cap--visual` / `.cap--mixed`** — the mode-aware sidebar caption
-- **`.skeleton` / `.skeleton-*`** — shimmering loading-placeholder blocks (offline-first design, reused across views)
-
-## Out of scope / follow-ups
-
-- **Real Mosaic branding art.** `logo.png`, `logo-head.png`, and `thumbnail.png` are placeholder graphics; a genuine logo and a real product screenshot are a follow-up task.
-- **Accurate per-bucket filter counts.** As with the count-free rationale above, showing true per-option counts would require a separate fan-out request per filter option; count-free was chosen to avoid the N-parallel-requests cost and the "counts exclude visual matches" confusion a keyword-only aggregation would otherwise cause.
-- **Interactive server-side mode switch.** Whether hybrid rank fusion is active is a server/plugin-level configuration decision, not something the theme can toggle at request time.
+- Cart, checkout, comparison tray, personalisation. This is a search theme.
+- A currency model — the price is yen (`¥`), hardcoded.
+- Auto-derived price bands: no stats/min/max aggregation is reachable from `/api/v2`, so
+  bands are configuration.
+- Similar-products discovery. `renderSimilarDocBanner`/`state.sdh` survive but are
+  unreachable: their only trigger was the removed list card, and Fess's similar-document
+  detection is content-minhash near-duplicate matching, which is not "similar products".

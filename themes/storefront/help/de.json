@@ -2,8 +2,8 @@
   "sections": [
     {
       "id": "gallery",
-      "title": "Galerieansicht",
-      "html": "<p>Suchergebnisse werden standardmäßig als Vorschaubild-Galerie angezeigt. Klicken Sie auf eine Kachel (oder drücken Sie Eingabe/Leertaste, wenn sie fokussiert ist), um das Bild in voller Größe in der Vorschau zu öffnen, und verwenden Sie die Pfeiltasten oder die Links-/Rechts-Pfeiltasten zum Blättern. Über die Raster-/Listen-Schaltfläche oberhalb der Ergebnisse können Sie jederzeit zur klassischen Listenansicht wechseln.</p><p>Wenn diese Fess-Installation für multimodale Suche konfiguriert ist, zeigen manche Ergebnisse ein kleines Abzeichen — <strong>Stichwort</strong> (per Text gefunden), <strong>Visuell</strong> (per Bildähnlichkeit gefunden) oder <strong>Kombiniert</strong> (durch beides gefunden) — das zeigt, wie das Ergebnis gefunden wurde. Werden keine Abzeichen angezeigt, funktioniert die Suche trotzdem normal.</p>"
+      "title": "Produktraster",
+      "html": "<p>Suchergebnisse werden standardmäßig als Raster von Produktkarten angezeigt: ein Foto, der Produktname, der Preis, die Sternebewertung und die Verfügbarkeit — bewusst ohne Textauszug, damit Sie Bilder und Preise überfliegen können, statt Fließtext zu lesen. Klicken Sie auf eine Karte, um die Produktseite zu öffnen.</p><p>In der Seitenleiste zeigen Preis- und andere Filter neben jeder Option einen Balken, dessen Länge sich relativ zur größten Anzahl in dieser Gruppe richtet — so sehen Sie auf einen Blick, welche Preisspanne die meisten Treffer hat. Verwenden Sie die Sortierung oberhalb der Ergebnisse, um die Reihenfolge zu ändern, zum Beispiel nach Preis.</p>"
     },
     {
       "id": "basic",
