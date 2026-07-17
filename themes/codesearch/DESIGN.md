@@ -43,8 +43,9 @@ is rendered with a monospace font at a smaller weight, matching IDE conventions.
 
 Match terms are highlighted (bold/em from `content_description`) on a tinted
 background row. XSS safety is maintained by `renderHighlightedSnippet()` in
-`format.js` which uses escape-then-restore rather than raw `innerHTML` with
-user data.
+`format.js`, which parses the server snippet in an inert `<template>` and keeps
+only the `<strong>`/`<em>` match tags, rather than assigning raw `innerHTML`
+with user data.
 
 The card header carries `org / repo · path` as a breadcrumb and an ↗
 open-in-repo link constructed best-effort from `repository_url + path`.

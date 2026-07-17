@@ -12,12 +12,13 @@
  * .getContentDescription -> escapeHighlight) runs LaFunctions.h() over the whole
  * body and then restores only query.highlight.tag.pre/post, i.e. <strong>.
  *
- * Deliberately NOT routed through format.js renderHighlightedSnippet(): that
- * escapes again, so a server-sent &amp; becomes &amp;amp; and renders as a
- * literal "&amp;". The baseline theme this was forked from has that exact
- * bug — in ITS OWN assets/search.js (not this theme's, and not this file),
- * around line 218 there; this theme shows far more of the field, so the same
- * bug would be far more visible here.
+ * Not routed through format.js renderHighlightedSnippet(): that helper parses
+ * with a <template>, and this module is DOM-free by contract (see the file
+ * header), so it cannot call it. It also used to escape a second time — a
+ * server-sent &amp; came back as &amp;amp; and rendered as a literal "&amp;" —
+ * which is the original reason this returns verbatim. That double-escape is
+ * fixed now, so search.js may wrap this value in renderHighlightedSnippet() at
+ * the innerHTML boundary if client-side sanitizing is ever wanted here.
  *
  * There is no digest fallback: getContentDescription() iterates hl_content AND
  * digest and only returns "" when both are blank, so `|| hit.digest` is dead code.
@@ -44,12 +45,12 @@ export function answerHtml(hit) {
  * .getContentTitle -> escapeHighlight) runs the identical LaFunctions.h() +
  * <strong>-splice logic that DefaultSearcher:246 runs for the description.
  *
- * Deliberately NOT routed through format.js renderHighlightedSnippet() for the
- * same reason as answerHtml(): re-escaping turns a server-sent &#039; (or
- * &amp;/&#034;) into a doubled entity, which renders literally in the H3
- * heading. In a FAQ theme the title IS the question, so this is the
- * most-read string on the page — and apostrophes ("What's", "Don't") make it
- * the common case, not an edge case.
+ * Not routed through format.js renderHighlightedSnippet() for the same reason
+ * as answerHtml(): this module is DOM-free and that helper needs a <template>.
+ * The double-escape it used to cause — a server-sent &#039; (or &amp;/&#034;)
+ * doubled into a literal entity in the H3 heading — is fixed. That mattered
+ * most here: in a FAQ theme the title IS the question, so apostrophes
+ * ("What's", "Don't") made it the common case rather than an edge case.
  *
  * @param {object|null} hit - one entry of the /api/v2/search `data` array
  * @returns {string} HTML string (safe for innerHTML), or "" when unavailable

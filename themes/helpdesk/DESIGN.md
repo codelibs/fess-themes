@@ -106,11 +106,11 @@ string `&#039;` on the page, and a server-sent `&amp;` would render as the
 literal text `&amp;`. In a FAQ theme the title *is* the question, so
 apostrophes ("What's…", "Don't…") are the common case, not an edge case,
 which makes this bug far more visible here than in a plain document-search
-result list. (The `docuforge` baseline this theme was forked from has exactly
-this double-escape bug in its own `assets/search.js`, around the line that
-assigns `renderHighlightedSnippet(d.content_description || d.digest || "")`
-to `description.innerHTML` — a different file from this theme's
-`assets/helpdesk.js`, and not present in this theme.)
+result list. (That double-escape has since been fixed at its source:
+`renderHighlightedSnippet()` now parses the server snippet instead of escaping
+it again, across every theme and the `bootstrap` reference. These helpers still
+return verbatim because this module is DOM-free by contract and the fixed
+helper needs a `<template>`.)
 
 ### Accessibility contract
 
