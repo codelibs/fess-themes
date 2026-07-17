@@ -1300,34 +1300,6 @@ export function attach() {
       form.dispatchEvent(new Event("submit"));
     });
   }
-  const clearBtn = document.getElementById("facet-clear");
-  if (clearBtn) clearBtn.addEventListener("click", () => {
-    state.facets = {};
-    state.fields = {};
-    state.facetQueries = [];
-    // GEO-1: reset geo state and inputs
-    state.geo = { lat: "", lon: "", distance: "" };
-    ["geo-lat", "geo-lon", "geo-distance"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
-    // Reset selects: label multi-select deselects all (selectedIndex = -1); sort
-    // returns to its "all / default" first option (selectedIndex = 0); num returns
-    // to the config-driven default (page_size_default, not necessarily num_options[0]),
-    // selecting whichever option matches it.
-    const sortSel = document.getElementById("sortSearchOption");
-    if (sortSel) { sortSel.selectedIndex = 0; state.sort = sortSel.value || ""; }
-    const numSel = document.getElementById("numSearchOption");
-    if (numSel) {
-      state.num = defaultNum();
-      const idx = Array.from(numSel.options).findIndex(o => Number(o.value) === state.num);
-      numSel.selectedIndex = idx >= 0 ? idx : 0;
-      if (idx < 0) state.num = Number(numSel.value) || state.num;
-    }
-    const langSel = document.getElementById("langSearchOption");
-    if (langSel) { langSel.selectedIndex = -1; state.lang = []; }
-    const labelSel = document.getElementById("labelSearchOption");
-    if (labelSel) { Array.from(labelSel.options).forEach(o => { o.selected = false; }); }
-    runSearch();
-  });
-
   // Geo filter apply/clear is handled by the drawer's main Search / Clear buttons
   // (geo inputs were migrated into #searchOptions); no separate geo buttons.
 
@@ -1409,15 +1381,14 @@ function buildFacetGroup(title, entries, fieldKey) {
 /**
  * Storefront: build the always-present filter groups from /api/v2/ui/config
  * (NOT from client-side result tallies, which would only reflect the current
- * page). File type options come from cfg.filetype_options and stay count-free,
- * since Fess has no live per-filetype count to join here. Every other group —
- * Updated, Size, a price-band group, or any other facet_views group the server
- * defines — is joined against env.facet_query (SRCH-4) and drawn as count bars
- * rather than a numeric badge: see barWidths() in storefront.js for why a bar,
- * not a histogram, is the honest way to draw a cumulative facet like Updated
- * alongside a disjoint one like a price band. Every option toggles its ex_q
- * clause in state.facetQueries and re-queries the server, so the filter narrows
- * the full result set rather than the current page.
+ * page). The option set is therefore config-driven and renders in every mode;
+ * counts are joined from env.facet_query (SRCH-4) per group, only where the
+ * response carried them. Counted groups draw count bars rather than a numeric
+ * badge: see barWidths() in storefront.js for why a bar, not a histogram, is the
+ * honest way to draw a cumulative facet like Updated alongside a disjoint one
+ * like a price band. Every option toggles its ex_q clause in state.facetQueries
+ * and re-queries the server, so the filter narrows the full result set rather
+ * than the current page.
  *
  * @param {Element} body - the facet-body container element
  * @param {Object} env  - the search response envelope (for env.facet_query)
@@ -1466,14 +1437,44 @@ function renderFilterGroups(body, env) {
     body.appendChild(group);
   };
 
+  // A count of 0 and a MISSING count mean opposite things — "nothing matches" versus
+  // "the server never told us" — and only the first is grounds for hiding a row. The v2
+  // payload omits facet_query entirely whenever the search produced no facet response
+  // (rank fusion whose main searcher is not the default one, or any query that comes back
+  // without aggregations), and a deployment can drop a group from query.facet.queries;
+  // reading either as "count 0" would suppress every option and delete the group from the
+  // sidebar. So a group takes counts and zero-suppression together or neither, and the
+  // fallback is the count-free rows it has always drawn. hasOwnProperty rather than `in`
+  // or a truthiness test: a real count of 0 is falsy, and countByValue is a plain object
+  // keyed by crawled/config strings, so an inherited (`__proto__`-ish) key must not pass
+  // for a count we were sent. Requiring EVERY option to have one keeps a partially counted
+  // group count-free instead of dropping the rows the server was never asked about —
+  // filetype_options is hardcoded server-side while the facet_views filetype group that
+  // counts it is config, so the two can disagree.
+  const hasCountsFor = options =>
+    options.length > 0 && options.every(opt => Object.prototype.hasOwnProperty.call(countByValue, opt.value));
+  // Only ever applied to a fully counted group, so 0 here always means "nothing matches".
+  // Fess folds an active ex_q into the main query and these aggs are bare top-level
+  // filters — no post_filter — so selecting one band of a DISJOINT group (Size) drives
+  // every sibling to 0, and a column of "0"s with 0-width bars is noise. An active option
+  // is always kept, or it could never be deselected. buildGroup early-returns when nothing
+  // survives, so a group with no live band disappears entirely.
+  const suppressZero = options =>
+    options.filter(opt => countByValue[opt.value] > 0 || (state.facetQueries || []).includes(opt.value));
+  const addGroup = (title, options) => {
+    const withCounts = hasCountsFor(options);
+    buildGroup(title, withCounts ? suppressZero(options) : options, withCounts);
+  };
+
   // File type — from filetype_options; each value becomes a `filetype:<value>` ex_q
-  // clause (same format the facet_views filetype group would use). No live count to
-  // join, so this group stays exactly as before: count-free.
+  // clause, the very string the facet_views filetype group uses, so runSearch already
+  // requests a facet.query for it and env.facet_query carries its count whenever that
+  // group is configured and the response came back with facets at all.
   const fileTypeOptions = (cfg.filetype_options || []).map(o => ({
     value: "filetype:" + o.value,
     label: o.label_key ? t(o.label_key) : o.value
   }));
-  buildGroup(t("labels.facet_filetype_title"), fileTypeOptions, false);
+  addGroup(t("labels.facet_filetype_title"), fileTypeOptions);
 
   // Every other facet_views group (Updated, Size, a price band, ...) — skip only
   // the facet_views filetype group (File type already comes from filetype_options
@@ -1481,43 +1482,40 @@ function renderFilterGroups(body, env) {
   (cfg.facet_views || []).forEach(view => {
     const gname = view.group_name || "";
     if (gname === "labels.facet_filetype_title") return;
-    // Zero-count bands are dropped (same as the label facet above). Fess folds an
-    // active ex_q into the main query and these aggs are bare top-level filters —
-    // no post_filter — so selecting one band of a DISJOINT group (Size) drives
-    // every sibling to 0, and a column of "0"s with 0-width bars is noise. An
-    // active option is always kept, or it could never be deselected. buildGroup
-    // early-returns when nothing survives, so the group disappears entirely.
-    const options = (view.queries || [])
-      .map(qy => ({
-        value: qy.value,
-        label: qy.label_key && qy.label_key.startsWith("labels.") ? t(qy.label_key) : (qy.label_key || qy.value)
-      }))
-      .filter(opt => (countByValue[opt.value] || 0) > 0
-        || (state.facetQueries || []).includes(opt.value));
-    buildGroup(gname.startsWith("labels.") ? t(gname) : gname, options, true);
+    const options = (view.queries || []).map(qy => ({
+      value: qy.value,
+      label: qy.label_key && qy.label_key.startsWith("labels.") ? t(qy.label_key) : (qy.label_key || qy.value)
+    }));
+    addGroup(gname.startsWith("labels.") ? t(gname) : gname, options);
   });
 }
 
 function renderFacets(env, labels) {
   const body = document.getElementById("facet-body");
-  const clearBtn = document.getElementById("facet-clear");
   if (!body) return;
   // Clear existing children without innerHTML = ""
   while (body.firstChild) body.removeChild(body.firstChild);
 
   // ZERO-RESULT: hide the whole facet sidebar (desktop aside + mobile filter button)
-  // when the search returned no documents — there is nothing to refine, so an empty
-  // sidebar is just noise. #facet-body keeps its base "d-none" (mobile-hidden) class;
-  // toggling "d-md-block" controls its desktop visibility. The mobile filter toggle
+  // only when the search returned no documents AND no filter is applied — there is
+  // nothing to refine, so an empty sidebar would be just noise. With a filter applied
+  // the zero may well have been CAUSED by it, and the sidebar carries the only controls
+  // that undo it (the active option itself, plus the reset link at its foot), so it
+  // stays mounted. #facet-body keeps its base "d-none" (mobile-hidden) class; toggling
+  // "d-md-block" controls its desktop visibility. The mobile filter toggle
   // (#facet-toggle-wrap) is hidden outright with "d-none".
   const mobileBody = document.getElementById("facet-body-mobile");
   const toggleWrap = document.getElementById("facet-toggle-wrap");
   const hasResults = (env.data || []).length > 0;
-  body.classList.toggle("d-md-block", hasResults);
-  if (toggleWrap) toggleWrap.classList.toggle("d-none", !hasResults);
-  if (!hasResults) {
+  const anyActive =
+    Object.values(state.facets).some(arr => Array.isArray(arr) && arr.length > 0) ||
+    Object.values(state.fields).some(arr => Array.isArray(arr) && arr.length > 0) ||
+    (Array.isArray(state.facetQueries) && state.facetQueries.length > 0);
+  const showFacets = hasResults || anyActive;
+  body.classList.toggle("d-md-block", showFacets);
+  if (toggleWrap) toggleWrap.classList.toggle("d-none", !showFacets);
+  if (!showFacets) {
     if (mobileBody) while (mobileBody.firstChild) mobileBody.removeChild(mobileBody.firstChild);
-    if (clearBtn) clearBtn.classList.add("d-none");
     return;
   }
 
@@ -1546,18 +1544,14 @@ function renderFacets(env, labels) {
   }
 
   // 3. Filter groups (File type / Updated / Size / price band / ...) built from
-  //    /api/v2/ui/config — always present and functional in every mode, including
-  //    visual-only (where the server returns no facet buckets). Clicking a row
-  //    re-queries the server so it narrows the full fused result set. Every group
-  //    except File type also draws a count bar from env.facet_query.
+  //    /api/v2/ui/config, so the option set is config-driven rather than derived from
+  //    the hits, and every group renders in every mode. Counts come from
+  //    env.facet_query and are joined per group only where the response actually
+  //    carried them: when it carries none — rank fusion whose main searcher is not the
+  //    default one, and any search that returns without aggregations — the groups
+  //    degrade to their count-free rows instead of vanishing. Clicking a row re-queries
+  //    the server so it narrows the full fused result set.
   renderFilterGroups(body, env);
-
-  // Show clear button if any filter is active (optional control; may be absent).
-  const anyActive =
-    Object.values(state.facets).some(arr => Array.isArray(arr) && arr.length > 0) ||
-    Object.values(state.fields).some(arr => Array.isArray(arr) && arr.length > 0) ||
-    (Array.isArray(state.facetQueries) && state.facetQueries.length > 0);
-  if (clearBtn) clearBtn.classList.toggle("d-none", !anyActive);
 
   // Mirror the rendered sidebar (caption + label facet + filter groups, count bars
   // included) into the mobile offcanvas (#facet-body-mobile). The desktop aside (#facet-body)

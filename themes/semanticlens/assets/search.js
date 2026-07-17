@@ -1529,27 +1529,6 @@ export function attach() {
       form.dispatchEvent(new Event("submit"));
     });
   }
-  const clearBtn = document.getElementById("facet-clear");
-  if (clearBtn) clearBtn.addEventListener("click", () => {
-    state.facets = {};
-    state.fields = {};
-    state.facetQueries = [];
-    // GEO-1: reset geo state and inputs
-    state.geo = { lat: "", lon: "", distance: "" };
-    ["geo-lat", "geo-lon", "geo-distance"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
-    // Reset selects: label multi-select deselects all (selectedIndex = -1);
-    // sort and num return to their "all / default" first option (selectedIndex = 0).
-    const sortSel = document.getElementById("sortSearchOption");
-    if (sortSel) { sortSel.selectedIndex = 0; state.sort = sortSel.value || ""; }
-    const numSel = document.getElementById("numSearchOption");
-    if (numSel) { numSel.selectedIndex = 0; state.num = Number(numSel.value) || 10; }
-    const langSel = document.getElementById("langSearchOption");
-    if (langSel) { langSel.selectedIndex = -1; state.lang = []; }
-    const labelSel = document.getElementById("labelSearchOption");
-    if (labelSel) { Array.from(labelSel.options).forEach(o => { o.selected = false; }); }
-    runSearch();
-  });
-
   // Geo filter apply/clear is handled by the drawer's main Search / Clear buttons
   // (geo inputs were migrated into #searchOptions); no separate geo buttons.
 
@@ -1692,24 +1671,30 @@ function renderFilterGroups(body) {
 
 function renderFacets(env, labels) {
   const body = document.getElementById("facet-body");
-  const clearBtn = document.getElementById("facet-clear");
   if (!body) return;
   // Clear existing children without innerHTML = ""
   while (body.firstChild) body.removeChild(body.firstChild);
 
   // ZERO-RESULT: hide the whole facet sidebar (desktop aside + mobile filter button)
-  // when the search returned no documents — there is nothing to refine, so an empty
-  // sidebar is just noise. #facet-body keeps its base "d-none" (mobile-hidden) class;
-  // toggling "d-md-block" controls its desktop visibility. The mobile filter toggle
+  // only when the search returned no documents AND no filter is applied — there is
+  // nothing to refine, so an empty sidebar would be just noise. With a filter applied
+  // the zero may well have been CAUSED by it, and the sidebar carries the only controls
+  // that undo it (the active option itself, plus the reset link at its foot), so it
+  // stays mounted. #facet-body keeps its base "d-none" (mobile-hidden) class; toggling
+  // "d-md-block" controls its desktop visibility. The mobile filter toggle
   // (#facet-toggle-wrap) is hidden outright with "d-none".
   const mobileBody = document.getElementById("facet-body-mobile");
   const toggleWrap = document.getElementById("facet-toggle-wrap");
   const hasResults = (env.data || []).length > 0;
-  body.classList.toggle("d-md-block", hasResults);
-  if (toggleWrap) toggleWrap.classList.toggle("d-none", !hasResults);
-  if (!hasResults) {
+  const anyActive =
+    Object.values(state.facets).some(arr => Array.isArray(arr) && arr.length > 0) ||
+    Object.values(state.fields).some(arr => Array.isArray(arr) && arr.length > 0) ||
+    (Array.isArray(state.facetQueries) && state.facetQueries.length > 0);
+  const showFacets = hasResults || anyActive;
+  body.classList.toggle("d-md-block", showFacets);
+  if (toggleWrap) toggleWrap.classList.toggle("d-none", !showFacets);
+  if (!showFacets) {
     if (mobileBody) while (mobileBody.firstChild) mobileBody.removeChild(mobileBody.firstChild);
-    if (clearBtn) clearBtn.classList.add("d-none");
     return;
   }
 
@@ -1754,13 +1739,6 @@ function renderFacets(env, labels) {
   //    semantic-only (where the server returns no facet buckets). Clicking a row
   //    re-queries the server so it narrows the full fused result set.
   renderFilterGroups(body);
-
-  // Show clear button if any filter is active (optional control; may be absent).
-  const anyActive =
-    Object.values(state.facets).some(arr => Array.isArray(arr) && arr.length > 0) ||
-    Object.values(state.fields).some(arr => Array.isArray(arr) && arr.length > 0) ||
-    (Array.isArray(state.facetQueries) && state.facetQueries.length > 0);
-  if (clearBtn) clearBtn.classList.toggle("d-none", !anyActive);
 
   // Mirror the rendered sidebar (caption + label facet + count-free filter groups)
   // into the mobile offcanvas (#facet-body-mobile). The desktop aside (#facet-body)
