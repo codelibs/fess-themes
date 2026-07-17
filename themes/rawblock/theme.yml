@@ -2,7 +2,7 @@ apiVersion: fess.codelibs.org/v1
 kind: StaticTheme
 name: rawblock
 displayName: "RawBlock"
-version: "1.0.2"
+version: "1.0.3"
 author: "CodeLibs Project"
 description: "Brutalist static theme for Fess. Self-contained (no Bootstrap), raw black-on-white search UI with thick borders, sharp corners, and full-inversion interactions, built on the RawBlock design system over /api/v2/*."
 license: "Apache-2.0"

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import * as api from "./api.js";
 import { t, languageLabel } from "./i18n.js";
-import { escapeHtml, formatFileSize, formatDate, renderHighlightedSnippet, sanitizeHtml } from "./format.js";
+import { escapeHtml, formatFileSize, formatDate, renderHighlightedSnippet, renderSnippetText, sanitizeHtml } from "./format.js";
 import { navigate } from "./router.js";
 
 /** Guard: prevent duplicate event-listener registration on hot-reload. */
@@ -170,16 +170,24 @@ function buildGoUrl(originalUrl, docId, queryId, order, rt) {
 }
 
 /**
- * Return the plain-text title for a result document, stripping any
- * server-injected highlight markup (<strong>/<em>) from content_title.
- * Safe to use in aria-label and other text-only contexts.
+ * Return the plain-text title for a result document: entities decoded and the
+ * server-injected highlight markup removed. The result is the same text list
+ * mode's h3 paints, so it is safe to use in aria-label and other text-only
+ * contexts — and in the lightbox title, which is text-only but visible.
  *
  * @param {Object} d - result document object
  * @returns {string}
  */
 function plainTitle(d) {
-  const raw = d.content_title || d.title || d.url || "";
-  return String(raw).replace(/<\/?(?:strong|em)>/g, "");
+  // content_title is server-escaped HTML with the highlight tags spliced in, so
+  // run it through the same parse path the visible title uses and the accessible
+  // name cannot diverge from what is on screen. title and url are raw index
+  // fields the server never escapes: parsing them would decode entities it never
+  // wrote, so a title literally reading "AT&amp;T" must be left alone. The
+  // branch mirrors buildResultCard()'s, down to an empty content_title falling
+  // through to title.
+  if (d.content_title) return renderSnippetText(d.content_title);
+  return d.title || d.url || "";
 }
 
 // --- Searcher provenance (keyword vs visual vs blend) --------------------------
@@ -646,10 +654,16 @@ function buildGalleryTile(doc, queryId, rank) {
   if (kind) li.classList.add("tile--" + kind);
 
   // Title fallback chain shared by the thumbnail's alt text and the caption
-  // below; highlight markup (<strong>/<em>) is stripped so it never leaks as
-  // literal text (textContent/alt do not parse HTML, but the tags would still
-  // be visible to the user/screen reader verbatim otherwise).
-  const titleText = String(doc.content_title || doc.filename || doc.url_link || "").replace(/<\/?(?:strong|em)>/g, "");
+  // below. content_title is server-escaped HTML with the highlight tags spliced
+  // in, so it goes through renderSnippetText() — the same parse path list mode's
+  // h3 and the lightbox title use. Stripping the tags by hand instead would
+  // leave the entities behind, so the same document would read "What&#039;s new"
+  // in this caption and "What's new" on the list-mode card. filename and
+  // url_link are raw index fields the server never escapes: parsing them would
+  // decode entities it never wrote, so they are left alone.
+  const titleText = doc.content_title
+    ? renderSnippetText(doc.content_title)
+    : String(doc.filename || doc.url_link || "");
 
   const thumbOk = window.__mosaicThumbEnabled === true && !!doc.thumbnail;
   if (thumbOk) {

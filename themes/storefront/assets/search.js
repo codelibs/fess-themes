@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import * as api from "./api.js";
 import { t, languageLabel, getLocale } from "./i18n.js";
-import { sanitizeHtml } from "./format.js";
+import { renderSnippetText, sanitizeHtml } from "./format.js";
 import { navigate } from "./router.js";
 import { formatPrice, ratingStars, availabilityLabel, hasImage, barWidths, sortOptionsFor } from "./storefront.js";
 
@@ -212,10 +212,16 @@ function buildGalleryTile(doc, queryId, rank) {
   const li = el("li", { className: "tile", dataset: { docId: doc.doc_id || "", rank: String(rank) } });
 
   // Title fallback chain shared by the thumbnail's alt text and the caption
-  // below; highlight markup (<strong>/<em>) is stripped so it never leaks as
-  // literal text (textContent/alt do not parse HTML, but the tags would still
-  // be visible to the user/screen reader verbatim otherwise).
-  const titleText = String(doc.content_title || doc.filename || doc.url_link || "").replace(/<\/?(?:strong|em)>/g, "");
+  // below. content_title is server-escaped HTML with the highlight tags spliced
+  // in, so it goes through renderSnippetText(): the markup is removed and the
+  // entities decode, so a product reads "Tom & Jerry" rather than the literal
+  // "Tom &amp; Jerry". This is the only place the title is shown, so a
+  // hand-rolled strip would leave those entities on screen with nothing to
+  // contradict them. filename and url_link are raw index fields the server never
+  // escapes: parsing them would decode entities it never wrote.
+  const titleText = doc.content_title
+    ? renderSnippetText(doc.content_title)
+    : String(doc.filename || doc.url_link || "");
 
   const originalUrl = doc.url_link || doc.url || "";
   const goHref = buildGoUrl(originalUrl, doc.doc_id, queryId, rank, state.requestedTime);

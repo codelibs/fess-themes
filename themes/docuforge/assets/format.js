@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Common formatting utilities for the DocuForge SPA.
 // Importing is DOM-free; calling is not. Only formatFileSize / formatDate /
-// escapeHtml are pure — sanitizeHtml and renderHighlightedSnippet parse via
-// document, and isSafeHref needs window.location.
+// escapeHtml are pure — sanitizeHtml, renderHighlightedSnippet and
+// renderSnippetText parse via document, and isSafeHref needs window.location.
 
 const UNITS = ["B", "KB", "MB", "GB", "TB", "PB"];
 
@@ -87,6 +87,37 @@ export function renderHighlightedSnippet(raw) {
   tpl.innerHTML = String(raw); // eslint-disable-line no-unsanitized/property
   sanitizeFragment(tpl.content, SNIPPET_TAGS);
   return tpl.innerHTML;
+}
+
+/**
+ * Reduce a server-supplied search snippet to plain text.
+ *
+ * Runs renderHighlightedSnippet()'s exact parse-and-sanitize path and differs
+ * only in what it hands back: the fragment's text instead of its HTML. Callers
+ * needing the text-only form of a field the UI also renders — an aria-label
+ * beside the visible snippet — must use this rather than stripping the
+ * highlight tags themselves, so the two can never disagree about what the
+ * server sent. A hand-rolled strip leaves the entities behind (`&#034;` reaches
+ * a screen reader literally) and keeps text the sanitizer drops whole (the
+ * DROP_WITH_CONTENT members), both of which the shared path gets right.
+ *
+ * `raw` must meet the same already-escaped contract renderHighlightedSnippet()
+ * documents. Fields the server does NOT escape — `title`, `url`, `digest` —
+ * are plain text already and must not be passed here: parsing would decode
+ * entities the server never wrote, turning a title that literally reads
+ * "AT&amp;T" into "AT&T".
+ *
+ * @param {string|null|undefined} raw - server snippet HTML
+ * @returns {string} plain text, entities decoded and markup removed
+ */
+export function renderSnippetText(raw) {
+  if (!raw) return "";
+  const tpl = document.createElement("template");
+  // Inert for the same reason renderHighlightedSnippet()'s assignment is, and
+  // the parsed string is never handed back as HTML here — only as text.
+  tpl.innerHTML = String(raw); // eslint-disable-line no-unsanitized/property
+  sanitizeFragment(tpl.content, SNIPPET_TAGS);
+  return tpl.content.textContent;
 }
 
 // ---------------------------------------------------------------------------

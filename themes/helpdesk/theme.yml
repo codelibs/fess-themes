@@ -2,7 +2,7 @@ apiVersion: fess.codelibs.org/v1
 kind: StaticTheme
 name: helpdesk
 displayName: "HelpDesk"
-version: "1.0.1"
+version: "1.0.2"
 author: "CodeLibs Project"
 description: "FAQ and support-site static theme for Fess. Answers expand inline in an accordion — no page navigation — with featured answers, category browsing and optional AI escalation, built on /api/v2/*."
 license: "Apache-2.0"
