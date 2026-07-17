@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import * as api from "./api.js";
 import { t, languageLabel } from "./i18n.js";
-import { formatFileSize, formatDate, renderHighlightedSnippet, sanitizeHtml } from "./format.js";
+import { escapeHtml, formatFileSize, formatDate, renderHighlightedSnippet, sanitizeHtml } from "./format.js";
 import { navigate } from "./router.js";
 
 /** Guard: prevent duplicate event-listener registration on hot-reload. */
@@ -215,7 +215,12 @@ function buildResultCard(d, queryId, order) {
     body.appendChild(thumbWrap);
   }
   const description = el("div", { className: "description" });
-  description.innerHTML = renderHighlightedSnippet(d.content_description || d.digest || "");
+  // content_description is server-escaped HTML; digest is the raw index field,
+  // so escape it here to meet the contract renderHighlightedSnippet() expects.
+  // Without that, a digest like "Michael Froh <msfroh@example.com>" would have
+  // the address parsed as a tag and dropped.
+  description.innerHTML = renderHighlightedSnippet(
+    d.content_description || escapeHtml(d.digest || ""));
   body.appendChild(description);
   li.appendChild(body);
 

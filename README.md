@@ -51,7 +51,7 @@ fess-themes/
 1. Package it into a ZIP:
    ```bash
    ./scripts/package.sh docuforge
-   # → dist/docuforge-1.0.1.zip
+   # → dist/docuforge-1.0.2.zip
    ```
 2. In Fess, open **Admin → Theme** (`/admin/theme/`) and upload the ZIP, then
    activate it (or bind it to a virtual host).

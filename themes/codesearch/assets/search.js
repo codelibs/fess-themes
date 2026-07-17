@@ -10,7 +10,8 @@
 //
 // XSS-safety contract: every field value is written with document.createElement +
 // textContent. The ONLY place HTML is injected is the snippet body, via
-// renderHighlightedSnippet() from format.js (escape-then-restore <strong>/<em>).
+// renderHighlightedSnippet() from format.js, which parses the server snippet in
+// an inert <template> and keeps only the <strong>/<em> match tags.
 // No untrusted string is ever passed to innerHTML anywhere else in this module.
 //
 // Syntax coloring (highlight.js) is DEFERRED — see the report. Applying a
@@ -20,7 +21,7 @@
 
 import * as api from "./api.js";
 import { t } from "./i18n.js";
-import { formatFileSize, formatDate, renderHighlightedSnippet } from "./format.js";
+import { escapeHtml, formatFileSize, formatDate, renderHighlightedSnippet } from "./format.js";
 import { navigate } from "./router.js";
 import { parseQuery, toFessQuery, addQualifier, removeQualifier, QUALIFIER_MAP } from "./query.js";
 
@@ -119,16 +120,39 @@ function openInRepoHref(d) {
 // ---------------------------------------------------------------------------
 
 /**
+ * The snippet for a doc, as the already-escaped HTML renderHighlightedSnippet()
+ * expects.
+ *
+ * content_description arrives escaped by ViewHelper.getContentDescription();
+ * digest is the raw index field, so it has to be escaped here to meet the same
+ * contract. Without that a digest like "Michael Froh <msfroh@example.com>"
+ * would have the address parsed as a tag and dropped.
+ *
+ * @param {Object} d - one element of env.data
+ * @returns {string} snippet HTML, or "" when the doc has neither field
+ */
+function snippetHtml(d) {
+  return d.content_description || escapeHtml(d.digest || "");
+}
+
+/**
  * Render the highlighted snippet into a two-column code block: a line-number
  * GUTTER (parsed from leading `Lnn:` tokens) and the code text. The line number
  * is NEVER part of the copyable code column.
  *
- * The snippet text is HTML (it may contain the server's <strong>/<em> match
- * tags). We split it into physical lines, strip a leading `L<number>:` per line
- * for the gutter, and inject the remainder through renderHighlightedSnippet so
- * the match tags survive but any other markup stays escaped.
+ * The snippet text is HTML (its text is entity-escaped and it may contain the
+ * server's <strong>/<em> match tags). We split it into physical lines, strip a
+ * leading `L<number>:` per line for the gutter, and inject the remainder through
+ * renderHighlightedSnippet so the match tags survive, the entities decode back
+ * to their characters, and any other markup is dropped.
  *
- * @param {string} raw - content_description (may contain Lnn: prefixes + <strong>/<em>)
+ * Splitting HTML on newlines can cut a match tag in half if the server ever
+ * wraps one across a line. That degrades rather than corrupts: each line is
+ * parsed on its own, so the opening half auto-closes at end of line and the
+ * orphaned closing half is discarded, costing the highlight on the later line
+ * but no text.
+ *
+ * @param {string} raw - snippetHtml(d) (may contain Lnn: prefixes + <strong>/<em>)
  * @returns {HTMLElement} a <div class="code-block">
  */
 function buildCodeBlock(raw) {
@@ -155,9 +179,9 @@ function buildCodeBlock(raw) {
       gutter.textContent = ""; // blank gutter cell for un-prefixed lines
     }
     const code = el("code", { className: "code-text" });
-    // The ONLY HTML injection: escape-then-restore <strong>/<em> from the server.
-    // codeText is a substring of the server snippet; renderHighlightedSnippet
-    // re-escapes everything and only un-escapes the two match tags.
+    // The ONLY HTML injection: codeText is a substring of the server snippet,
+    // and renderHighlightedSnippet parses it in an inert <template> and keeps
+    // only the two match tags.
     code.innerHTML = renderHighlightedSnippet(codeText); // eslint-disable-line no-unsanitized/property
     row.appendChild(gutter);
     row.appendChild(code);
@@ -245,7 +269,7 @@ function buildResultCard(d, queryId) {
   li.appendChild(header);
 
   // ---- Body: line-gutter code block from content_description ----
-  const snippet = d.content_description || d.digest || "";
+  const snippet = snippetHtml(d);
   if (snippet) {
     li.appendChild(buildCodeBlock(snippet));
   }
@@ -297,7 +321,7 @@ function buildGenericCard(li, d) {
   }
   li.appendChild(head);
 
-  const snippet = d.content_description || d.digest || "";
+  const snippet = snippetHtml(d);
   if (snippet) {
     const body = el("div", { className: "result-snippet" });
     body.innerHTML = renderHighlightedSnippet(snippet); // eslint-disable-line no-unsanitized/property

@@ -2,7 +2,7 @@ apiVersion: fess.codelibs.org/v1
 kind: StaticTheme
 name: docuforge
 displayName: "DocuForge"
-version: "1.0.1"
+version: "1.0.2"
 author: "CodeLibs Project"
 description: "Documentation-style static theme for Fess. Self-contained (no Bootstrap), docs-grade search UI with a persistent facet sidebar, built on the DocuForge design system over /api/v2/*."
 license: "Apache-2.0"
