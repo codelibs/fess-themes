@@ -7,6 +7,9 @@ import { sanitizeHtml } from "./format.js";
 import { t, languageLabel } from "./i18n.js";
 import { navigate } from "./router.js";
 import { attachSuggest, disableSubmitBriefly } from "./search.js";
+// Storefront divergence from the shared advance.js: this theme contributes sort
+// options the server cannot advertise (price/rating). See the sort select below.
+import { sortOptionsFor } from "./storefront.js";
 
 // ---------------------------------------------------------------------------
 // DOM helpers
@@ -383,53 +386,49 @@ export function attach() {
   // option keeps labels.advance_search_num ("- 表示件数 -") as the placeholder.
   const fNum = makeSelect("search.num", "adv-num", numOpts);
 
-  // ADV-6: sort select — prefer serverConfig.sort_options; when absent build a gated fallback
+  // ADV-6: sort select — prefer serverConfig.sort_options; when absent fall back to a gated list
   const features = (serverConfig.features) || {};
   const searchLogEnabled = !!features.search_log_enabled;
   const favoriteEnabled = !!features.user_favorite;
-  let sortOptsRaw;
-  if (serverConfig.sort_options && serverConfig.sort_options.length > 0) {
-    sortOptsRaw = serverConfig.sort_options.map(o => ({
-      value: o.value != null ? o.value : "",
-      label: t(o.label_key || o.value || ""),
-    }));
-  } else {
-    // Fallback: always include core sort options; gate click_count and favorite_count on features
-    sortOptsRaw = [
-      { value: "score.desc",             label: t("labels.search_result_sort_score_desc") },
-      { value: "filename.asc",           label: t("labels.search_result_sort_filename_asc") },
-      { value: "filename.desc",          label: t("labels.search_result_sort_filename_desc") },
-      { value: "created.asc",            label: t("labels.search_result_sort_created_asc") },
-      { value: "created.desc",           label: t("labels.search_result_sort_created_desc") },
-      { value: "content_length.asc",     label: t("labels.search_result_sort_content_length_asc") },
-      { value: "content_length.desc",    label: t("labels.search_result_sort_content_length_desc") },
-      { value: "last_modified.asc",      label: t("labels.search_result_sort_last_modified_asc") },
-      { value: "last_modified.desc",     label: t("labels.search_result_sort_last_modified_desc") },
-    ];
-    if (searchLogEnabled) {
-      sortOptsRaw.push(
-        { value: "click_count.asc",  label: t("labels.search_result_sort_click_count_asc") },
-        { value: "click_count.desc", label: t("labels.search_result_sort_click_count_desc") },
-      );
-    }
-    if (favoriteEnabled) {
-      sortOptsRaw.push(
-        { value: "favorite_count.asc",  label: t("labels.search_result_sort_favorite_count_asc") },
-        { value: "favorite_count.desc", label: t("labels.search_result_sort_favorite_count_desc") },
-      );
-    }
+  // Fallback: always include core sort options; gate click_count and favorite_count on features.
+  // Storefront divergence: written in the server's { value, label_key } shape so
+  // that this branch and the server-supplied one both resolve through
+  // sortOptionsFor(), which merges in the theme's product sorts. Without them
+  // this select omits an incoming sort=price.asc: the prefill below then leaves
+  // the placeholder selected and submit drops the sort back to relevance order.
+  const sortFallback = [
+    { value: "score.desc",             label_key: "labels.search_result_sort_score_desc" },
+    { value: "filename.asc",           label_key: "labels.search_result_sort_filename_asc" },
+    { value: "filename.desc",          label_key: "labels.search_result_sort_filename_desc" },
+    { value: "created.asc",            label_key: "labels.search_result_sort_created_asc" },
+    { value: "created.desc",           label_key: "labels.search_result_sort_created_desc" },
+    { value: "content_length.asc",     label_key: "labels.search_result_sort_content_length_asc" },
+    { value: "content_length.desc",    label_key: "labels.search_result_sort_content_length_desc" },
+    { value: "last_modified.asc",      label_key: "labels.search_result_sort_last_modified_asc" },
+    { value: "last_modified.desc",     label_key: "labels.search_result_sort_last_modified_desc" },
+  ];
+  if (searchLogEnabled) {
+    sortFallback.push(
+      { value: "click_count.asc",  label_key: "labels.search_result_sort_click_count_asc" },
+      { value: "click_count.desc", label_key: "labels.search_result_sort_click_count_desc" },
+    );
+  }
+  if (favoriteEnabled) {
+    sortFallback.push(
+      { value: "favorite_count.asc",  label_key: "labels.search_result_sort_favorite_count_asc" },
+      { value: "favorite_count.desc", label_key: "labels.search_result_sort_favorite_count_desc" },
+    );
   }
   // JSP parity (advance.jsp:159-162): a single empty-value placeholder heads
-  // the sort list, followed by the real sort options. The server's sort_options
-  // already supplies a leading value="" entry (labelled "Score"); drop it before
-  // prepending the theme's own default placeholder so the list does not show a
-  // duplicate empty option + "Score"/"スコア順" pair.
-  const sortOptsBody = (sortOptsRaw.length > 0 && sortOptsRaw[0].value === "")
-    ? sortOptsRaw.slice(1)
-    : sortOptsRaw;
+  // the sort list, followed by the real sort options. sortOptionsFor() drops the
+  // server's own leading value="" entry, so the list does not show a duplicate
+  // empty option + "Score"/"スコア順" pair.
   const sortOpts = [
     { value: "", label: t("labels.advance_search_sort_default") },
-    ...sortOptsBody,
+    ...sortOptionsFor(serverConfig, sortFallback).map(o => ({
+      value: o.value != null ? o.value : "",
+      label: t(o.label_key || o.value || ""),
+    })),
   ];
   const fSort = makeSelect("search.sort", "adv-sort", sortOpts);
 

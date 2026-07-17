@@ -34,7 +34,9 @@ in `fess_config.properties` (or as a Java system property) and restart Fess.
 - **Count bars** — each facet-query group (a price band group, Updated, Size, anything the
   server defines) is drawn as bars proportional to its real counts, with the count beside
   it, instead of a bare numeric badge.
-- **Price-aware sorting** — sort by price or rating, driven by the server's `sort_options`.
+- **Price-aware sorting** — sort by price or rating. The server cannot advertise these
+  (`UiConfigHandler.buildSortOptions()` is a hardcoded list), so the theme contributes them
+  itself; they require `query.additional.sort.fields=price,rating`.
 - **Grid only** — there is no grid/list toggle. Grid *is* the thesis.
 
 ## Requirements / Configuration

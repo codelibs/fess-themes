@@ -1140,7 +1140,6 @@ footer[role="contentinfo"] {
   border-radius: var(--df-radius-lg);
   background: var(--df-surface);
   box-shadow: var(--df-shadow-subtle);
-  cursor: pointer;
   transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
 }
 .tile:hover,
@@ -1148,10 +1147,6 @@ footer[role="contentinfo"] {
   transform: translateY(-3px);
   box-shadow: var(--df-shadow-large);
   border-color: var(--df-stone-300);
-}
-.tile:focus-visible {
-  outline: 2px solid var(--df-secondary);
-  outline-offset: 2px;
 }
 .tile__img {
   display: block;
@@ -1175,8 +1170,21 @@ footer[role="contentinfo"] {
   color: var(--df-stone-400);
   background: linear-gradient(160deg, var(--df-stone-100) 0%, var(--df-stone-200) 100%);
 }
-.tile__cap { padding: .5rem .6rem .6rem; border-top: 1px solid var(--df-stone-100); }
+/* No border-top: the rule this cap inherited separated the image from the
+   caption, back when the caption held the title. The title now lives in
+   a.tile__link, so the same line would separate the name from its price —
+   a boundary nobody chose. Name and price are one product-identity unit;
+   whitespace groups them. */
+/* padding-top carries the title's lower air (see .tile__title). */
+.tile__cap { padding: 1rem .6rem .6rem; }
 .tile__title {
+  /* a.tile__link is deliberately unstyled so the image it also wraps keeps
+     bleeding to the tile edge, so the title carries its own box instead.
+     padding-bottom stays 0: -webkit-line-clamp needs overflow:hidden, which
+     clips at the PADDING box, so any bottom padding here becomes a band the
+     clamped third line renders into. The air below the name lives on
+     .tile__cap's padding-top instead — same 16px, nothing to bleed into. */
+  padding: .5rem .6rem 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
