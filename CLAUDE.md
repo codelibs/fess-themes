@@ -99,7 +99,7 @@ Every theme carries its own copy of the same core modules. The copies are identi
 **except for the per-theme module comment on line 2** — they are not byte-identical, so a
 plain `md5` reports a difference for every theme and tells you nothing.
 
-Identical across all 8 themes (line 2 aside):
+Identical across all 10 themes (line 2 aside):
 
 ```
 cache.js  error.js  format.js  markdown.js  profile.js  router.js
@@ -112,15 +112,17 @@ incoming `sort=price.asc`, and submit silently drops it back to relevance order.
 divergence is deliberate — a theme contributing its own sort fields has nowhere else to put
 them — so do **not** "restore" it by copying another theme's copy over it.
 
-Identical across 7, with `codesearch` diverged: `api.js`, `auth.js`.
-`chat.js` splits 6 / `codesearch` / `docsearch`.
-`compat.js` / `help.js` / `i18n.js` differ only by name-bound `/themes/<name>/` paths.
-`assets/logo.png` and `assets/logo-head.png` are byte-identical across all 8.
+Identical across 9, with `codesearch` diverged: `auth.js`.
+`chat.js` splits 8 / `codesearch` / `docsearch`.
+`help.js` / `i18n.js` differ only by name-bound `/themes/<name>/` paths.
+`compat.js` carries no `/themes/` path at all — it differs by header brand plus a
+CSS-class prefix (`df-` in eight, `vb-` in `voicebox`, `bs-` in `codesearch`).
+`assets/logo.png` and `assets/logo-head.png` are byte-identical across all 10.
 
 `codesearch` is the usual outlier — it is the oldest lineage and its `theme.yml` also omits
-the `author` / `description` / `license` / `homepage` the other 7 carry.
+the `author` / `description` / `license` / `homepage` the other 9 carry.
 
-`assets/format.js` (the HTML sanitizer) has a 9th copy in the `bootstrap` reference theme
+`assets/format.js` (the HTML sanitizer) has an 11th copy in the `bootstrap` reference theme
 of the `fess` repo (`src/main/webapp/themes/bootstrap/assets/format.js`), and some theme
 READMEs assert identity with it.
 
@@ -135,6 +137,14 @@ for f in themes/*/assets/format.js ../fess/src/main/webapp/themes/bootstrap/asse
 done | sort   # a single distinct hash = all copies in sync
 ```
 
+`sed '2d'` assumes line 1 is the SPDX header and line 2 the per-theme comment. That holds
+for `format.js` and `markdown.js` in every copy, so the recipe above is sound — but eight
+files put the brand comment on line 1 and carry no SPDX line at all (`codesearch`'s
+`api.js` / `app.js` / `auth.js` / `i18n.js` / `query.js`, `docsearch`'s `docsearch.js` /
+`palette.js` / `theme-init.js`). There the recipe deletes a real line and reports a
+difference that is not there: it is why `api.js` reads as diverged when its code matches
+all 10. Diff before believing the hash.
+
 ## Conventions
 
 - Vanilla JS ES modules, no bundler, no framework, no CDN — a strict CSP blocks external
@@ -143,7 +153,7 @@ done | sort   # a single distinct hash = all copies in sync
 - Asset paths inside a theme are absolute and name-bound (`/themes/<name>/assets/...`), so
   renaming a theme means updating `theme.yml#name`, `#displayName`, and every path.
 - i18n lives in `i18n/messages.<locale>.json`. Every theme ships **16** message bundles and
-  **8** `help/<locale>.json` bundles, but 7 of the 8 themes declare only 8 locales in
+  **8** `help/<locale>.json` bundles, but 9 of the 10 themes declare only 8 locales in
   `theme.yml#supportedLocales` (`codesearch` declares all 16) — the undeclared bundles ship
   but the server never lists them. Keep key parity across *every shipped bundle*, not just
   the declared ones. `help.js` falls back to `help/en.json` for locales with no help bundle.
