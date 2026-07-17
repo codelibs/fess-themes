@@ -1175,12 +1175,16 @@ footer[role="contentinfo"] {
    a.tile__link, so the same line would separate the name from its price —
    a boundary nobody chose. Name and price are one product-identity unit;
    whitespace groups them. */
-.tile__cap { padding: .5rem .6rem .6rem; }
+/* padding-top carries the title's lower air (see .tile__title). */
+.tile__cap { padding: 1rem .6rem .6rem; }
 .tile__title {
   /* a.tile__link is deliberately unstyled so the image it also wraps keeps
-     bleeding to the tile edge — so the title carries its own box, matching the
-     cap's inset horizontally and giving the name equal air above and below. */
-  padding: .5rem .6rem;
+     bleeding to the tile edge, so the title carries its own box instead.
+     padding-bottom stays 0: -webkit-line-clamp needs overflow:hidden, which
+     clips at the PADDING box, so any bottom padding here becomes a band the
+     clamped third line renders into. The air below the name lives on
+     .tile__cap's padding-top instead — same 16px, nothing to bleed into. */
+  padding: .5rem .6rem 0;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
