@@ -1,0 +1,15 @@
+{
+  "name": "fess-themes-js-tests",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Executable unit tests for the shared JavaScript that ships inside every fess-themes theme (themes/*/assets/*.js). NOT shipped: this directory is never part of any theme ZIP (scripts/package.sh only zips themes/<name>/) and is not referenced by any theme. See README.md.",
+  "type": "module",
+  "scripts": {
+    "test": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.10",
+    "jsdom": "^29.1.1",
+    "vitest": "^4.1.10"
+  }
+}
