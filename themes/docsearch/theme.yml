@@ -2,7 +2,7 @@ apiVersion: fess.codelibs.org/v1
 kind: StaticTheme
 name: docsearch
 displayName: "DocSearch"
-version: "1.0.2"
+version: "1.0.3"
 author: "CodeLibs Project"
 description: "Documentation-search static theme for Fess. Self-contained (no Bootstrap), with a Command/Ctrl+K palette, instant grouped results, breadcrumb context, faceted navigation, light/dark mode, and an optional cited Ask-AI mode. Built on /api/v2/*."
 license: "Apache-2.0"

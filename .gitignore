@@ -2,6 +2,10 @@
 /dist/
 *.zip
 
+# Theme JS test tooling (not shipped)
+/test/node_modules/
+/test/coverage/
+
 # OS / editor cruft
 .DS_Store
 Thumbs.db
