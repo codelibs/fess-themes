@@ -38,7 +38,7 @@ const FILETYPE_VALUES = [
 // passed to innerHTML.
 
 /**
- * Return `url` only when its scheme is in the http/https/ftp/ftps allowlist.
+ * Return `url` only when its scheme is in the allowlist of schemes Fess serves (web plus file/smb/smb1/storage/s3/gcs).
  * Any other scheme (e.g. javascript:, data:, vbscript:) returns "#" so that
  * setAttribute("href", safeHref(u)) can never inject executable content.
  */
@@ -47,7 +47,9 @@ function safeHref(url) {
   try {
     const u = new URL(url, location.href);
     if (u.protocol === "https:" || u.protocol === "http:" ||
-        u.protocol === "ftp:" || u.protocol === "ftps:") {
+        u.protocol === "ftp:" || u.protocol === "ftps:" ||
+        u.protocol === "file:" || u.protocol === "smb:" || u.protocol === "smb1:" ||
+        u.protocol === "storage:" || u.protocol === "s3:" || u.protocol === "gcs:") {
       return url;
     }
   } catch (e) {
@@ -100,7 +102,7 @@ function copyToClipboard(text) {
  * Build the /go/ click-tracking URL for a result link.
  *
  * Mirrors the JSP mousedown handler in src/main/webapp/js/search.js:111-127.
- * Returns "#" when the original URL is not in the http/https/ftp/ftps allowlist
+ * Returns "#" when the original URL is not in the allowlist of schemes Fess serves (web plus file/smb/smb1/storage/s3/gcs)
  * so that safeHref semantics are preserved — the /go/ redirect would fail anyway
  * for unsafe schemes.
  *
@@ -117,7 +119,9 @@ function buildGoUrl(originalUrl, docId, queryId, order, rt) {
   try {
     const u = new URL(originalUrl, location.href);
     if (u.protocol !== "https:" && u.protocol !== "http:" &&
-        u.protocol !== "ftp:" && u.protocol !== "ftps:") {
+        u.protocol !== "ftp:" && u.protocol !== "ftps:" &&
+        u.protocol !== "file:" && u.protocol !== "smb:" && u.protocol !== "smb1:" &&
+        u.protocol !== "storage:" && u.protocol !== "s3:" && u.protocol !== "gcs:") {
       return "#";
     }
   } catch (e) {
