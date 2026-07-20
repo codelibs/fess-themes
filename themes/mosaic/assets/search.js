@@ -56,7 +56,7 @@ try {
 // passed to innerHTML.
 
 /**
- * Return `url` only when its scheme is in the http/https/ftp/ftps allowlist.
+ * Return `url` only when its scheme is in the allowlist of schemes Fess serves (web plus file/smb/smb1/storage/s3/gcs).
  * Any other scheme (e.g. javascript:, data:, vbscript:) returns "#" so that
  * setAttribute("href", safeHref(u)) can never inject executable content.
  */
@@ -65,7 +65,9 @@ function safeHref(url) {
   try {
     const u = new URL(url, location.href);
     if (u.protocol === "https:" || u.protocol === "http:" ||
-        u.protocol === "ftp:" || u.protocol === "ftps:") {
+        u.protocol === "ftp:" || u.protocol === "ftps:" ||
+        u.protocol === "file:" || u.protocol === "smb:" || u.protocol === "smb1:" ||
+        u.protocol === "storage:" || u.protocol === "s3:" || u.protocol === "gcs:") {
       return url;
     }
   } catch (e) {
@@ -131,7 +133,7 @@ function copyToClipboard(text) {
  * Build the /go/ click-tracking URL for a result link.
  *
  * Mirrors the JSP mousedown handler in src/main/webapp/js/search.js:111-127.
- * Returns "#" when the original URL is not in the http/https/ftp/ftps allowlist
+ * Returns "#" when the original URL is not in the allowlist of schemes Fess serves (web plus file/smb/smb1/storage/s3/gcs)
  * so that safeHref semantics are preserved — the /go/ redirect would fail anyway
  * for unsafe schemes.
  *
@@ -148,7 +150,9 @@ function buildGoUrl(originalUrl, docId, queryId, order, rt) {
   try {
     const u = new URL(originalUrl, location.href);
     if (u.protocol !== "https:" && u.protocol !== "http:" &&
-        u.protocol !== "ftp:" && u.protocol !== "ftps:") {
+        u.protocol !== "ftp:" && u.protocol !== "ftps:" &&
+        u.protocol !== "file:" && u.protocol !== "smb:" && u.protocol !== "smb1:" &&
+        u.protocol !== "storage:" && u.protocol !== "s3:" && u.protocol !== "gcs:") {
       return "#";
     }
   } catch (e) {
@@ -748,25 +752,28 @@ function trapLightboxTab(ev, lb) {
 
 /**
  * Build the lightbox metadata panel (figcaption content) for one document:
- * title, the original URL as a safeHref-gated link (target=_blank,
- * rel=noopener — this link doubles as the "open original" action), mimetype/
- * filetype, size, last-modified date, score, the searcher badge (reusing
- * searcherBadgeKind()/buildGallerySearcherBadge() from the gallery tile
+ * title, the original URL as the "open original" action routed through Fess's
+ * same-origin /go/ File Proxy (buildGoUrl, target=_blank, rel=noopener — same as
+ * the list-mode result cards, so file:/smb: hits stay navigable from an http(s)
+ * page), mimetype/filetype, size, last-modified date, score, the searcher badge
+ * (reusing searcherBadgeKind()/buildGallerySearcherBadge() from the gallery tile
  * above), and a Cache action when doc.has_cache — same /cache/?docId=&hq=
  * URL convention buildResultCard's own cache link already uses. XSS-safe:
  * every string is set via textContent (via the el() helper) or a
- * safeHref()-validated href — never innerHTML with doc data.
+ * buildGoUrl()/safeHref()-validated href — never innerHTML with doc data.
  *
  * @param {Object} doc - result document (env.data[i])
+ * @param {string} [queryId] - query identifier from the search response
+ * @param {number} [order] - 1-based result rank (embedded in the /go/ URL)
  * @returns {HTMLDivElement}
  */
-function buildLightboxMeta(doc) {
+function buildLightboxMeta(doc, queryId, order) {
   const meta = el("div", { className: "lightbox__meta-body" });
 
   meta.appendChild(el("h2", { className: "lightbox__title", text: plainTitle(doc) }));
 
   const originalUrl = doc.url_link || doc.url || "";
-  const href = safeHref(originalUrl);
+  const href = buildGoUrl(originalUrl, doc.doc_id, queryId, order, state.requestedTime);
   if (originalUrl && href !== "#") {
     meta.appendChild(el("a", {
       className: "lightbox__link",
@@ -841,7 +848,9 @@ function openLightbox(rank) {
   const safeUrl = safeHref(rawUrl);
   img.src = (isImage && safeUrl !== "#" && isDisplayableImageUrl(safeUrl)) ? safeUrl : thumbUrl(doc.doc_id, env.query_id);
   img.alt = plainTitle(doc);
-  lb.querySelector(".lightbox__meta").replaceChildren(buildLightboxMeta(doc));
+  // rank is the 0-based env.data[] index, so the 1-based /go/ `order` is rank + 1
+  // (matches buildGalleryTile's `idx + 1` in renderResults).
+  lb.querySelector(".lightbox__meta").replaceChildren(buildLightboxMeta(doc, env.query_id, rank + 1));
   // Boundary hint for the nav buttons (styles.css dims + inert-s a disabled
   // edge button); Next/Prev themselves already no-op at the boundary
   // (see lightboxNext/lightboxPrev), so this is a pure a11y/visual affordance.

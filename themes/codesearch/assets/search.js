@@ -76,21 +76,68 @@ function el(tag, opts) {
 }
 
 /**
- * Return `url` only when its scheme is http/https/ftp/ftps; otherwise "#".
- * Prevents javascript:/data:/vbscript: injection through any field used as href.
+ * Return `url` only when its scheme is in the allowlist of schemes Fess serves
+ * (web plus file/smb/smb1/storage/s3/gcs); otherwise "#". Prevents
+ * javascript:/data:/vbscript: injection through any field used as href.
  */
 function safeHref(url) {
   if (!url || typeof url !== "string") return "#";
   try {
     const u = new URL(url, location.href);
     if (u.protocol === "https:" || u.protocol === "http:" ||
-        u.protocol === "ftp:" || u.protocol === "ftps:") {
+        u.protocol === "ftp:" || u.protocol === "ftps:" ||
+        u.protocol === "file:" || u.protocol === "smb:" || u.protocol === "smb1:" ||
+        u.protocol === "storage:" || u.protocol === "s3:" || u.protocol === "gcs:") {
       return url;
     }
   } catch {
     return "#";
   }
   return "#";
+}
+
+/**
+ * Build the /go/ click-tracking URL for a result link.
+ *
+ * Mirrors the JSP mousedown handler in src/main/webapp/js/search.js:111-127.
+ * Returns "#" when the original URL is not in the allowlist of schemes Fess serves (web plus file/smb/smb1/storage/s3/gcs)
+ * so that safeHref semantics are preserved — the /go/ redirect would fail anyway
+ * for unsafe schemes.
+ *
+ * @param {string} originalUrl - the document's url_link / url value
+ * @param {string} docId       - document identifier
+ * @param {string} queryId     - query identifier from the search response
+ * @param {number} order       - 1-based rank of the result
+ * @param {number} rt          - requestedTime in epoch ms
+ * @returns {string} the /go/ redirect URL, or "#" for unsafe schemes
+ */
+function buildGoUrl(originalUrl, docId, queryId, order, rt) {
+  // Validate scheme — same rules as safeHref; only build /go/ for safe schemes.
+  if (!originalUrl || typeof originalUrl !== "string") return "#";
+  try {
+    const u = new URL(originalUrl, location.href);
+    if (u.protocol !== "https:" && u.protocol !== "http:" &&
+        u.protocol !== "ftp:" && u.protocol !== "ftps:" &&
+        u.protocol !== "file:" && u.protocol !== "smb:" && u.protocol !== "smb1:" &&
+        u.protocol !== "storage:" && u.protocol !== "s3:" && u.protocol !== "gcs:") {
+      return "#";
+    }
+  } catch (e) {
+    return "#";
+  }
+
+  let goUrl = "/go/?rt=" + encodeURIComponent(rt) +
+              "&docId=" + encodeURIComponent(docId || "") +
+              "&queryId=" + encodeURIComponent(queryId || "") +
+              "&order=" + encodeURIComponent(order || 0);
+
+  // Preserve the fragment from the original URL (e.g. /doc.html#section-2)
+  const hashIndex = originalUrl.indexOf("#");
+  if (hashIndex >= 0) {
+    goUrl += "&hash=" + encodeURIComponent(originalUrl.substring(hashIndex));
+  }
+
+  return goUrl;
 }
 
 /** True when the document carries any of the seven codesearch fields. */
@@ -201,16 +248,17 @@ function buildCodeBlock(raw) {
  *
  * @param {Object} d - one element of env.data
  * @param {string} [queryId] - server query_id (for favorite attribution)
+ * @param {number} [order] - 1-based result rank (embedded in the /go/ URL)
  * @returns {HTMLLIElement}
  */
-function buildResultCard(d, queryId) {
+function buildResultCard(d, queryId, order) {
   const li = el("li", {
     className: "result-card",
     dataset: { docId: d.doc_id || "", queryId: queryId || "" }
   });
 
   if (!isCodeDoc(d)) {
-    return buildGenericCard(li, d);
+    return buildGenericCard(li, d, queryId, order);
   }
 
   // ---- Header: org / repo · path  +  open-in-repo  +  language badge  +  ★ ----
@@ -294,12 +342,27 @@ function buildResultCard(d, queryId) {
  * Generic fallback card for non-codesearch indices: title link + snippet.
  * @param {HTMLLIElement} li - the (already-created) card element to fill
  * @param {Object} d
+ * @param {string} [queryId] - server query_id (for the /go/ click-log URL)
+ * @param {number} [order] - 1-based result rank (for the /go/ click-log URL)
  */
-function buildGenericCard(li, d) {
+function buildGenericCard(li, d, queryId, order) {
   li.classList.add("result-generic");
   const head = el("div", { className: "result-head" });
   const titleWrap = el("div", { className: "result-title" });
-  const href = safeHref(d.url || "");
+  // Web/repo results keep their direct link; file-system results
+  // (file:/smb:/smb1:/storage:/s3:/gcs:) cannot be navigated to directly from an
+  // http(s) page, so route those through Fess's same-origin /go/ File Proxy.
+  const url = d.url || "";
+  let href = safeHref(url);
+  try {
+    const proto = new URL(url, location.href).protocol;
+    if (proto === "file:" || proto === "smb:" || proto === "smb1:" ||
+        proto === "storage:" || proto === "s3:" || proto === "gcs:") {
+      href = buildGoUrl(url, d.doc_id, queryId, order, state.requestedTime);
+    }
+  } catch (e) {
+    // Unparseable URL — leave href as the safeHref result (already "#").
+  }
   const a = el("a", {
     className: "result-link",
     attrs: href !== "#"
@@ -427,7 +490,8 @@ function renderResults(env) {
   }
   if (empty) empty.hidden = true;
 
-  data.forEach(d => list.appendChild(buildResultCard(d, env.query_id)));
+  // Pass 1-based order so buildResultCard can embed it in the /go/ URL.
+  data.forEach((d, idx) => list.appendChild(buildResultCard(d, env.query_id, idx + 1)));
 
   // Wire favorite click handlers + bulk-sync state for authenticated users.
   list.querySelectorAll("li[data-doc-id]").forEach(li => {

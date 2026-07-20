@@ -48,7 +48,7 @@ function el(tag, opts) {
  * Build the /go/ click-tracking URL for a result link.
  *
  * Mirrors the JSP mousedown handler in src/main/webapp/js/search.js:111-127.
- * Returns "#" when the original URL is not in the http/https/ftp/ftps allowlist
+ * Returns "#" when the original URL is not in the allowlist of schemes Fess serves (web plus file/smb/smb1/storage/s3/gcs)
  * — the /go/ redirect would fail anyway for unsafe schemes.
  *
  * @param {string} originalUrl - the document's url_link / url value
@@ -59,12 +59,14 @@ function el(tag, opts) {
  * @returns {string} the /go/ redirect URL, or "#" for unsafe schemes
  */
 function buildGoUrl(originalUrl, docId, queryId, order, rt) {
-  // Validate scheme — only build /go/ for the http/https/ftp/ftps allowlist.
+  // Validate scheme — only build /go/ for the allowlist of schemes Fess serves (web plus file/smb/smb1/storage/s3/gcs).
   if (!originalUrl || typeof originalUrl !== "string") return "#";
   try {
     const u = new URL(originalUrl, location.href);
     if (u.protocol !== "https:" && u.protocol !== "http:" &&
-        u.protocol !== "ftp:" && u.protocol !== "ftps:") {
+        u.protocol !== "ftp:" && u.protocol !== "ftps:" &&
+        u.protocol !== "file:" && u.protocol !== "smb:" && u.protocol !== "smb1:" &&
+        u.protocol !== "storage:" && u.protocol !== "s3:" && u.protocol !== "gcs:") {
       return "#";
     }
   } catch (e) {
