@@ -30,3 +30,37 @@ export function mountFragment(fragment) {
   host.appendChild(fragment);
   return host;
 }
+
+/**
+ * Replace document.body's markup with `html` and return the live body, so a
+ * runSearch-driven test can build the container scaffold the render machinery
+ * reaches for (#results, #facet-body, #pagination, …) and then assert on what it
+ * rendered into the live document. Mirrors the bootstrap reference harness.
+ *
+ * @param {string} html
+ * @returns {HTMLElement} document.body
+ */
+export function mountBody(html) {
+  document.body.innerHTML = html;
+  return document.body;
+}
+
+/**
+ * Reset the shared jsdom document between cases: empty <body>, drop the title.
+ * The asset modules mutate document.title and the body, so a clean slate keeps
+ * cases order-independent.
+ */
+export function resetDom() {
+  document.body.innerHTML = "";
+  document.title = "";
+}
+
+/**
+ * Point window.location at `url` without a real navigation (jsdom history API),
+ * so runFromUrl()/attach() see the query string a test wants to exercise.
+ *
+ * @param {string} url - a path+query such as "/search?q=foo"
+ */
+export function setLocation(url) {
+  window.history.replaceState(null, "", url);
+}

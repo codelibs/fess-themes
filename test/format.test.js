@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Behavioural tests for the shared format.js that ships inside every theme.
 // These import and EXECUTE each theme's real, shipped format.js (adapted from
-// codelibs/fess PR #3194's bootstrap format.test.js to the fess-themes API,
-// which has renderHighlightedSnippet but NOT bootstrap's renderSnippetText).
+// codelibs/fess PR #3194's bootstrap format.test.js to the fess-themes API).
+// Since the format.js sync to canonical, each theme exports the full bootstrap
+// surface, including renderHighlightedSnippet AND renderSnippetText.
 //
 // sanitizeHtml returns a DocumentFragment (not a string), so it is serialised
 // through a detached <div> to inspect the resulting markup — exactly how the
@@ -18,8 +19,15 @@ const mods = Object.fromEntries(
 );
 
 describe.each(themes)("format.js [%s]", (theme) => {
-  const { escapeHtml, formatFileSize, formatDate, isSafeHref, sanitizeHtml, renderHighlightedSnippet } =
-    mods[theme];
+  const {
+    escapeHtml,
+    formatFileSize,
+    formatDate,
+    isSafeHref,
+    sanitizeHtml,
+    renderHighlightedSnippet,
+    renderSnippetText,
+  } = mods[theme];
 
   /** Serialise the DocumentFragment sanitizeHtml() returns into an HTML string. */
   const clean = (html) => serializeFragment(sanitizeHtml(html));
@@ -235,6 +243,21 @@ describe.each(themes)("format.js [%s]", (theme) => {
     it("returns empty string for empty input", () => {
       expect(renderHighlightedSnippet("")).toBe("");
       expect(renderHighlightedSnippet(null)).toBe("");
+    });
+  });
+
+  describe("renderSnippetText: server snippet reduced to plain text", () => {
+    // Verified against the canonical bootstrap impl (fess format.test.js):
+    // it runs renderHighlightedSnippet's exact parse-and-sanitize path but
+    // returns the fragment's text instead of its HTML.
+    it("decodes entities to plain text and strips tags", () => {
+      expect(renderSnippetText("AT&T")).toBe("AT&T");              // ampersand preserved as text
+      expect(renderSnippetText("<strong>hi</strong>")).toBe("hi"); // live tag stripped to its text
+    });
+
+    it("returns empty string for empty input", () => {
+      expect(renderSnippetText("")).toBe("");
+      expect(renderSnippetText(null)).toBe("");
     });
   });
 });
