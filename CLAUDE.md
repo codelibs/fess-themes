@@ -95,14 +95,18 @@ and in `themes/<name>/README.md` and update them to match.
 
 ## Shared core files
 
-Every theme carries its own copy of the same core modules. The copies are identical
-**except for the per-theme module comment on line 2** — they are not byte-identical, so a
-plain `md5` reports a difference for every theme and tells you nothing.
+Every theme carries its own copy of the same core modules. For most of them the copies are
+identical **except for the per-theme module comment on line 2** — they are not byte-identical,
+so a plain `md5` reports a difference for every theme and tells you nothing. The exception is
+`format.js` and `markdown.js`: their line-2 comment was neutralized to a theme-agnostic string
+(`// ... for the Fess static theme SPA.`), so those two are now **fully byte-identical** across
+all 10 themes (and the `bootstrap` 11th copy) — a plain `md5` confirms them.
 
-Identical across all 10 themes (line 2 aside):
+Identical across all 10 themes:
 
 ```
-cache.js  error.js  format.js  markdown.js  profile.js  router.js
+format.js  markdown.js                        (byte-identical, line 2 included)
+cache.js   error.js  profile.js  router.js    (identical, per-theme line-2 comment aside)
 ```
 
 `advance.js` is identical across every theme **except `storefront`**, which imports
@@ -128,22 +132,33 @@ READMEs assert identity with it.
 
 **When patching a shared core file, patch every copy in the same PR and bump every
 affected theme**, otherwise the identity claims silently become false. Nothing enforces
-this: CI checks locale bundles only, and never compares these copies. Verify by hand,
-with a hash that ignores the comment line:
+this: CI checks locale bundles only, and never compares these copies. Verify by hand.
+
+`format.js` and `markdown.js` are byte-identical including line 2, so a plain `md5`
+(no `sed`) confirms all 11 copies:
 
 ```bash
 for f in themes/*/assets/format.js ../fess/src/main/webapp/themes/bootstrap/assets/format.js; do
+  md5 -q "$f"
+done | sort -u   # a single hash = all copies in sync
+```
+
+For the other shared modules, whose per-theme line-2 comment still varies, hash with the
+comment line stripped:
+
+```bash
+for f in themes/*/assets/router.js; do
   printf '%s  %s\n' "$(sed '2d' "$f" | md5 -q)" "$f"
 done | sort   # a single distinct hash = all copies in sync
 ```
 
 `sed '2d'` assumes line 1 is the SPDX header and line 2 the per-theme comment. That holds
-for `format.js` and `markdown.js` in every copy, so the recipe above is sound — but eight
-files put the brand comment on line 1 and carry no SPDX line at all (`codesearch`'s
-`api.js` / `app.js` / `auth.js` / `i18n.js` / `query.js`, `docsearch`'s `docsearch.js` /
-`palette.js` / `theme-init.js`). There the recipe deletes a real line and reports a
-difference that is not there: it is why `api.js` reads as diverged when its code matches
-all 10. Diff before believing the hash.
+for `cache.js` / `error.js` / `profile.js` / `router.js` in every copy, so the recipe above
+is sound — but eight files put the brand comment on line 1 and carry no SPDX line at all
+(`codesearch`'s `api.js` / `app.js` / `auth.js` / `i18n.js` / `query.js`, `docsearch`'s
+`docsearch.js` / `palette.js` / `theme-init.js`). There the recipe deletes a real line and
+reports a difference that is not there: it is why `api.js` reads as diverged when its code
+matches all 10. Diff before believing the hash.
 
 ## Conventions
 

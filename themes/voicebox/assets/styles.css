@@ -453,7 +453,7 @@ button { font-family: inherit; }
   padding: 8px 14px;
   transition: border-color .15s ease, box-shadow .15s ease;
 }
-.form-control::placeholder { color: var(--vb-text-tertiary); }
+.form-control::placeholder { color: var(--vb-text-secondary); }
 .form-control:hover { border-color: var(--vb-border-medium); }
 .form-control:focus {
   outline: none;
@@ -956,7 +956,7 @@ body.modal-open { overflow: hidden; }
 #searchOptions h3 { color: var(--vb-white); font-family: var(--vb-font-head); }
 #searchOptions label, #searchOptions legend { color: var(--vb-text-tertiary); font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
 #searchOptions .form-control { background: #1a1a1a; border-color: #333; color: var(--vb-white); }
-#searchOptions .form-control::placeholder { color: var(--vb-text-tertiary); }
+#searchOptions .form-control::placeholder { color: var(--vb-text-secondary); }
 #searchOptions fieldset { border: 0; padding: 0; margin: 0 0 1rem; }
 #searchOptions > .container > div:last-child { display: flex; gap: .5rem; flex-wrap: wrap; }
 #searchOptions .btn-secondary { color: var(--vb-white); border-color: var(--vb-white); }
@@ -1134,6 +1134,11 @@ footer[role="contentinfo"] {
 #result .site cite { color: var(--bs-success); font-style: normal; }
 #result .more { display: none; }
 #result .info { font-size: 80%; color: var(--bs-tertiary-color); }
+/* The copy control is a <button> so it is focusable and keyboard-operable;
+   strip the UA's button chrome so it still reads as a bare icon. The glyph
+   inside keeps .url-copy/.url-copied, so the colour rules below still apply.
+   The focus ring comes from the global :focus-visible rule. */
+#result .url-copy-btn { background: none; border: 0; padding: 0; margin: 0; font: inherit; line-height: 1; vertical-align: middle; color: inherit; cursor: pointer; }
 #result .url-copy { color: var(--vb-primary); }
 #result .url-copied { color: var(--vb-success); }
 #result .favorited { display: none; }

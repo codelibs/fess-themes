@@ -2,7 +2,7 @@ apiVersion: fess.codelibs.org/v1
 kind: StaticTheme
 name: storefront
 displayName: "Storefront"
-version: "1.0.2"
+version: "1.0.3"
 author: "CodeLibs Project"
 description: "EC and product-search static theme for Fess. Results render as product cards — image, price, rating and stock, with no text snippet — and facet counts are drawn as proportional bars, built on /api/v2/*."
 license: "Apache-2.0"
