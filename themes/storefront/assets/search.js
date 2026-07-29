@@ -677,7 +677,7 @@ async function runSearch() {
     // search failed with a 500 or a dropped connection. Fall back to #results-meta when a
     // theme has no visible banner.
     const msg = (e && e.name === "NetworkError") ? t("error.network")
-              : (e && e.code === "AUTH_REQUIRED") ? t("error.auth_required")
+              : (e && (e.code === "auth_required" || e.code === "AUTH_REQUIRED")) ? t("error.auth_required")
               : t("error.server");
     if (errBox) { errBox.textContent = msg; errBox.classList.remove("d-none"); }
     else { const meta = document.getElementById("results-meta"); if (meta) meta.textContent = msg; }

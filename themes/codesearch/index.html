@@ -82,8 +82,8 @@
     <section id="home-view" class="view-pane home" hidden>
       <p class="home-mark"><span class="sigil" aria-hidden="true">⌗</span> <span data-i18n="page.heading">Fess Code Search</span></p>
       <p class="home-tag" data-i18n="search.home_tagline">Search across your code, paths, and symbols.</p>
-      <div class="notification" id="home-notification" role="status" aria-live="polite" hidden></div>
-      <div id="home-flash" class="home-flash" role="alert" aria-live="assertive" aria-atomic="true" hidden></div>
+      <div class="notification d-none" id="home-notification" role="status" aria-live="polite"></div>
+      <div id="home-flash" class="home-flash d-none" role="alert" aria-live="assertive" aria-atomic="true"></div>
       <form id="home-search-form" role="search" aria-label="Home search">
         <div class="home-search">
           <span class="prompt" aria-hidden="true">&gt;</span>
@@ -112,7 +112,7 @@
 
         <!-- Center: results column. Cards rendered by Task 4 into #results. -->
         <div class="results-col">
-          <div id="results-notification" class="notification" role="status" aria-live="polite" hidden></div>
+          <div id="results-notification" class="notification d-none" role="status" aria-live="polite"></div>
           <div id="search-error" class="alert alert-danger" role="alert" aria-live="assertive" hidden></div>
           <p id="result-summary" aria-live="polite" aria-atomic="true"></p>
           <input type="hidden" id="queryId" value="">
@@ -170,8 +170,8 @@
         </div>
         <div class="modal-body">
           <form id="login-form">
-            <div class="notification" id="login-notification" role="status" aria-live="polite" hidden></div>
-            <div class="alert alert-danger" id="login-error" role="alert" hidden></div>
+            <div class="notification d-none" id="login-notification" role="status" aria-live="polite"></div>
+            <div class="alert alert-danger d-none" id="login-error" role="alert"></div>
             <p>
               <label for="login-username" data-i18n="auth.username">Username</label><br>
               <input class="btn login-modal-body-input" id="login-username" name="username" autocomplete="username" required>

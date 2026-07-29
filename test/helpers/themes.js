@@ -55,3 +55,42 @@ export function loadModule(theme, moduleName) {
 export function readModuleSource(theme, moduleName) {
   return readFileSync(modulePath(theme, moduleName), "utf8");
 }
+
+/** Raw source of a theme's shipped index.html. */
+export function readIndexHtml(theme) {
+  return readFileSync(join(themesDir, theme, "index.html"), "utf8");
+}
+
+/**
+ * Parse a theme's shipped index.html into a DETACHED Document via DOMParser —
+ * no script execution, no subresource loading — for markup-contract assertions
+ * that must observe the shipped attributes exactly as Fess serves them.
+ *
+ * @param {string} theme
+ * @returns {Document}
+ */
+export function parseIndexHtml(theme) {
+  return new DOMParser().parseFromString(readIndexHtml(theme), "text/html");
+}
+
+/**
+ * Mount a theme's REAL shipped <body> markup into the live jsdom document, so a
+ * behavioural test drives the theme's own modules against the exact DOM the
+ * server delivers — initial classes and `hidden` attributes included. Asserting
+ * against a hand-written fixture cannot see a markup/JS mismatch, which is the
+ * whole point of the banner suite.
+ *
+ * <script> elements are dropped first: scripts inserted via innerHTML never
+ * execute per spec, and removing them keeps jsdom from even considering the
+ * /themes/<name>/assets/... srcs. Call this BEFORE importing app.js — that
+ * module runs main() at import time.
+ *
+ * @param {string} theme
+ * @returns {HTMLElement} document.body
+ */
+export function mountIndexBody(theme) {
+  const doc = parseIndexHtml(theme);
+  for (const s of doc.body.querySelectorAll("script")) s.remove();
+  document.body.innerHTML = doc.body.innerHTML;
+  return document.body;
+}
