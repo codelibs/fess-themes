@@ -28,6 +28,17 @@ The suites:
 - `parity.test.js` — locks the cross-theme invariant that all 10 copies of
   `format.js` (and of `markdown.js`) are byte-identical except their per-theme
   line-2 comment. Nothing else in the repo enforces this.
+- `notification-banners.test.js` — the five notification/error banners whose
+  visibility the shared JS owns through the `d-none` class alone
+  (`#home-notification`, `#results-notification`, `#home-flash`,
+  `#login-notification`, `#login-error`). It boots each theme's real `app.js`
+  and `auth.js` against that theme's **shipped `index.html` body** and asserts
+  the banner ends up renderable, then re-states the invariant as a markup
+  contract: none of those five may ship the `hidden` attribute, because
+  `[hidden] { display: none !important; }` outlives every `d-none` removal. A
+  final suite pins the opposite case — the codesearch elements that are driven
+  through the `hidden` DOM *property* (`#search-error`, `#empty-state`,
+  `#chat-nav-item`, `#drawer-scrim`) must keep the attribute.
 
 ## Not shipped
 
@@ -59,9 +70,15 @@ the Maven-less packaging flow.
 test/
 ├── package.json / package-lock.json / vitest.config.js
 ├── helpers/
-│   ├── themes.js   # enumerate themes; load a theme's own asset module (no cache-bust query)
-│   └── dom.js      # serialise a sanitized DocumentFragment for assertions
+│   ├── themes.js     # enumerate themes; load a theme's own asset module (no cache-bust query);
+│   │                 # read/parse/mount a theme's shipped index.html
+│   ├── loadSearch.js # import a theme's search.js with api/router doubles injected
+│   ├── loadShell.js  # import a theme's auth.js / boot its app.js against the real index.html
+│   ├── searchFlow.js # DOM scaffold + /search fixtures for the runSearch() flows
+│   └── dom.js        # serialise a sanitized DocumentFragment for assertions
 ├── format.test.js  markdown.test.js  pipeline.test.js
+├── search.test.js  search-flows.test.js  scheme.test.js  helpdesk.plaintitle.test.js
+├── notification-banners.test.js
 └── parity.test.js
 ```
 
