@@ -436,7 +436,7 @@ async function toggleFavorite(docId, btn, queryId) {
     setFavoriteUi(btn, !!env.favorite, env.count || 0);
   } catch (e) {
     // 401/403: adding a favorite requires login — open the login modal if present.
-    if (e && (e.code === "AUTH_REQUIRED" || e.httpStatus === 401 || e.httpStatus === 403)) {
+    if (e && (e.code === "auth_required" || e.code === "AUTH_REQUIRED" || e.httpStatus === 401 || e.httpStatus === 403)) {
       const modal = document.getElementById("login-modal");
       if (modal && window.bootstrap && window.bootstrap.Modal) {
         window.bootstrap.Modal.getOrCreateInstance(modal).show();
@@ -464,7 +464,7 @@ async function syncFavorites(queryId) {
       setFavoriteUi(btn, favorited.has(docId), Number(btn.dataset.count) || 0);
     });
   } catch (e) {
-    if (e && (e.code === "AUTH_REQUIRED" || e.httpStatus === 401)) return;
+    if (e && (e.code === "auth_required" || e.code === "AUTH_REQUIRED" || e.httpStatus === 401)) return;
   }
 }
 
@@ -905,7 +905,7 @@ async function runSearch() {
     if (e && e.name === "AbortError") return; // superseded by a newer request
     const msg = (e && e.name === "NetworkError") ? t("error.network")
       : (e && (e.code === "invalid_request" || e.code === "INVALID_REQUEST" || e.httpStatus === 400)) ? (e.message || t("error.invalid_request"))
-        : (e && e.code === "AUTH_REQUIRED") ? t("error.auth_required")
+        : (e && (e.code === "auth_required" || e.code === "AUTH_REQUIRED")) ? t("error.auth_required")
           : t("error.server");
     if (errBox) { errBox.textContent = msg; errBox.hidden = false; }
     // Clear stale results/summary/pagination on a hard failure.

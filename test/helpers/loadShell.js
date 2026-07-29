@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-// Config-injection loaders for the per-theme shell modules (app.js / auth.js).
+// Config-injection loaders for the per-theme shell modules (app.js / auth.js /
+// profile.js).
 //
 // Same technique as loadSearch.js: both modules read their runtime configuration
 // from `api.getConfig()` and reach the network through `import * as api from
@@ -46,6 +47,39 @@ export async function loadAuth(theme, config = {}) {
   const mod = await import(`../../themes/${theme}/assets/auth.js`);
   vi.doUnmock(apiPath);
   return { mod, get, post };
+}
+
+/**
+ * Import a theme's own profile.js with the api + router surfaces stubbed.
+ *
+ * Unlike the bootstrap reference copy in the `fess` repo, the ten shipped copies
+ * keep `localizePasswordError()` module-private — `attach()` is profile.js's only
+ * export. So the password-error mapping can only be observed the way a user meets
+ * it: mount #profile-view, let attach() build the real form, submit it, and read
+ * what lands in #profile-error. api.post drives the rejection; router.navigate is
+ * replaced so the success path can never mutate history.
+ *
+ * i18n.js stays REAL (never init()'d), so t(key) returns the key itself and the
+ * rendered message is an exact, assertable i18n key.
+ *
+ * @param {string} theme - theme directory name under themes/
+ * @returns {Promise<{mod: object, post: Function, navigate: Function}>}
+ */
+export async function loadProfile(theme) {
+  vi.resetModules();
+  const apiPath = `../../themes/${theme}/assets/api.js`;
+  const routerPath = `../../themes/${theme}/assets/router.js`;
+  const post = vi.fn(async () => ({}));
+  const navigate = vi.fn();
+  vi.doMock(apiPath, async (importOriginal) => {
+    const actual = await importOriginal();
+    return { ...actual, post };
+  });
+  vi.doMock(routerPath, () => ({ navigate }));
+  const mod = await import(`../../themes/${theme}/assets/profile.js`);
+  vi.doUnmock(apiPath);
+  vi.doUnmock(routerPath);
+  return { mod, post, navigate };
 }
 
 /**
