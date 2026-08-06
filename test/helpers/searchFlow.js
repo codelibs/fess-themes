@@ -27,7 +27,7 @@ export const SEARCH_FIXTURE = `
   <form id="search-form">
     <input id="query"><button id="searchButton" type="button"></button>
   </form>
-  <form id="search-bar"><input id="query-input"></form>
+  <form id="search-bar"><input id="query-input"><ul id="header-suggest-dropdown" class="visually-hidden"></ul></form>
   <input id="contentQuery">
   <ul id="suggest-dropdown" class="d-none"></ul>
   <div id="home-view"></div>

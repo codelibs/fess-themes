@@ -41,8 +41,17 @@
           spellcheck="false"
           aria-label="Search query"
           data-i18n-placeholder="search.placeholder"
-          placeholder="Search code, paths, symbols…">
+          placeholder="Search code, paths, symbols…"
+          role="combobox"
+          aria-expanded="false"
+          aria-controls="header-suggest-dropdown"
+          aria-autocomplete="list"
+          aria-haspopup="listbox">
       <span class="scope-pill" data-i18n="search.scope_all">all repos</span>
+      <!-- Suggest dropdown for the header box, wired by search.attach(). The box is
+           mounted on the results, help and error views, so typing there suggests
+           too, not just in the home box. -->
+      <ul class="visually-hidden" id="header-suggest-dropdown" role="listbox" aria-label="Search suggestions"></ul>
     </form>
 
     <nav class="header-actions" aria-label="Primary">
@@ -89,7 +98,9 @@
           <span class="prompt" aria-hidden="true">&gt;</span>
           <input id="contentQuery" type="search" name="q" maxlength="1000" autocomplete="off" spellcheck="false"
                  data-i18n-placeholder="search.placeholder" placeholder="Search code, paths, symbols…"
-                 aria-label="Search query">
+                 aria-label="Search query"
+                 role="combobox" aria-expanded="false" aria-controls="home-suggest-dropdown"
+                 aria-autocomplete="list" aria-haspopup="listbox">
           <button type="submit" id="home-search-submit" class="btn-primary" data-i18n="search.button">Search</button>
         </div>
         <ul class="visually-hidden" id="home-suggest-dropdown" role="listbox" aria-label="Search suggestions"></ul>

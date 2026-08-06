@@ -166,6 +166,7 @@ h1, h2, h3, h4 { font-weight: 600; line-height: 1.25; margin: 0 0 .5em; }
 
 /* The search bar styled as a command/prompt line — the page's signature. */
 .search-bar {
+  position: relative;
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
@@ -584,6 +585,7 @@ mark, .match {
 .home .home-popular .popular-label { color: var(--faint); margin-right: 4px; }
 .home .home-popular .popular-word { font-family: var(--mono); margin: 0 6px; }
 #home-suggest-dropdown:not(.visually-hidden),
+#header-suggest-dropdown:not(.visually-hidden),
 .suggest-list:not(.visually-hidden) {
   list-style: none;
   margin: 6px 0 0;
@@ -600,7 +602,26 @@ mark, .match {
   border-radius: var(--r-sm);
   cursor: pointer;
 }
-.suggest-item:hover { background: var(--raised); }
+.suggest-item:hover,
+.suggest-item.active { background: var(--raised); }
+
+/* The header box sits in a fixed-height flex row (unlike the home box, which has
+ * room to grow inline), so its dropdown must float below it instead of pushing
+ * the header taller. Positioned relative to .search-bar (position: relative above).
+ * z-index is local to .app-header's own stacking context (position: sticky +
+ * z-index: 100), so it ranks against the header's children only: 1 clears the
+ * in-flow ones and deliberately stays under the user .dropdown-menu (1040),
+ * which can overlap this during the 120ms blur delay. The 6px offset comes from
+ * `top`, so the shared rule's 6px margin is dropped here rather than doubled. */
+#header-suggest-dropdown:not(.visually-hidden) {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  margin-top: 0;
+  z-index: 1;
+  box-shadow: var(--shadow);
+}
 
 /* ---- Right: Ask panel (collapsible) ---- */
 .ask-panel {
