@@ -2,7 +2,7 @@ apiVersion: fess.codelibs.org/v1
 kind: StaticTheme
 name: voicebox
 displayName: "VoiceBox"
-version: "1.0.6"
+version: "1.0.7"
 author: "CodeLibs Project"
 description: "Bold, magazine-style static theme for Fess. Self-contained (no Bootstrap), high-contrast black/white editorial search UI with a single red accent and a persistent facet sidebar, built on the VoiceBox design system over /api/v2/*."
 license: "Apache-2.0"

@@ -123,7 +123,7 @@ the `--bs-*` custom properties the SPA modules already reference. Key choices:
 # 1. Package
 cd /path/to/fess-themes
 ./scripts/package.sh docsearch
-# → dist/docsearch-1.0.6.zip
+# → dist/docsearch-1.0.7.zip
 
 # 2. Upload
 # In Fess admin UI: /admin/theme/ → Upload ZIP → Activate
