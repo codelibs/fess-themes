@@ -2,7 +2,7 @@ apiVersion: fess.codelibs.org/v1
 kind: StaticTheme
 name: semanticlens
 displayName: "SemanticLens"
-version: "1.0.6"
+version: "1.0.7"
 author: "CodeLibs Project"
 description: "Static theme for hybrid (keyword + semantic) search. Labels every result with the searcher that produced it — keyword, semantic, or hybrid — over /api/v2/*. Built for the docker-semanticsearch stack."
 license: "Apache-2.0"
