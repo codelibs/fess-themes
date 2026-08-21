@@ -364,6 +364,6 @@
   "composition.balanced": "Una mezcla equilibrada de palabras clave y significado",
   "composition.mostly_semantic": "Principalmente por significado",
   "composition.mostly_keyword": "Principalmente coincidencias por palabras clave",
-  "sidebar.caption_semantic": "La mayoría de los resultados son por significado. Los filtros reducen todos, incluidas las coincidencias semánticas.",
-  "sidebar.caption_mixed": "Los filtros reducen el conjunto completo de resultados — tanto por palabras clave como por semántica."
+  "sidebar.caption_semantic": "La mayoría de los resultados coinciden por significado. Al aplicar un filtro, la búsqueda pasa a ser solo por palabras clave.",
+  "sidebar.caption_mixed": "Al aplicar un filtro, la búsqueda pasa a ser solo por palabras clave."
 }

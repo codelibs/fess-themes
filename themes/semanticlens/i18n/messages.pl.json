@@ -364,6 +364,6 @@
   "composition.balanced": "Zrównoważone połączenie słów kluczowych i znaczenia",
   "composition.mostly_semantic": "Głównie dopasowane znaczeniowo",
   "composition.mostly_keyword": "Głównie dopasowania słów kluczowych",
-  "sidebar.caption_semantic": "Większość wyników jest dopasowana znaczeniowo. Filtry zawężają wszystkie wyniki, w tym dopasowania semantyczne.",
-  "sidebar.caption_mixed": "Filtry zawężają pełny zestaw wyników — zarówno słowa kluczowe, jak i semantyczne."
+  "sidebar.caption_semantic": "Większość wyników dopasowano znaczeniowo. Po zastosowaniu filtra wyszukiwanie działa tylko na słowach kluczowych.",
+  "sidebar.caption_mixed": "Po zastosowaniu filtra wyszukiwanie działa tylko na słowach kluczowych."
 }

@@ -13,14 +13,6 @@ let currentSearchAbort = null;
 /** AbortController for in-flight related-queries/content requests; null when idle. */
 let currentRelatedAbort = null;
 
-/**
- * Sticky flag: records whether this deployment has ever returned the `searcher`
- * provenance field, i.e. semantic/hybrid search is active. Once true it stays true.
- * Used to gate the quote-on-filter workaround so keyword-only deployments (which
- * never emit `searcher`) are left untouched — see runSearch / quoteQueryForFilter.
- */
-let semanticSeen = false;
-
 const state = {
   q: "",
   start: 0,
@@ -171,8 +163,14 @@ function plainTitle(d) {
 // d.searcher is the rank-fusion provenance field Fess exposes when
 // query.additional.api.response.fields=searcher is set (docker-semanticsearch).
 // Value is an array (or comma string) of searcher names: "default" (BM25/keyword)
-// and/or "semantic" (kNN/vector). Absent on deployments that don't expose it →
+// and/or the vector searcher. Absent on deployments that don't expose it →
 // no badge is rendered (graceful degradation: stays a valid general-purpose theme).
+//
+// The vector searcher is named "semantic_chunk" in Fess 15.8, where semantic search
+// is part of core. "semantic" was the name registered by the fess-webapp-semantic-search
+// plugin on 15.7 and earlier; it is still accepted so the theme reads correctly against
+// an older deployment.
+const SEMANTIC_SEARCHER_NAMES = ["semantic_chunk", "semantic"];
 const SEARCHER_BADGES = {
   semantic: { label: "searcher.semantic", title: "searcher.title_semantic", icon: "fa fa-magic" },
   keyword:  { label: "searcher.keyword",  title: "searcher.title_keyword",  icon: "fa fa-search" },
@@ -193,7 +191,7 @@ function searcherKinds(d) {
 function searcherBadgeKind(kinds) {
   if (!kinds) return null;
   const hasDefault = kinds.includes("default");
-  const hasSemantic = kinds.includes("semantic");
+  const hasSemantic = SEMANTIC_SEARCHER_NAMES.some(n => kinds.includes(n));
   if (hasDefault && hasSemantic) return "hybrid";
   if (hasSemantic) return "semantic";
   if (hasDefault) return "keyword";
@@ -721,10 +719,6 @@ function renderResults(env) {
   const empty = document.getElementById("empty-state");
   list.innerHTML = "";   // empty-string literal — clears children, no untrusted data
   const data = env.data || [];
-  // Sticky: mark semantic/hybrid search active once any hit carries searcher provenance.
-  // Filters are only clickable after a search has rendered, so by the time a filter can be
-  // active this flag is already known — no first-request edge case (see runSearch gating).
-  if (!semanticSeen && data.some(d => searcherKinds(d) !== null)) semanticSeen = true;
   renderComposition(env); // SemanticLens: show search-composition band when hits carry provenance
   // C.2: always refresh similar-doc banner (hides when state.sdh is cleared)
   renderSimilarDocBanner();
@@ -785,44 +779,6 @@ function showSearchLoading(show) {
   if (el) el.classList.toggle("d-none", !show);
 }
 
-/**
- * True when the request carries at least one field/range filter — the same merged
- * filter state runSearch emits (facet query views, advance ex_q clauses, field
- * filters, label facets). Used (only when semanticSeen, i.e. semantic search is
- * active) to decide whether the free-text query must be collapsed to a single
- * quoted phrase (see quoteQueryForFilter).
- */
-function hasActiveFilter() {
-  return (Array.isArray(state.facetQueries) && state.facetQueries.length > 0)
-    || (Array.isArray(state.exQ) && state.exQ.length > 0)
-    || Object.values(state.fields).some(v => v && v.length)
-    || Object.values(state.facets).some(v => v && v.length);
-}
-
-/**
- * Quote-on-filter transform. Applied only when semanticSeen (semantic/hybrid search
- * is active) and a filter is active: a multi-word free-text query must then be sent as
- * a single quoted phrase so the semantic plugin collapses it to one neural clause —
- * otherwise the duplicate content_vector inner-hits names trip an HTTP 400
- * (`[inner_hits] already contains an entry for key [content_vector]`). This only
- * replicates what the plugin already does for the unfiltered case, so it is
- * forward-safe. Keyword-only deployments never reach here (semanticSeen stays false),
- * so their multi-word + filter queries are unchanged — parity with other themes.
- * Left untouched when empty, already a single quoted phrase, a user-authored advanced
- * query (field:/operators), or a single token.
- *
- * @param {string} q
- * @returns {string}
- */
-function quoteQueryForFilter(q) {
-  const s = (q || "").trim();
-  if (!s) return q;                                            // empty browse-by-filter
-  if (/^".*"$/.test(s)) return q;                              // already one quoted phrase
-  if (/[:"()]/.test(s) || /\b(AND|OR|NOT)\b/.test(s)) return q; // user advanced query
-  if (!/\s/.test(s)) return q;                                 // single token
-  return '"' + s.replace(/"/g, '\\"') + '"';                   // multi-word + filter
-}
-
 async function runSearch() {
   // Cancel any in-flight request before issuing a new one.
   if (currentSearchAbort) currentSearchAbort.abort();
@@ -840,11 +796,13 @@ async function runSearch() {
   if (prevErr) prevErr.classList.add("d-none");
   showSearchLoading(true);
   try {
-    // Quote-on-filter: when semantic/hybrid search is active AND any filter is active,
-    // send a multi-word query as a single quoted phrase so the semantic branch stays one
-    // neural clause (avoids HTTP 400). Gated on semanticSeen so keyword-only deployments
-    // are unaffected (no exact-phrase collapse) — parity with other themes.
-    const params = { q: (semanticSeen && hasActiveFilter()) ? quoteQueryForFilter(state.q) : state.q, start: state.start, num: state.num };
+    // The query text is sent verbatim — parity with every other theme. (Up to theme
+    // version 1.0.7 a multi-word query was collapsed into one quoted phrase whenever a
+    // filter was active, to dodge an HTTP 400 in fess-webapp-semantic-search. Fess 15.8
+    // replaced that plugin with core semantic search, where the 400 no longer exists and
+    // the added quotes would be actively harmful: a quote makes the query count as search
+    // syntax, and Fess skips the semantic branch entirely for any query containing it.)
+    const params = { q: state.q, start: state.start, num: state.num };
     if (state.sort) params.sort = state.sort;
     // state.lang is string[] — send as repeated lang= params (empty array → omit).
     if (Array.isArray(state.lang) && state.lang.length > 0) {
@@ -1642,9 +1600,13 @@ function buildFacetGroup(title, entries, fieldKey) {
  * /api/v2/ui/config (NOT from result tallies — honors "no client-side facet
  * computation"). File type options come from cfg.filetype_options; Updated and
  * Size from the cfg.facet_views timestamp & content_length groups. Every option
- * toggles its ex_q clause in state.facetQueries and re-queries the server, so the
- * filter narrows the full fused set (keyword + semantic) in every mode. No counts,
- * no zero-suppression — the option set is stable for every search.
+ * toggles its ex_q clause in state.facetQueries and re-queries the server. No counts,
+ * no zero-suppression — the option set is stable for every search, which is why it is
+ * sourced from the config rather than from result buckets.
+ *
+ * Note that on Fess 15.8 an ex_q clause is search syntax, and Fess skips the semantic
+ * branch for any query that carries syntax — so a filtered search is keyword-only.
+ * The sidebar caption says so (sidebar.caption_*).
  *
  * @param {Element} body - the facet-body container element
  */
@@ -1733,7 +1695,7 @@ function renderFacets(env, labels) {
   }
 
   // SemanticLens: mode-aware caption from a read-only page tally (display only) —
-  // reassures that filters narrow the full fused set, including semantic matches.
+  // says how this page was matched and warns that filtering drops to keyword-only.
   // Skipped gracefully when no hit carries searcher provenance.
   const tally = tallyKinds(env.data || []);
   if (tally.total > 0) {
@@ -1771,7 +1733,7 @@ function renderFacets(env, labels) {
   // 3. Count-free filter groups (File type / Updated / Size) built from
   //    /api/v2/ui/config — always present and functional in every mode, including
   //    semantic-only (where the server returns no facet buckets). Clicking a row
-  //    re-queries the server so it narrows the full fused result set.
+  //    re-queries the server with the clause appended.
   renderFilterGroups(body);
 
   // Mirror the rendered sidebar (caption + label facet + count-free filter groups)

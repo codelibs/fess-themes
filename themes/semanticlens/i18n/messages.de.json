@@ -364,6 +364,6 @@
   "composition.balanced": "Eine ausgewogene Mischung aus Schlüsselwörtern und Bedeutung",
   "composition.mostly_semantic": "Überwiegend bedeutungsbasiert",
   "composition.mostly_keyword": "Überwiegend Schlüsselwortübereinstimmungen",
-  "sidebar.caption_semantic": "Die meisten Ergebnisse basieren auf Bedeutung. Filter grenzen alle davon ein, einschließlich semantischer Treffer.",
-  "sidebar.caption_mixed": "Filter grenzen alle Ergebnisse ein — sowohl Schlüsselwort- als auch semantische Treffer."
+  "sidebar.caption_semantic": "Die meisten Ergebnisse basieren auf Bedeutung. Mit einem Filter wird nur noch nach Schlüsselwörtern gesucht.",
+  "sidebar.caption_mixed": "Mit einem Filter wird nur noch nach Schlüsselwörtern gesucht."
 }
