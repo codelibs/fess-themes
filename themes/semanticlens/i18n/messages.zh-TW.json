@@ -364,6 +364,6 @@
   "composition.balanced": "關鍵字與語義的均衡搜尋",
   "composition.mostly_semantic": "主要以語義匹配",
   "composition.mostly_keyword": "主要以關鍵字匹配",
-  "sidebar.caption_semantic": "大多數結果通過語義匹配。過濾器縮小所有結果的範圍，包括語義匹配。",
-  "sidebar.caption_mixed": "過濾器縮小完整結果集的範圍——關鍵字和語義結果均適用。"
+  "sidebar.caption_semantic": "多數結果透過語意比對。套用篩選後，將僅進行關鍵字檢索。",
+  "sidebar.caption_mixed": "套用篩選後，將僅進行關鍵字檢索。"
 }

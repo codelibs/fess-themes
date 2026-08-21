@@ -64,22 +64,24 @@ Filter options are built at render time from `api.getConfig()` — a query-indep
 
 ### Mode-aware caption
 
-A caption (`.facet-cap`) derived from `tallyKinds` sits at the top of the sidebar. It reassures users that clicking a filter narrows the full fused set, not just the BM25 branch:
+A caption (`.facet-cap`) derived from `tallyKinds` sits at the top of the sidebar. It states how the current page was matched and what applying a filter will do:
 
-- Semantic-dominant (semantic ≥ 60%): violet border, explains that filters include semantic matches.
-- Otherwise: teal border, explains that filters cover keyword and semantic alike.
+- Semantic-dominant (semantic ≥ 60%): violet border, notes that most results are meaning-matched and that filtering falls back to keyword-only search.
+- Otherwise: teal border, notes that filtering falls back to keyword-only search.
 
 The caption is absent when `searcher` is not in the response.
 
-## Quote-on-filter rationale and forward-safety
+## Filtering is keyword-only on Fess 15.8
 
-A multi-word free-text query combined with any field filter currently causes an HTTP 400 from the semantic-search plugin. The root cause: the plugin auto-quotes an unfiltered whitespace query (collapsing it to one `neural` clause), but the presence of a `field:` token in the query string suppresses that quoting, causing each word to become a separate `neural` clause with duplicate `content_vector` inner-hits names, which OpenSearch rejects.
+Fess 15.8 skips the semantic branch for any query containing search syntax, judged on the **assembled** query. Every filter this theme offers adds such syntax — an `ex_q` clause from the sidebar, `label:"…"` from the label picker, `sort:…` from the options bar — so a filtered request never reaches the vector searcher.
 
-The theme-side fix: whenever `hasActiveFilter()` is true, `quoteQueryForFilter(q)` wraps the raw free-text query in double quotes before sending. This replicates what the plugin already does in the unfiltered case. It is skipped when the query is empty, already quoted, contains `field:` or boolean operators (user-authored advanced queries are left untouched), or is a single token (no crash risk, no need).
+The theme cannot change that from the client, so it surfaces it instead of hiding it: the sidebar caption says so up front, and the per-result badges independently show the truth (every hit on a filtered page is labelled Keyword).
 
-**Forward-safety:** if the plugin is later fixed (see Out of scope), quoting a phrase that would have been quoted anyway produces the same result. If the plugin begins quoting even filter-bearing queries, the double-quoting path becomes a no-op. Either way the theme behavior degrades gracefully.
+### Why the quote-on-filter workaround was removed in 2.0.0
 
-**Known tradeoff:** with a filter active, the BM25 branch evaluates the query as a phrase match rather than OR-of-terms, which may shift lexical ranking slightly. The semantic branch is unaffected. This is documented and acceptable.
+Versions up to 1.0.7 wrapped a multi-word query in double quotes whenever a filter was active. That existed for a bug in the 15.7 `fess-webapp-semantic-search` plugin: it auto-quoted an unfiltered whitespace query into one `neural` clause, but a `field:` token suppressed that quoting, producing one `neural` clause per word with duplicate `content_vector` inner-hits names, which OpenSearch rejected with HTTP 400.
+
+15.8 replaced that plugin with core semantic search, which builds a single `knn` query and never emits inner hits by that name — the 400 cannot occur. Meanwhile a double quote is itself search syntax, so the workaround would now be actively harmful twice over: it would force the keyword-only path even for queries that would otherwise have kept it, and it would narrow the BM25 branch to a phrase match. Queries are sent verbatim, the same as every other theme; `test/semanticlens.searcher.test.js` pins that.
 
 ## Home / semantic-space hero
 
@@ -118,8 +120,8 @@ What was added instead: a `<span class="sl-lensmark" aria-hidden="true">` inside
 The following were explicitly excluded to keep the implementation theme-only and low-risk:
 
 - **Accurate per-bucket counts via server fan-out.** Each filter option would need its own `GET /api/v2/search?ex_q=…&num=0` request to get a real `record_count`. This adds N parallel requests per render; count-free was chosen instead.
-- **Interactive server-side mode switch.** `rank.fusion.searchers` is read once at Fess boot; switching between hybrid, keyword-only, and semantic-only modes requires a Fess or plugin change and is outside the theme's scope.
-- **Upstream plugin fix: wire filters into `NeuralQueryBuilder.filter` and use unique inner-hits names per neural clause.** This would eliminate the HTTP 400 bug at source and make the quote-on-filter workaround unnecessary. The fix lives in `repos/fess-webapp-semantic-search/…/helper/SemanticSearchHelper.java` (~lines 330-380). Until that fix lands, the theme workaround remains the correct behavior.
+- **Interactive server-side mode switch.** `rank.fusion.searchers` is read once at Fess boot; switching between hybrid, keyword-only, and semantic-only modes requires a server change and is outside the theme's scope.
+- **Keeping semantic matching alive under a filter.** The syntax gate lives in Fess core (`SemanticChunkSearcher`), which decides on the assembled query string. A client cannot opt out of it, and faking a filter by post-filtering results would break paging and `record_count`. Surfacing the behaviour is the theme-level answer.
 
 ## System font stack rationale
 

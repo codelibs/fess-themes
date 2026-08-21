@@ -9,19 +9,27 @@ Activate it by setting `theme.default=semanticlens` in the admin UI (`/admin/the
 SemanticLens targets **hybrid keyword + semantic search** deployments such as the `docker-semanticsearch` stack. When rank-fusion is active and Fess is configured to expose the `searcher` field, each result is labelled:
 
 - **Keyword** — matched by BM25 / full-text search only (`default` searcher)
-- **Semantic** — matched by vector / kNN search only (`semantic` searcher)
+- **Semantic** — matched by vector / kNN search only (`semantic_chunk` searcher)
 - **Hybrid** — matched by both searchers
 
 A Search Composition band above the results list is shown whenever at least one hit carries searcher data, making the mix of retrieval strategies immediately visible to users.
 
 ## Requirements
 
-- Fess 15.7+
+- Fess 15.8+, with semantic search enabled (`content_chunker.enabled` and
+  `content_chunker.search.enabled` in `system.properties`)
 - To show searcher badges, set in `fess_config.properties` (or via Java system properties):
   ```
   query.additional.api.response.fields=searcher
-  rank.fusion.searchers=default,semantic
   ```
+  Leave `rank.fusion.searchers` unset so every registered searcher participates.
+  The 15.7-era value `default,semantic` names the searcher the deprecated
+  `fess-webapp-semantic-search` plugin registered; on 15.8 it excludes the core
+  `semantic_chunk` searcher and silently disables semantic search.
+
+The theme still reads the plugin's `semantic` searcher name, so badges remain correct
+against an older deployment, but 15.7 is no longer supported — see
+[Filtering is keyword-only](#filtering-is-keyword-only).
 
 ## Hybrid search experience
 
@@ -50,22 +58,22 @@ The band is hidden (`d-none`) when `searcher` is absent on all page results (non
 
 The sidebar always shows three option groups — **File type**, **Updated**, and **Size** — sourced from `GET /api/v2/ui/config` (`filetype_options` and `facet_views`). This makes the groups query-independent and always populated, even for semantic-only queries that return empty BM25 facet buckets.
 
-Options are rendered as clickable `li.filter-opt` rows with a `.filter-chk` checkbox (filled when active) and a label. **No counts are shown.** Clicking toggles the clause in `state.facetQueries` and re-queries the server, which narrows the full fused result set (both keyword and semantic branches share the same `bool.must` filter in the plugin's query builder).
+Options are rendered as clickable `li.filter-opt` rows with a `.filter-chk` checkbox (filled when active) and a label. **No counts are shown.** Clicking toggles the clause in `state.facetQueries` and re-queries the server.
 
-A **mode-aware caption** (`.facet-cap`) at the top of the sidebar describes what filters do:
+A **mode-aware caption** (`.facet-cap`) at the top of the sidebar states how the current page was matched and what a filter will do:
 
-- Semantic-dominant page (semantic ≥ 60%): violet-bordered "Most of these are meaning-matched. Filters narrow all of them — including semantic matches."
-- Otherwise: teal-bordered "Filters narrow the full result set — keyword and semantic alike."
+- Semantic-dominant page (semantic ≥ 60%): violet-bordered "Most results are meaning-matched. Applying a filter falls back to keyword-only search."
+- Otherwise: teal-bordered "Applying a filter falls back to keyword-only search."
 
 The caption is omitted when `searcher` is absent (standard deployments).
 
-### Quote-on-filter behavior
+### Filtering is keyword-only
 
-A multi-word free-text query combined with any active filter currently causes an HTTP 400 from the semantic-search plugin (`[inner_hits] already contains an entry for key [content_vector]`). The plugin auto-quotes unfiltered multi-word queries to produce a single neural clause, but adding a filter suppresses that quoting, creating duplicate inner-hits names.
+Fess 15.8 skips the semantic branch for **any** query that contains search syntax, and it makes that decision on the assembled query — so a facet click (`filetype:…`), a label (`label:"…"`), a sort order (`sort:…`) or a quoted phrase all disable semantic matching for that request. A filtered search is therefore keyword-only, and the badges on the page will say so.
 
-When at least one filter is active, SemanticLens wraps the free-text query as a single quoted phrase before sending it (`q="how do I make search faster"`). This collapses the query to one neural clause, which the plugin handles correctly. The quoting is skipped when the query is empty, already quoted, contains `field:` operators, or is a single token.
+This is a core behaviour the theme cannot work around; it is surfaced rather than hidden, through the sidebar caption above and the per-result badges.
 
-**Tradeoff:** with a filter active, the BM25 branch becomes phrase-match rather than OR-of-terms, so lexical ranking may shift slightly. The semantic branch is unaffected and preserves recall. This behavior is documented and acceptable; it replicates what the plugin already does for unfiltered multi-word queries, so it remains correct if the plugin later fixes the underlying bug.
+Up to version 1.0.7 this theme collapsed a multi-word query into a single quoted phrase whenever a filter was active, to dodge an HTTP 400 in the 15.7 `fess-webapp-semantic-search` plugin (`[inner_hits] already contains an entry for key [content_vector]`). **That transform is gone.** The 400 does not exist in 15.8 core, and the quotes it added would themselves be search syntax — the workaround would silently make every filtered search keyword-only *and* narrow the BM25 branch to a phrase match. Queries are now sent verbatim, the same as every other theme.
 
 ## Home / landing hero
 

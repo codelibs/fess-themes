@@ -364,6 +364,6 @@
   "composition.balanced": "Un mélange équilibré de mots-clés et de sens",
   "composition.mostly_semantic": "Principalement par sens",
   "composition.mostly_keyword": "Principalement des correspondances par mots-clés",
-  "sidebar.caption_semantic": "La plupart des résultats sont basés sur le sens. Les filtres réduisent tous les résultats, y compris les correspondances sémantiques.",
-  "sidebar.caption_mixed": "Les filtres réduisent l'ensemble complet des résultats — mots-clés et sémantique."
+  "sidebar.caption_semantic": "La plupart des résultats sont basés sur le sens. Appliquer un filtre limite la recherche aux mots-clés.",
+  "sidebar.caption_mixed": "Appliquer un filtre limite la recherche aux mots-clés."
 }

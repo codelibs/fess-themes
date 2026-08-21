@@ -364,6 +364,6 @@
   "composition.balanced": "Uma combinação equilibrada de palavras-chave e significado",
   "composition.mostly_semantic": "Principalmente por significado",
   "composition.mostly_keyword": "Principalmente correspondências por palavras-chave",
-  "sidebar.caption_semantic": "A maioria dos resultados é por significado. Os filtros reduzem todos, incluindo as correspondências semânticas.",
-  "sidebar.caption_mixed": "Os filtros reduzem o conjunto completo de resultados — tanto por palavras-chave quanto semânticos."
+  "sidebar.caption_semantic": "A maioria dos resultados corresponde por significado. Ao aplicar um filtro, a busca passa a ser apenas por palavras-chave.",
+  "sidebar.caption_mixed": "Ao aplicar um filtro, a busca passa a ser apenas por palavras-chave."
 }
