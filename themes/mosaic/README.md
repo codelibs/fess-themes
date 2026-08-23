@@ -29,7 +29,7 @@ in `fess_config.properties` (or as a Java system property) and restart Fess.
 
 ## Requirements / Configuration
 
-Mosaic works on any Fess 15.7+ install with zero extra configuration — it is a valid general-purpose theme on its own. The searcher-provenance features described below only activate when the backend is additionally configured for multimodal/hybrid search:
+Mosaic works on any Fess 15.8+ install with zero extra configuration — it is a valid general-purpose theme on its own. The searcher-provenance features described below only activate when the backend is additionally configured for multimodal/hybrid search:
 
 ```properties
 query.additional.api.response.fields=searcher
@@ -60,9 +60,11 @@ The home page also shows three static "preview cards" (Keyword / Visual / Blend)
 
 The sidebar's filter groups (file type, updated, size) are sourced from the query-independent `GET /api/v2/ui/config` endpoint rather than from the search response's facet buckets, so they stay populated even for visual-only queries that return no BM25 facet counts. No per-option counts are shown, since a hybrid deployment's aggregation counts only reflect the keyword branch and would otherwise be misleading.
 
-### Quote-on-filter behavior
+### The query is sent verbatim
 
-When multimodal search is active (i.e. the deployment has ever returned a `searcher` field) and a multi-word free-text query is combined with an active filter, Mosaic sends the query as a single quoted phrase. This mirrors what the search plugin already does automatically for an unfiltered multi-word query, and works around an HTTP 400 (duplicate `content_vector` inner-hits) that a filter otherwise triggers. It is skipped for empty queries, single tokens, already-quoted phrases, and advanced queries (`field:`/`AND`/`OR`/`NOT`).
+Mosaic sends whatever the user typed, unchanged, whether or not a filter is active.
+
+Earlier versions quoted a multi-word query into a single phrase once a filter was applied, to dodge an HTTP 400 that the 15.7 plugin's `content_vector` inner-hits raised. On Fess 15.8 that workaround is actively harmful: a quoted phrase is real query syntax, so the core's query-syntax gate skips the vector branch — meaning every filtered search would silently lose its visual results. Filter conditions are lifted into the kNN query on the server side instead, so visual matches survive filtering without any client-side rewriting.
 
 ## Thumbnails
 
