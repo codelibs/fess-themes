@@ -23,6 +23,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { loadSearchFlow } from "./helpers/loadSearch.js";
 import { resetDom, mountBody, setLocation } from "./helpers/dom.js";
+import { mountIndexBody } from "./helpers/themes.js";
 import {
   SEARCH_FIXTURE, FULL_CFG, SAMPLE_DOCS, makeSearchEnv,
   installDispatch, settle, searchCalls,
@@ -575,5 +576,195 @@ describe.each(ALL_THEMES)("attachSuggest [%s]", (theme) => {
     const { mod } = await loadSearchFlow(theme, {});
     expect(() => mod.attachSuggest(null, document.createElement("ul"))).not.toThrow();
     expect(() => mod.attachSuggest(document.createElement("input"), null)).not.toThrow();
+  });
+});
+
+// ─── codesearch header suggest, driven through attach() ─────────────────────────
+// The block above exercises attachSuggest directly; nothing there routes through
+// attach(), so reverting the wiring left the whole suite green. These cases mount
+// the SHIPPED index.html body (not the superset fixture) and call attach(), so the
+// markup contract — the <ul> living inside <form id="search-bar"> so choose()'s
+// input.form lookup finds the form, and the combobox ARIA on #query-input — is
+// pinned together with the behaviour.
+//
+// codesearch is the only theme that keeps facets INSIDE the query string
+// (the facet checkboxes call addQualifier() back into #query-input), so the two
+// query-shaping cases below are codesearch-specific by construction.
+describe("codesearch header suggest via attach()", () => {
+  afterEach(() => vi.useRealTimers());
+
+  const KEY = (key) => new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true });
+
+  async function boot(suggestWords = [{ text: "sug1" }, { text: "sug2" }]) {
+    const flow = await loadSearchFlow("codesearch", FULL_CFG);
+    installDispatch(flow.get, { suggestWords });
+    mountIndexBody("codesearch");
+    flow.mod.attach();
+    return {
+      ...flow,
+      input: document.getElementById("query-input"),
+      dd: document.getElementById("header-suggest-dropdown"),
+    };
+  }
+
+  /** Type `value` into the header box and let the 150ms debounce fire. */
+  async function type(input, value) {
+    input.value = value;
+    input.dispatchEvent(new Event("input"));
+    await vi.advanceTimersByTimeAsync(150);
+  }
+
+  const suggestCalls = (get) => get.mock.calls.filter((c) => c[0] === "/suggest-words");
+
+  it("ships the dropdown inside #search-bar with the combobox ARIA on the input", () => {
+    mountIndexBody("codesearch");
+    const dd = document.getElementById("header-suggest-dropdown");
+    const input = document.getElementById("query-input");
+    // choose() submits via input.form, which only resolves inside the <form>.
+    expect(dd.closest("form").id).toBe("search-bar");
+    expect(dd.getAttribute("role")).toBe("listbox");
+    expect(input.getAttribute("role")).toBe("combobox");
+    expect(input.getAttribute("aria-controls")).toBe("header-suggest-dropdown");
+    expect(input.getAttribute("aria-autocomplete")).toBe("list");
+    expect(input.getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("attach() wires suggest to #query-input and renders one option per word", async () => {
+    vi.useFakeTimers();
+    const { input, dd } = await boot();
+    await type(input, "he");
+    const items = dd.querySelectorAll('[role="option"]');
+    expect(items.length).toBe(2);
+    expect(items[0].textContent).toBe("sug1");
+    expect(dd.classList.contains("visually-hidden")).toBe(false);
+    expect(input.getAttribute("aria-expanded")).toBe("true");
+  });
+
+  it("sends only the free-text terms, not the facet qualifiers, to /suggest-words", async () => {
+    vi.useFakeTimers();
+    const { input, get } = await boot();
+    // What runFromUrl() puts in the box once a facet checkbox is ticked.
+    await type(input, "foo repository:fess -filetype:pdf ba");
+    expect(suggestCalls(get)[0][1]).toMatchObject({ q: "foo ba" });
+  });
+
+  it("keeps the active qualifiers when a suggestion replaces the terms", async () => {
+    vi.useFakeTimers();
+    const { input, dd } = await boot([{ text: "foobar" }]);
+    await type(input, "foo repository:fess");
+    dd.querySelector('[role="option"]')
+      .dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true }));
+    expect(input.value).toBe("foobar repository:fess");
+  });
+
+  it("collapses the dropdown on submit and cancels the request the keystroke queued", async () => {
+    vi.useFakeTimers();
+    const { input, dd, get, navigate } = await boot();
+    input.value = "he";
+    input.dispatchEvent(new Event("input"));
+    // Enter before the 150ms debounce elapses — the ordinary fast-typing case.
+    await vi.advanceTimersByTimeAsync(20);
+    document.getElementById("search-bar").dispatchEvent(new Event("submit", { cancelable: true }));
+    expect(navigate).toHaveBeenCalled();
+    // The queued request must never fire, and the dropdown must stay collapsed
+    // once the debounce interval has fully elapsed.
+    await vi.advanceTimersByTimeAsync(500);
+    expect(suggestCalls(get).length).toBe(0);
+    expect(dd.classList.contains("visually-hidden")).toBe(true);
+  });
+
+  it("stays collapsed when a route change lands before the debounce fires", async () => {
+    vi.useFakeTimers();
+    const { input, dd, get } = await boot();
+    input.value = "he";
+    input.dispatchEvent(new Event("input"));
+    await vi.advanceTimersByTimeAsync(20);
+    document.dispatchEvent(new CustomEvent("fess:route:change", { detail: { path: "/help" } }));
+    await vi.advanceTimersByTimeAsync(500);
+    expect(suggestCalls(get).length).toBe(0);
+    expect(dd.classList.contains("visually-hidden")).toBe(true);
+  });
+
+  it("does not re-open when an in-flight request resolves after a route change", async () => {
+    vi.useFakeTimers();
+    // The header form stays mounted on /search and /help, so a response that
+    // renders after navigation would park the dropdown over the results list
+    // with nothing left to close it.
+    let release;
+    const flow = await loadSearchFlow("codesearch", FULL_CFG);
+    flow.get.mockImplementation((path) => {
+      if (path === "/suggest-words") {
+        return new Promise((resolve) => { release = () => resolve({ suggest_words: [{ text: "late" }] }); });
+      }
+      return Promise.resolve({});
+    });
+    mountIndexBody("codesearch");
+    flow.mod.attach();
+    const input = document.getElementById("query-input");
+    const dd = document.getElementById("header-suggest-dropdown");
+    await type(input, "he");
+    expect(release).toBeTypeOf("function"); // the request is genuinely in flight
+
+    document.dispatchEvent(new CustomEvent("fess:route:change", { detail: { path: "/help" } }));
+    release();
+    await vi.advanceTimersByTimeAsync(500);
+    expect(dd.querySelectorAll('[role="option"]').length).toBe(0);
+    expect(dd.classList.contains("visually-hidden")).toBe(true);
+    expect(input.getAttribute("aria-expanded")).toBe("false");
+  });
+
+  it("ArrowDown highlights an option and points aria-activedescendant at it", async () => {
+    vi.useFakeTimers();
+    const { input, dd } = await boot();
+    await type(input, "he");
+    input.dispatchEvent(KEY("ArrowDown"));
+    const items = dd.querySelectorAll('[role="option"]');
+    expect(items[0].getAttribute("aria-selected")).toBe("true");
+    expect(items[0].classList.contains("active")).toBe(true);
+    expect(input.getAttribute("aria-activedescendant")).toBe(items[0].id);
+    // ArrowUp from the first option wraps to the last.
+    input.dispatchEvent(KEY("ArrowUp"));
+    expect(items[1].getAttribute("aria-selected")).toBe("true");
+    expect(input.getAttribute("aria-activedescendant")).toBe(items[1].id);
+  });
+
+  it("Enter commits the highlighted option and submits", async () => {
+    vi.useFakeTimers();
+    const { input, dd, navigate } = await boot();
+    await type(input, "he");
+    input.dispatchEvent(KEY("ArrowDown"));
+    input.dispatchEvent(KEY("Enter"));
+    expect(input.value).toBe("sug1");
+    expect(dd.classList.contains("visually-hidden")).toBe(true);
+    expect(navigate).toHaveBeenCalledWith(expect.stringContaining("q=sug1"));
+  });
+
+  it("leaves keyboard nav inert for a dropdown hidden by d-none", async () => {
+    vi.useFakeTimers();
+    // advance.js builds its all-words list with a permanent `d-none`
+    // (display:none!important) that attachSuggest never removes, so its options
+    // render but are invisible — they must not become an ArrowDown/Enter target.
+    const { mod, get } = await loadSearchFlow("codesearch", FULL_CFG);
+    installDispatch(get);
+    mountBody('<form><input id="adv-all"><ul id="adv-all-suggest" class="list-group suggest-dropdown d-none"></ul></form>');
+    const input = document.getElementById("adv-all");
+    const dd = document.getElementById("adv-all-suggest");
+    mod.attachSuggest(input, dd);
+    await type(input, "he");
+    expect(dd.querySelectorAll('[role="option"]').length).toBeGreaterThan(0);
+    input.dispatchEvent(KEY("ArrowDown"));
+    expect(dd.querySelector('[role="option"]').getAttribute("aria-selected")).toBe("false");
+    expect(input.hasAttribute("aria-activedescendant")).toBe(false);
+  });
+
+  it("Escape dismisses the dropdown without submitting", async () => {
+    vi.useFakeTimers();
+    const { input, dd, navigate } = await boot();
+    await type(input, "he");
+    input.dispatchEvent(KEY("Escape"));
+    expect(dd.classList.contains("visually-hidden")).toBe(true);
+    expect(input.getAttribute("aria-expanded")).toBe("false");
+    expect(input.hasAttribute("aria-activedescendant")).toBe(false);
+    expect(navigate).not.toHaveBeenCalled();
   });
 });

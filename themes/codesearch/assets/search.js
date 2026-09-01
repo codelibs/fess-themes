@@ -980,12 +980,38 @@ export function attach() {
   // Header search box (#search-bar / #query-input).
   const bar = document.getElementById("search-bar");
   const input = document.getElementById("query-input");
+
+  // app.js keeps the header box mounted on the results (:512), help (:550) and
+  // error (:586) views, and hides it on home, advance, chat, profile, cache and
+  // the 404 fallback. Wire the suggest dropdown attachHomeView() gives
+  // #contentQuery so typing there suggests too, not only on "/".
+  const headerDropdown = document.getElementById("header-suggest-dropdown");
+  const suggest = input && headerDropdown
+    ? attachSuggest(input, headerDropdown, {
+        // submitOnSelect: true — matches the home box and default-JSP suggestor.js.
+        submitOnSelect: true,
+        lang: () => {
+          // Home and results share the single #searchOptions drawer (JSP parity),
+          // so the suggest lang filter reads the drawer's #langSearchOption select.
+          const sel = document.getElementById("langSearchOption");
+          return sel ? Array.from(sel.selectedOptions).map(o => o.value).filter(v => v !== "") : [];
+        }
+      })
+    : null;
+
   if (bar && input) {
     bar.addEventListener("submit", ev => {
       ev.preventDefault();
+      if (suggest) suggest.cancel();
       submitQuery(input.value);
     });
   }
+
+  // Unlike the home and advance boxes, whose whole pane is hidden on navigation,
+  // this dropdown floats over the results list inside chrome that stays visible.
+  // Nothing else would close it, so drop it (and anything still in flight) on
+  // every route change.
+  if (suggest) document.addEventListener("fess:route:change", () => suggest.cancel());
 }
 
 /**
@@ -1051,20 +1077,85 @@ export function renderPopularWords(words, targetEl) {
 }
 
 /**
- * Attach a lightweight suggest dropdown to a text input (used by app.js home view).
+ * The free-text part of a raw query-box value. codesearch is the only theme that
+ * keeps facets inside the query string itself — the facet checkboxes write
+ * `repository:fess` back into the box via addQualifier() — and /suggest-words
+ * treats that syntax as part of the term, so it must not be sent.
+ */
+function suggestTerms(raw) {
+  return parseQuery(raw || "").terms.join(" ").trim();
+}
+
+/**
+ * Rebuild a raw query-box value with its free-text terms replaced by `text`,
+ * keeping the qualifiers. Only the terms were sent to /suggest-words, so only
+ * the terms are what the chosen suggestion replaces — the qualifiers stay
+ * visible in the box and the active facets survive the submit that follows.
+ * Qualifiers are re-emitted in the form addQualifier() writes them.
+ */
+function withTerms(raw, text) {
+  const qualifiers = parseQuery(raw || "").qualifiers.map(q => {
+    const value = q.value.includes(" ") ? `"${q.value}"` : q.value;
+    return (q.negate ? "-" : "") + q.key + ":" + value;
+  });
+  return [text, ...qualifiers].filter(Boolean).join(" ");
+}
+
+/**
+ * Attach a lightweight suggest dropdown to a text input (the home box in
+ * app.js, the header box in attach(), the all-words box in advance.js).
  * Calls GET /api/v2/suggest-words; renders with createElement/textContent only.
+ *
+ * Implements the combobox keyboard contract the sibling themes carry:
+ * ArrowUp/ArrowDown with wrap-around, Enter to commit, Tab to accept, Escape to
+ * dismiss, plus aria-selected per option and aria-activedescendant on the input.
+ *
+ * @param {HTMLInputElement|null} input
+ * @param {HTMLElement|null} dropdown - the role="listbox" <ul> to render into
+ * @param {object} [opts]
+ * @param {boolean} [opts.submitOnSelect] - submit the owning form on selection
+ * @param {string[]|function} [opts.lang] - lang filter, or a function returning one
+ * @returns {{cancel: () => void}|null} handle to drop everything in flight,
+ *   or null when either element is missing
  */
 export function attachSuggest(input, dropdown, opts = {}) {
-  if (!input || !dropdown) return;
+  if (!input || !dropdown) return null;
   let timer = null;
+  let pending = null; // AbortController of the in-flight /suggest-words request
+  let index = -1; // highlighted option, -1 = none
+
+  const options = () => dropdown.querySelectorAll('[role="option"]');
+  const highlight = () => {
+    const items = options();
+    items.forEach((it, i) => {
+      const active = i === index;
+      it.classList.toggle("active", active);
+      it.setAttribute("aria-selected", active ? "true" : "false");
+    });
+    if (index >= 0 && items[index]) input.setAttribute("aria-activedescendant", items[index].id);
+    else input.removeAttribute("aria-activedescendant");
+  };
   const clear = () => {
     while (dropdown.firstChild) dropdown.removeChild(dropdown.firstChild);
     dropdown.classList.add("visually-hidden");
     input.setAttribute("aria-expanded", "false");
+    input.removeAttribute("aria-activedescendant");
+    index = -1;
+  };
+  /**
+   * Collapse the dropdown and drop everything that could re-open it: the pending
+   * debounce timer and the in-flight request. Needed because the timer and the
+   * request outlive the keystroke that started them — after Enter + navigate,
+   * a bare clear() is undone ~250ms later when the fetch resolves and renders.
+   */
+  const cancel = () => {
+    if (timer) { clearTimeout(timer); timer = null; }
+    if (pending) { pending.abort(); pending = null; }
+    clear();
   };
   const choose = (text) => {
-    input.value = text;
-    clear();
+    input.value = withTerms(input.value, text);
+    cancel();
     if (opts.submitOnSelect) {
       const form = input.form || input.closest("form");
       if (form) form.dispatchEvent(new Event("submit", { cancelable: true }));
@@ -1072,35 +1163,81 @@ export function attachSuggest(input, dropdown, opts = {}) {
     }
     input.focus();
   };
-  const render = async (q) => {
-    if (!q || q.length < 1) { clear(); return; }
+  const render = async (raw) => {
+    const q = suggestTerms(raw);
+    if (!q) { clear(); return; }
+    const ctrl = new AbortController();
+    pending = ctrl;
     try {
       const params = { q, num: 10, fn: ["_default", "content", "title"] };
-      const lang = typeof opts.lang === "function" ? opts.lang() : opts.lang;
+      // Read opts.lang once: call sites pass it as a getter, which a
+      // `typeof x === "function" ? x() : x` expression would evaluate twice.
+      const langOpt = opts.lang;
+      const lang = typeof langOpt === "function" ? langOpt() : langOpt;
       if (Array.isArray(lang) && lang.length > 0) params.lang = lang;
-      const env = await api.get("/suggest-words", params);
+      const env = await api.get("/suggest-words", params, { signal: ctrl.signal });
+      // The mock/fetch may resolve after cancel(); do not resurrect the dropdown.
+      if (ctrl.signal.aborted) return;
       const items = env.suggest_words || [];
       while (dropdown.firstChild) dropdown.removeChild(dropdown.firstChild);
+      index = -1;
+      input.removeAttribute("aria-activedescendant");
       if (items.length === 0) { clear(); return; }
       items.forEach((it, i) => {
         const li = el("li", {
           className: "suggest-item",
           text: it.text || "",
-          attrs: { role: "option", id: input.id + "-suggest-" + i }
+          attrs: { role: "option", id: input.id + "-suggest-" + i, "aria-selected": "false" }
         });
         li.addEventListener("mousedown", ev => { ev.preventDefault(); choose(it.text || ""); });
         dropdown.appendChild(li);
       });
       dropdown.classList.remove("visually-hidden");
       input.setAttribute("aria-expanded", "true");
-    } catch { /* best-effort */ }
+    } catch { /* best-effort */ } finally {
+      if (pending === ctrl) pending = null;
+    }
   };
   input.addEventListener("input", () => {
     if (timer) clearTimeout(timer);
-    const v = input.value.trim();
+    if (pending) { pending.abort(); pending = null; }
+    const v = input.value;
     timer = setTimeout(() => render(v), 150);
   });
-  input.addEventListener("blur", () => setTimeout(clear, 120));
+  input.addEventListener("keydown", ev => {
+    const items = options();
+    // Only steer keys while the list is actually on screen. Both hiding regimes
+    // count: the home/header dropdowns toggle .visually-hidden, while advance.js
+    // builds its list with a permanent .d-none (display:none!important), so
+    // rendered options there must stay unreachable rather than become an
+    // invisible target for ArrowDown/Enter.
+    if (!items.length
+      || dropdown.classList.contains("visually-hidden")
+      || dropdown.classList.contains("d-none")) return;
+    if (ev.key === "ArrowDown") {
+      ev.preventDefault();
+      index = index >= items.length - 1 ? 0 : index + 1;
+    } else if (ev.key === "ArrowUp") {
+      ev.preventDefault();
+      index = index <= 0 ? items.length - 1 : index - 1;
+    } else if ((ev.key === "Enter" || ev.key === "Tab") && index >= 0) {
+      // Enter commits the highlighted option; Tab accepts it Google-style
+      // instead of moving focus out of the box.
+      ev.preventDefault();
+      choose(items[index].textContent || "");
+      return;
+    } else if (ev.key === "Escape") {
+      cancel();
+      return;
+    } else {
+      return;
+    }
+    highlight();
+  });
+  // Leaving the box also drops the pending timer: otherwise the last keystroke's
+  // request still fires and opens the dropdown over a box nobody is typing in.
+  input.addEventListener("blur", () => setTimeout(cancel, 120));
+  return { cancel };
 }
 
 /**
