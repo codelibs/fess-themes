@@ -107,13 +107,47 @@ describe.each(DNONE_THEMES)("runSearch pipeline [%s]", (theme) => {
     expect(detail.query_id).toBe("qid-1");
   });
 
-  it("shows the partial-results warning when env.partial is set", async () => {
-    const { mod } = await boot({ search: makeSearchEnv(SAMPLE_DOCS, { partial: true }) });
+  it("shows the timeout warning when the search timed out", async () => {
+    const { mod } = await boot({ search: makeSearchEnv(SAMPLE_DOCS, { partial: true, timed_out: true }) });
     await mod.runSearch();
     await settle();
     const warn = document.getElementById("results-warning");
     expect(warn.classList.contains("d-none")).toBe(false);
     expect(warn.textContent).toBe("labels.process_time_is_exceeded");
+  });
+
+  it("does not call a shard failure a timeout", async () => {
+    const { mod } = await boot({ search: makeSearchEnv(SAMPLE_DOCS, { partial: true, shard_failed: true }) });
+    await mod.runSearch();
+    await settle();
+    const warn = document.getElementById("results-warning");
+    expect(warn.classList.contains("d-none")).toBe(false);
+    expect(warn.textContent).toBe("labels.search_partially_failed");
+  });
+
+  it("shows both warnings when a timeout and a shard failure coincide", async () => {
+    const { mod } = await boot({ search: makeSearchEnv(SAMPLE_DOCS, { partial: true, timed_out: true, shard_failed: true }) });
+    await mod.runSearch();
+    await settle();
+    expect(document.getElementById("results-warning").textContent)
+      .toBe("labels.process_time_is_exceeded labels.search_partially_failed");
+  });
+
+  it("does not call a partial result a timeout when no cause is given", async () => {
+    const { mod } = await boot({ search: makeSearchEnv(SAMPLE_DOCS, { partial: true }) });
+    await mod.runSearch();
+    await settle();
+    const warn = document.getElementById("results-warning");
+    expect(warn.classList.contains("d-none")).toBe(false);
+    expect(warn.textContent).toBe("labels.search_partially_failed");
+  });
+
+  it("hides the partial-results warning when the result is complete", async () => {
+    const { mod } = await boot();
+    document.getElementById("results-warning").classList.remove("d-none");
+    await mod.runSearch();
+    await settle();
+    expect(document.getElementById("results-warning").classList.contains("d-none")).toBe(true);
   });
 
   it("renders zero-result state: empty shown, results list and status cleared", async () => {
