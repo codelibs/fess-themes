@@ -124,7 +124,7 @@ function buildGoUrl(originalUrl, docId, queryId, order, rt) {
     return "#";
   }
 
-  let goUrl = "/go/?rt=" + encodeURIComponent(rt) +
+  let goUrl = "go/?rt=" + encodeURIComponent(rt) +
               "&docId=" + encodeURIComponent(docId || "") +
               "&queryId=" + encodeURIComponent(queryId || "") +
               "&order=" + encodeURIComponent(order || 0);
@@ -376,7 +376,7 @@ function buildResultCard(d, queryId, order) {
     img.setAttribute("loading", "lazy");
     img.setAttribute("alt", "");
     img.setAttribute("src",
-      "/thumbnail/?docId=" + encodeURIComponent(d.doc_id || "") +
+      "thumbnail/?docId=" + encodeURIComponent(d.doc_id || "") +
       "&queryId=" + encodeURIComponent(queryId || ""));
     img.addEventListener("error", () => { thumbWrap.classList.add("d-none"); });
     thumbA.appendChild(img);
@@ -467,7 +467,7 @@ function buildResultCard(d, queryId, order) {
     info.appendChild(el("a", {
       className: "cache d-print-none",
       text: t("result.cache"),
-      attrs: { href: `/cache/?docId=${encodeURIComponent(d.doc_id || "")}${hlParam}`, target: "_blank", rel: "noopener" }
+      attrs: { href: `cache/?docId=${encodeURIComponent(d.doc_id || "")}${hlParam}`, target: "_blank", rel: "noopener" }
     }));
   }
 
@@ -1293,7 +1293,7 @@ export function runFromUrl() {
     // results DOM is re-rendered only when runSearch() runs and neither showView() nor
     // resetSearchState() clears it. Use replace: true so the empty /search entry does
     // not linger in history (matching the server-side redirect).
-    navigate("/", { replace: true });
+    navigate("./", { replace: true });
     return;
   }
   runSearch();
@@ -1352,7 +1352,7 @@ function ensureOsddLink() {
   link.setAttribute("rel", "search");
   link.setAttribute("type", "application/opensearchdescription+xml");
   link.setAttribute("title", cfg.site_name || "Fess");
-  link.setAttribute("href", "/osdd");
+  link.setAttribute("href", "osdd");
   document.head.appendChild(link);
 }
 
@@ -1409,7 +1409,7 @@ export function attach() {
           Array.from(langSel.selectedOptions).map(o => o.value).filter(Boolean).forEach(v => params.append("lang", v));
         }
       }
-      navigate("/search?" + params.toString());
+      navigate("search?" + params.toString());
       // JSP parity: disable the submit button for 3s after the search has been
       // triggered, to prevent rapid double-submits.
       disableSubmitBriefly(document.getElementById("searchButton"));
@@ -1469,7 +1469,7 @@ export function attach() {
         params.set("geo.location.point", geoLat + "," + geoLon);
         params.set("geo.location.distance", geoDist);
       }
-      navigate("/search?" + params.toString());
+      navigate("search?" + params.toString());
     });
   }
   if (input) {
@@ -1946,7 +1946,7 @@ export function renderPopularWords(words, targetEl) {
       className: "me-1" + (i >= 3 ? " d-sm-inline-block d-none" : ""),
       text: w,
       attrs: {
-        href: "/search?q=" + encodeURIComponent(w),
+        href: "search?q=" + encodeURIComponent(w),
         "data-spa": ""
       }
     });

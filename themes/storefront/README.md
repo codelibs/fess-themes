@@ -214,5 +214,6 @@ That checks the **locale-bundle contract only**: a bundle for every locale `asse
 serves, key parity across all of them, and help section-id parity. It does not check element
 ids, baseline leaks, or behaviour — verify those by hand and by running the theme.
 
-A theme cannot be previewed from `file://`: it is an SPA on absolute `/themes/storefront/`
-paths calling `/api/v2/*`, so it only runs when served by Fess 15.9+.
+A theme cannot be previewed from `file://`: it is an SPA on paths relative to the
+`<base href>` Fess inserts (`themes/storefront/…`) calling `/api/v2/*`, so it only runs
+when served by Fess 15.9+.

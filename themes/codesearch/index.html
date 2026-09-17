@@ -6,8 +6,10 @@
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Fess Code Search</title>
-  <link rel="stylesheet" href="/themes/codesearch/assets/styles.css">
-  <link rel="icon" href="/favicon.ico">
+  <!-- Fess inserts <base href="{context path}/"> right after <head>. Every URL in this
+       theme is relative to it, so the theme works under any context path. -->
+  <link rel="stylesheet" href="themes/codesearch/assets/styles.css">
+  <link rel="icon" href="favicon.ico">
 </head>
 <body>
   <a href="#page-root" class="skip-link" data-i18n="aria.skip_to_main">Skip to main content</a>
@@ -21,7 +23,7 @@
        #theme-toggle. app.js wires auth/chat/warnings into #header-nav.
        =================================================================== -->
   <header class="app-header" role="banner">
-    <a class="brand" href="/" id="brand-link" data-spa aria-label="Fess Code Search home">
+    <a class="brand" href="./" id="brand-link" data-spa aria-label="Fess Code Search home">
       <span class="brand-sigil" aria-hidden="true">⌗</span>
       <span class="brand-name"><b>fess</b>/code</span>
     </a>
@@ -59,12 +61,12 @@
         <!-- Warnings (EOL / dev-mode) and auth/chat entries injected by app.js / auth.js. -->
         <li class="nav-item" id="auth-controls" data-i18n-aria-label="aria.auth_controls"></li>
         <li class="nav-item" id="chat-nav-item" hidden>
-          <a class="nav-link" href="/chat" id="chat-nav-link" data-spa role="button">
+          <a class="nav-link" href="chat" id="chat-nav-link" data-spa role="button">
             <span class="icon" aria-hidden="true">✦</span> <span data-i18n="nav.chat_ai_mode">AI Search</span>
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link help-link" href="/help" id="help-link" data-spa>
+          <a class="nav-link help-link" href="help" id="help-link" data-spa>
             <span class="icon" aria-hidden="true">?</span> <span data-i18n="nav.help">Help</span>
           </a>
         </li>
@@ -219,10 +221,7 @@
     </div>
   </div>
 
-  <!-- contextPath hidden field (parity index.jsp). -->
-  <input type="hidden" id="contextPath" value="">
-
-  <script src="/themes/codesearch/assets/compat.js" defer></script>
-  <script type="module" src="/themes/codesearch/assets/app.js"></script>
+  <script src="themes/codesearch/assets/compat.js" defer></script>
+  <script type="module" src="themes/codesearch/assets/app.js"></script>
 </body>
 </html>

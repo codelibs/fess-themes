@@ -3,6 +3,7 @@
 import * as api from "./api.js";
 import { t } from "./i18n.js";
 import { contentTypeIcon, deriveBreadcrumb } from "./docsearch.js";
+import { redirect } from "./router.js";
 
 const RECENT_KEY="ds-recent", FAV_KEY="ds-fav";
 const RECENT_MAX=7, RECENT_WITH_FAV_MAX=4, FAV_MAX=10, DEBOUNCE=200, STALL=500;
@@ -17,16 +18,15 @@ function pushRecent(q){ q=(q||"").trim(); if(!q) return;
 export function toggleFavorite(q){ q=(q||"").trim(); if(!q) return;
   const f=favs(), i=f.indexOf(q); if(i>=0) f.splice(i,1); else f.unshift(q); lsSet(FAV_KEY,f.slice(0,FAV_MAX)); }
 
-function ctxPath(){ const e=document.getElementById("contextPath"); return (e&&e.value)||""; }
 // Current query from the URL (?q=) — used to pre-fill the palette when refining on /search.
 function qFromUrl(){ try { return new URLSearchParams(location.search).get("q")||""; } catch { return ""; } }
-function goSearch(q){ location.assign(`${ctxPath()}/search?q=${encodeURIComponent(q)}`); }
-function goChat(q){ location.assign(`${ctxPath()}/chat?q=${encodeURIComponent(q)}`); }
+function goSearch(q){ redirect(`search?q=${encodeURIComponent(q)}`); }
+function goChat(q){ redirect(`chat?q=${encodeURIComponent(q)}`); }
 function ragEnabled(){ const c=api.getConfig&&api.getConfig(); return !!(c&&c.features&&c.features.rag_chat_enabled); }
 // click-logged doc nav: build /go/ from the palette's OWN search response (queryId+rt); else direct.
 function goDoc(d, queryId, rt, order){
   if(queryId && d.doc_id && rt){
-    location.assign(`${ctxPath()}/go/?rt=${encodeURIComponent(rt)}&queryId=${encodeURIComponent(queryId)}&docId=${encodeURIComponent(d.doc_id)}&order=${order}`);
+    redirect(`go/?rt=${encodeURIComponent(rt)}&queryId=${encodeURIComponent(queryId)}&docId=${encodeURIComponent(d.doc_id)}&order=${order}`);
   } else { location.assign(d.url); }
 }
 

@@ -76,15 +76,17 @@ a checkout instead.
 Then open **Admin → Theme** (`/admin/theme/`) in Fess, upload the ZIP and
 activate it (or bind it to a virtual host).
 
-> A theme is served at `/themes/<name>/` where `<name>` is `theme.yml#name`, so
-> the asset paths inside `index.html` (e.g. `/themes/docuforge/assets/styles.css`)
-> are tied to the theme name rather than this repository's location.
+> A theme is served at `/themes/<name>/` where `<name>` is `theme.yml#name`, and the
+> asset paths inside `index.html` (e.g. `themes/docuforge/assets/styles.css`) are
+> relative, resolved against the `<base href>` Fess inserts — so they still have to
+> match the theme's own directory name, just without a leading slash.
 
 ## Adding a new theme
 
 1. Create `themes/<name>/` (copy an existing theme as a starting point).
 2. Set `theme.yml#name` / `#displayName` to `<name>`, and update every
-   `/themes/<old>/…` path in `index.html` / `assets/*.js` to `/themes/<name>/…`.
+   `themes/<old>/…` path in `index.html` to `themes/<name>/…` (`assets/*.js` carries
+   no theme-name paths, so nothing to change there).
 3. Set `theme.yml#version` to the current Fess line's first patch — `"15.9.0"` today —
    and `theme.yml#minFessVersion` to match (`"15.9"`); see [Versioning](#versioning).
 4. Add a row to the **Themes** table above.

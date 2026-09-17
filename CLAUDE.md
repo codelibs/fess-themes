@@ -55,8 +55,9 @@ different:
 Nothing outside these three is enforced anywhere.
 
 **There is no build, no test runner, and no dev server.** A theme cannot be
-previewed from `file://`: it is an SPA on absolute `/themes/<name>/` paths calling
-`/api/v2/*`, so it only runs when served by Fess. The loop is package → upload at
+previewed from `file://`: it is an SPA on relative paths resolved against the
+`<base href>` Fess inserts and calls `/api/v2/*`, so it only runs when served by Fess.
+The loop is package → upload at
 **Admin → Theme** (`/admin/theme/`) → activate, or set `theme.default=<name>` in
 `fess_config.properties` against a running Fess 15.9+.
 
@@ -205,8 +206,12 @@ matches all 10. Diff before believing the hash.
 - Vanilla JS ES modules, no bundler, no framework, no CDN — a strict CSP blocks external
   hosts, so no Google Fonts and no inline scripts. Self-host fonts; use a classic `<head>`
   script for FOUC-safe theming.
-- Asset paths inside a theme are absolute and name-bound (`/themes/<name>/assets/...`), so
-  renaming a theme means updating `theme.yml#name`, `#displayName`, and every path.
+- URLs are relative to the `<base href="{context path}/">` Fess 15.9 inserts into
+  `index.html` (`themes/<name>/assets/...`, `api/v2`, `search?q=...`, `./`), and CSS `url()`
+  is relative to the stylesheet — a root-absolute `/...` URL skips the context path
+  (`test/relative-urls.test.js` rejects one). Asset paths in `index.html` are still
+  name-bound, so renaming a theme means updating `theme.yml#name`, `#displayName`, and
+  those paths.
 - i18n lives in `i18n/messages.<locale>.json`. Every theme ships **16** message bundles and
   **8** `help/<locale>.json` bundles, but 9 of the 10 themes declare only 8 locales in
   `theme.yml#supportedLocales` (`codesearch` declares all 16) — the undeclared bundles ship

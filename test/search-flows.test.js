@@ -214,7 +214,7 @@ describe.each(DNONE_THEMES)("runSearch pipeline [%s]", (theme) => {
     setLocation("/search?num=10");
     mod.runFromUrl();
     await settle();
-    expect(navigate).toHaveBeenCalledWith("/", { replace: true });
+    expect(navigate).toHaveBeenCalledWith("./", { replace: true });
     expect(get.mock.calls.some((c) => c[0] === "/search")).toBe(false);
   });
 

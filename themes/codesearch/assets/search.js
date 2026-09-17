@@ -126,7 +126,7 @@ function buildGoUrl(originalUrl, docId, queryId, order, rt) {
     return "#";
   }
 
-  let goUrl = "/go/?rt=" + encodeURIComponent(rt) +
+  let goUrl = "go/?rt=" + encodeURIComponent(rt) +
               "&docId=" + encodeURIComponent(docId || "") +
               "&queryId=" + encodeURIComponent(queryId || "") +
               "&order=" + encodeURIComponent(order || 0);
@@ -553,7 +553,7 @@ function renderSummary(env) {
     const params = new URLSearchParams(location.search);
     if (sortSel.value) params.set("sort", sortSel.value); else params.delete("sort");
     params.delete("start"); // new sort → back to first page
-    navigate("/search?" + params.toString());
+    navigate("search?" + params.toString());
   });
   sortWrap.appendChild(sortSel);
   controls.appendChild(sortWrap);
@@ -603,7 +603,7 @@ function renderPagination(env) {
   const goToPage = (start) => {
     const params = new URLSearchParams(location.search);
     params.set("start", String(Math.max(0, start)));
-    navigate("/search?" + params.toString());
+    navigate("search?" + params.toString());
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -746,7 +746,7 @@ function renderFacets(env) {
         const params = new URLSearchParams(location.search);
         params.set("q", newQuery);
         params.delete("start");
-        navigate("/search?" + params.toString());
+        navigate("search?" + params.toString());
       });
 
       const valueSpan = document.createElement("span");
@@ -849,7 +849,7 @@ function renderActiveChips() {
       const params = new URLSearchParams(location.search);
       params.set("q", newQuery);
       params.delete("start");
-      navigate("/search?" + params.toString());
+      navigate("search?" + params.toString());
     });
 
     chip.appendChild(removeBtn);
@@ -945,7 +945,7 @@ export function runFromUrl() {
   // with the server redirectToRoot). replace:true so the empty /search entry
   // does not linger in history.
   if (!state.q) {
-    navigate("/", { replace: true });
+    navigate("./", { replace: true });
     return;
   }
   runSearch();
@@ -964,7 +964,7 @@ export function submitQuery(rawInput, base) {
   const params = base ? new URLSearchParams(base) : new URLSearchParams(location.search);
   if (fessQuery) params.set("q", fessQuery); else params.delete("q");
   params.delete("start"); // new query → first page
-  navigate("/search?" + params.toString());
+  navigate("search?" + params.toString());
 }
 
 /**
@@ -1070,7 +1070,7 @@ export function renderPopularWords(words, targetEl) {
     const a = el("a", {
       className: "popular-word",
       text: w,
-      attrs: { href: "/search?q=" + encodeURIComponent(w), "data-spa": "" }
+      attrs: { href: "search?q=" + encodeURIComponent(w), "data-spa": "" }
     });
     targetEl.appendChild(a);
   });

@@ -18,11 +18,11 @@
 
 /* ---------------------------------------------------------------- ds-tokens */
 /* self-hosted fonts — same-origin @font-face (CSP font-src falls back to 'self') */
-@font-face{font-family:"Inter";font-style:normal;font-weight:400;font-display:swap;src:url("/themes/docsearch/assets/fonts/inter-400.woff2") format("woff2");}
-@font-face{font-family:"Inter";font-style:normal;font-weight:500;font-display:swap;src:url("/themes/docsearch/assets/fonts/inter-500.woff2") format("woff2");}
-@font-face{font-family:"Inter";font-style:normal;font-weight:600;font-display:swap;src:url("/themes/docsearch/assets/fonts/inter-600.woff2") format("woff2");}
-@font-face{font-family:"JetBrains Mono";font-style:normal;font-weight:400;font-display:swap;src:url("/themes/docsearch/assets/fonts/jetbrains-mono-400.woff2") format("woff2");}
-@font-face{font-family:"JetBrains Mono";font-style:normal;font-weight:500;font-display:swap;src:url("/themes/docsearch/assets/fonts/jetbrains-mono-500.woff2") format("woff2");}
+@font-face{font-family:"Inter";font-style:normal;font-weight:400;font-display:swap;src:url("fonts/inter-400.woff2") format("woff2");}
+@font-face{font-family:"Inter";font-style:normal;font-weight:500;font-display:swap;src:url("fonts/inter-500.woff2") format("woff2");}
+@font-face{font-family:"Inter";font-style:normal;font-weight:600;font-display:swap;src:url("fonts/inter-600.woff2") format("woff2");}
+@font-face{font-family:"JetBrains Mono";font-style:normal;font-weight:400;font-display:swap;src:url("fonts/jetbrains-mono-400.woff2") format("woff2");}
+@font-face{font-family:"JetBrains Mono";font-style:normal;font-weight:500;font-display:swap;src:url("fonts/jetbrains-mono-500.woff2") format("woff2");}
 :root {
   --ds-accent:#4F46E5; --ds-accent-hover:#4338CA; --ds-accent-subtle:#EEF2FF;
   --ds-bg:#FFFFFF; --ds-surface:#FFFFFF; --ds-surface-2:#F8FAFC;

@@ -246,7 +246,7 @@ async function renderHomeCategories() {
       const a = document.createElement("a");
       a.className = "hd-category-tile";
       a.textContent = l.label || value;
-      a.setAttribute("href", "/search?q=&fields.label=" + encodeURIComponent(value));
+      a.setAttribute("href", "search?q=&fields.label=" + encodeURIComponent(value));
       a.setAttribute("data-spa", "");
       list.appendChild(a);
     }
@@ -275,7 +275,7 @@ function attachHomeView() {
         if (numSel && numSel.value) params.set("num", numSel.value);
         const langSel = document.getElementById("langSearchOption");
         if (langSel) Array.from(langSel.selectedOptions).map(o => o.value).filter(Boolean).forEach(v => params.append("lang", v));
-        router.navigate("/search?" + params.toString());
+        router.navigate("search?" + params.toString());
         // JSP parity: disable the submit button for 3s after navigation has been
         // triggered, to prevent rapid double-submits.
         search.disableSubmitBriefly(document.querySelector("#home-search-form button[type=submit]"));
@@ -382,7 +382,7 @@ function renderChatNavLink() {
 
 /**
  * #F (parity header.jsp:83-89): on the chat route, turn the chat nav link into a
- * "Search" link (href "/", fa-search). On any other route restore the chat label.
+ * "Search" link (href "./", fa-search). On any other route restore the chat label.
  * header-search-link
  */
 function setChatNavSearchMode(onChat) {
@@ -397,12 +397,12 @@ function setChatNavSearchMode(onChat) {
   icon.setAttribute("aria-hidden", "true");
   const span = document.createElement("span");
   if (onChat) {
-    link.href = "/";
+    link.href = "./";
     icon.className = "fa fa-fw fa-search";
     span.setAttribute("data-i18n", "nav.search");
     span.textContent = t("nav.search");
   } else {
-    link.href = "/chat";
+    link.href = "chat";
     icon.className = "fa fa-fw fa-robot";
     span.setAttribute("data-i18n", "nav.chat_ai_mode");
     span.textContent = t("nav.chat_ai_mode");
@@ -456,8 +456,8 @@ function updateAdvanceLinks() {
   const urlQ = urlParams.get("q") || "";
   const q = (headerVal || homeVal || urlQ || "").trim();
   if (!q) {
-    document.querySelectorAll('a[href^="/search/advance"]').forEach(a => {
-      a.setAttribute("href", "/search/advance");
+    document.querySelectorAll('a[href^="search/advance"]').forEach(a => {
+      a.setAttribute("href", "search/advance");
     });
     return;
   }
@@ -475,8 +475,8 @@ function updateAdvanceLinks() {
   // fields.label — multi-valued; forward all
   urlParams.getAll("fields.label").filter(v => v !== "").forEach(v => advParams.append("fields.label", v));
 
-  const href = "/search/advance?" + advParams.toString();
-  document.querySelectorAll('a[href^="/search/advance"]').forEach(a => {
+  const href = "search/advance?" + advParams.toString();
+  document.querySelectorAll('a[href^="search/advance"]').forEach(a => {
     a.setAttribute("href", href);
   });
 }
