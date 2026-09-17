@@ -42,6 +42,7 @@ const STD_THEMES = [
 
 beforeEach(() => {
   resetDom();
+  sessionStorage.clear();
   // renderPagination / facet click handlers scroll to top; jsdom has no scrollTo.
   window.scrollTo = () => {};
 });

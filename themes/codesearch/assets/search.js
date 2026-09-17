@@ -37,9 +37,12 @@ const CODE_FIELDS = ["domain", "organization", "repository", "path", "repository
 /** Density preference key (persisted to localStorage). */
 const DENSITY_KEY = "codesearch.density";
 
-/** Sort options offered in the summary sort control. Values map to Fess sort keys. */
+/**
+ * Sort options offered in the summary sort control. Values map to Fess sort keys.
+ * Relevance is an explicit score.desc: an empty sort now means the user's default sort.
+ */
 const SORT_OPTIONS = [
-  { value: "",                   key: "search.sort.relevance" },
+  { value: "score.desc",         key: "search.sort.relevance" },
   { value: "last_modified.desc", key: "search.sort.created_desc" },
   { value: "last_modified.asc",  key: "search.sort.created_asc" },
   { value: "content_length.desc", key: "search.sort.length_desc" },
@@ -962,6 +965,11 @@ export function runFromUrl() {
     navigate("./", { replace: true });
     return;
   }
+  // JSP parity (FessSearchAction.buildFormParams): the default sort applies when the URL
+  // names none. Labels and the page size stay as they are: this theme filters with query
+  // qualifiers and pages 20 results at a time.
+  const cfg = api.getConfig();
+  if (!state.sort && cfg && cfg.default_sort) state.sort = cfg.default_sort;
   runSearch();
 }
 

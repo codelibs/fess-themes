@@ -491,8 +491,9 @@ function renderCurrentFilters() {
     badges.push({ name, targetId: "sortSearchOption" });
   }
 
-  // Num (only show when non-default)
-  const defaultNum = cfg.num_options && cfg.num_options.length > 0 ? cfg.num_options[0] : 10;
+  // Num (only show when it differs from the server's default page size)
+  const defaultNum = Number(cfg.page_size_default) > 0 ? Number(cfg.page_size_default)
+    : (cfg.num_options && cfg.num_options.length > 0 ? cfg.num_options[0] : 10);
   if (state.num !== Number(defaultNum)) {
     badges.push({ name: t("search.num_format", { num: state.num }), targetId: "numSearchOption" });
   }
@@ -1134,8 +1135,15 @@ export function runFromUrl() {
   const q = params.get("q");
   state.q = q || "";
   state.start = Number(params.get("start")) || 0;
+  // JSP parity (SearchAction, session attribute resultsPerPage): an explicit num is
+  // remembered for this tab; a URL without one uses the remembered or default size.
   const numVal = Number(params.get("num"));
-  if (numVal > 0) state.num = numVal;
+  if (numVal > 0) {
+    state.num = numVal;
+    rememberNum(numVal);
+  } else {
+    state.num = initialNum();
+  }
   state.sort = params.get("sort") || "";
   // C.16: sync both inputs to reflect the URL query.
   syncSearchInputs(state.q);
@@ -1170,16 +1178,6 @@ export function runFromUrl() {
     }
   }
   state.exQ = params.getAll("ex_q").filter(v => v !== "");
-  // Re-sync the search-options drawer selects (sort / num / lang / label) to the
-  // freshly hydrated state. attach() renders them only once, so without this a
-  // navigation (link click, back/forward, facet submit) would leave the selects
-  // showing stale values. That matters now that the selects are applied on the
-  // Search button: a stale displayed value would otherwise be written back into the
-  // URL on the next submit, silently reverting the user's actual sort/num/lang.
-  // Guarded on config so the option lists exist before we re-render them.
-  if (api.getConfig()) {
-    renderSearchOptions();
-  }
   // Run a search when a keyword OR any active filter is present in the URL (label /
   // other fields, geo, or ex_q). The classic JSP theme issues the request for
   // filter-only URLs such as /search?fields.label=fess, so mirror that here instead
@@ -1201,6 +1199,24 @@ export function runFromUrl() {
     navigate("./", { replace: true });
     return;
   }
+  const cfg = api.getConfig();
+  if (cfg) {
+    // JSP parity (FessSearchAction.buildFormParams): apply the user's default labels when
+    // the URL has no fields.label, and the default sort when it names no sort. This runs
+    // after the empty-search check, so the defaults never turn an empty URL into a search.
+    if (!params.has("fields.label") && Array.isArray(cfg.default_label_values) && cfg.default_label_values.length > 0) {
+      state.fields.label = [...cfg.default_label_values];
+    }
+    if (!state.sort && cfg.default_sort) state.sort = cfg.default_sort;
+    // Re-sync the search-options drawer selects (sort / num / lang / label) to the
+    // freshly hydrated state. attach() renders them only once, so without this a
+    // navigation (link click, back/forward, facet submit) would leave the selects
+    // showing stale values. That matters now that the selects are applied on the
+    // Search button: a stale displayed value would otherwise be written back into the
+    // URL on the next submit, silently reverting the user's actual sort/num/lang.
+    // Guarded on config so the option lists exist before we re-render them.
+    renderSearchOptions();
+  }
   runSearch();
 }
 
@@ -1213,14 +1229,18 @@ export function runFromUrl() {
  * triggers a search on the home view.
  */
 export function resetSearchState() {
+  // JSP parity (RootAction → buildFormParams): the home page starts from the remembered or
+  // default page size and pre-selects the user's default labels and sort.
+  const cfg = api.getConfig();
+  const defaultLabels = cfg && Array.isArray(cfg.default_label_values) ? cfg.default_label_values : [];
   state.q = "";
   state.start = 0;
-  state.num = 10;
-  state.sort = "";
+  state.num = initialNum();
+  state.sort = (cfg && cfg.default_sort) || "";
   state.lang = [];
   state.sdh = "";
   state.facets = {};
-  state.fields = {};
+  state.fields = defaultLabels.length > 0 ? { label: [...defaultLabels] } : {};
   state.facetQueries = [];
   state.exQ = [];
   state.geo = { lat: "", lon: "", distance: "" };
@@ -1240,13 +1260,48 @@ export function resetSearchState() {
       sel.selectedIndex = 0;
     }
   });
-  // Keep state.num / state.sort in sync with the default option now selected: the
-  // count list is config-driven (num_options[0] may not be 10), so read it back from
-  // the drawer instead of assuming, leaving state and the visible control in agreement.
-  const numSel = document.getElementById("numSearchOption");
-  if (numSel && numSel.value) state.num = Number(numSel.value) || state.num;
-  const sortSel = document.getElementById("sortSearchOption");
-  state.sort = (sortSel && sortSel.value) || "";
+  // Show the defaults in the drawer selects once the option lists can be built. Reading the
+  // selects back instead would turn the default sort into the empty placeholder.
+  if (cfg) renderSearchOptions();
+}
+
+/** sessionStorage key of the page size last searched with (JSP: session attribute resultsPerPage). */
+const NUM_STORAGE_KEY = "fess.search.num";
+
+/**
+ * Page size for a search whose URL has no num: the size remembered for this tab, capped at
+ * page_size_max and rounded down to an offered num option (the smallest option when it is
+ * below all of them); otherwise page_size_default; otherwise 10.
+ */
+export function initialNum() {
+  const cfg = api.getConfig() || {};
+  const pageSizeDefault = Number(cfg.page_size_default);
+  const fallback = pageSizeDefault > 0 ? pageSizeDefault : 10;
+  let stored = 0;
+  try {
+    stored = Math.trunc(Number(sessionStorage.getItem(NUM_STORAGE_KEY)));
+  } catch { /* storage unavailable (e.g. blocked site data) */ }
+  if (!(stored > 0)) return fallback;
+  const max = Number(cfg.page_size_max);
+  const capped = max > 0 ? Math.min(stored, max) : stored;
+  const options = (cfg.num_options || []).map(Number).filter(n => n > 0).sort((a, b) => a - b);
+  if (options.length === 0) return capped;
+  const lower = options.filter(n => n <= capped);
+  return lower.length > 0 ? lower[lower.length - 1] : options[0];
+}
+
+/** Remember the page size of an explicit search for this tab. */
+function rememberNum(num) {
+  try {
+    sessionStorage.setItem(NUM_STORAGE_KEY, String(num));
+  } catch { /* storage unavailable */ }
+}
+
+/** Forget the remembered page size (on logout, as the JSP session attribute ended with the session). */
+export function forgetNum() {
+  try {
+    sessionStorage.removeItem(NUM_STORAGE_KEY);
+  } catch { /* storage unavailable */ }
 }
 
 function ensureOsddLink() {
