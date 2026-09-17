@@ -94,6 +94,36 @@ export async function loadProfile(theme, user = { name: "alice", editable: true 
 }
 
 /**
+ * Record the listeners added to document and window until stop(), so a test can remove
+ * them with detach(). app.js, router.js and search.js add document-level listeners at
+ * boot; without removing them, a theme booted by an earlier case would still answer the
+ * events a later case sends (and could make its assertion pass on its behalf).
+ */
+function recordListeners() {
+  const added = [];
+  const patched = [document, window].map((target) => {
+    const own = Object.prototype.hasOwnProperty.call(target, "addEventListener");
+    const original = target.addEventListener;
+    target.addEventListener = function (type, listener, options) {
+      added.push([target, type, listener, options]);
+      return original.call(this, type, listener, options);
+    };
+    return { target, own, original };
+  });
+  return {
+    stop() {
+      for (const { target, own, original } of patched) {
+        if (own) target.addEventListener = original;
+        else delete target.addEventListener;
+      }
+    },
+    detach() {
+      for (const [target, type, listener, options] of added) target.removeEventListener(type, listener, options);
+    },
+  };
+}
+
+/**
  * Mount a theme's shipped index.html body and boot its app.js against it.
  *
  * app.js is the SPA entry: it runs main() at import time (document.readyState is
@@ -103,26 +133,33 @@ export async function loadProfile(theme, user = { name: "alice", editable: true 
  * #home-notification / #results-notification, so the DOM must be in place first.
  *
  * api.init() is stubbed to a no-op and getConfig() returns `config`, standing in
- * for the /api/v2/ui/config payload. i18n.init() is stubbed too — the real one
- * fetches /themes/<name>/i18n/messages.<locale>.json, which would make the suite
- * depend on a network round trip failing fast. Everything else in both modules
- * (including t()) stays real.
+ * for the /api/v2/ui/config payload; api.get / api.post answer with `get` / `post` when
+ * given (by default /auth/me reports a guest). i18n.init() is stubbed too — the real one
+ * fetches the theme's i18n/messages.<locale>.json, which would make the suite depend on
+ * a network round trip failing fast. router.redirect() is replaced, because jsdom cannot
+ * leave the page. Everything else (auth.js, router.js, search.js, t()) stays real.
  *
  * @param {string} theme  - theme directory name under themes/
  * @param {object} config - the object api.getConfig() should return
- * @returns {Promise<{mod: object, get: Function, post: Function, i18nInit: Function}>}
+ * @param {{get?: Function, post?: Function}} [impl] - api.get / api.post implementations
+ * @returns {Promise<{mod: object, get: Function, post: Function, i18nInit: Function,
+ *                     apiInit: Function, redirect: Function, detach: Function}>}
  */
-export async function bootApp(theme, config = {}) {
+export async function bootApp(theme, config = {}, impl = {}) {
   vi.resetModules();
   const apiPath = `../../themes/${theme}/assets/api.js`;
   const i18nPath = `../../themes/${theme}/assets/i18n.js`;
-  const get = vi.fn(async () => ({ authenticated: false }));
-  const post = vi.fn(async () => ({}));
+  const routerPath = `../../themes/${theme}/assets/router.js`;
+  const get = vi.fn(impl.get || (async () => ({ authenticated: false })));
+  const post = vi.fn(impl.post || (async () => ({})));
+  const apiInit = vi.fn(async () => {});
+  const i18nInit = vi.fn(async () => {});
+  const redirect = vi.fn();
   vi.doMock(apiPath, async (importOriginal) => {
     const actual = await importOriginal();
     return {
       ...actual,
-      init: vi.fn(async () => {}),
+      init: apiInit,
       getConfig: () => config,
       get,
       post,
@@ -130,15 +167,25 @@ export async function bootApp(theme, config = {}) {
       setCsrfToken: vi.fn(),
     };
   });
-  const i18nInit = vi.fn(async () => {});
   vi.doMock(i18nPath, async (importOriginal) => {
     const actual = await importOriginal();
     return { ...actual, init: i18nInit };
   });
+  vi.doMock(routerPath, async (importOriginal) => {
+    const actual = await importOriginal();
+    return { ...actual, redirect };
+  });
   mountIndexBody(theme);
-  const mod = await import(`../../themes/${theme}/assets/app.js`);
-  vi.doUnmock(apiPath);
-  vi.doUnmock(i18nPath);
-  await settle();
-  return { mod, get, post, i18nInit };
+  const listeners = recordListeners();
+  let mod;
+  try {
+    mod = await import(`../../themes/${theme}/assets/app.js`);
+    await settle();
+  } finally {
+    listeners.stop();
+    vi.doUnmock(apiPath);
+    vi.doUnmock(i18nPath);
+    vi.doUnmock(routerPath);
+  }
+  return { mod, get, post, i18nInit, apiInit, redirect, detach: listeners.detach };
 }
