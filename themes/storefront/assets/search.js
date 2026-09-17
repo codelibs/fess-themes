@@ -641,14 +641,21 @@ async function runSearch() {
     if (env.requested_time) state.requestedTime = env.requested_time;
     // A.5: store server-supplied highlight params for cache link construction.
     state.highlightParams = (typeof env.highlight_params === "string" && env.highlight_params) ? env.highlight_params : "";
-    // A.6: show/hide the partial-results warning banner. A timeout and a failed shard are
-    // different causes; a partial result that names neither is not called a timeout.
+    // A.6: show/hide the warning banner above the results. JSP parity
+    // (FessSearchAction.hookBefore): say so when the user's group and role permissions are
+    // still loading or failed to load, since the results may then be incomplete. A timeout
+    // and a failed shard are different causes; a partial result that names neither is not
+    // called a timeout.
     const warningEl = document.getElementById("results-warning");
     if (warningEl) {
+      const warnings = [];
+      if (env.permission_state === "PENDING") warnings.push(t("errors.user_permissions_loading"));
+      else if (env.permission_state === "FAILED") warnings.push(t("errors.user_permissions_unavailable"));
       if (env.partial) {
-        const warnings = [];
         if (env.timed_out) warnings.push(t("labels.process_time_is_exceeded"));
         if (env.shard_failed || !env.timed_out) warnings.push(t("labels.search_partially_failed"));
+      }
+      if (warnings.length > 0) {
         warningEl.textContent = warnings.join(" ");
         warningEl.classList.remove("d-none");
       } else {
@@ -685,6 +692,10 @@ async function runSearch() {
               : t("error.server");
     if (errBox) { errBox.textContent = msg; errBox.classList.remove("d-none"); }
     else { const meta = document.getElementById("results-meta"); if (meta) meta.textContent = msg; }
+    // The session is gone: app.js asks for login again when the site requires it.
+    if (e && (e.code === "auth_required" || e.code === "AUTH_REQUIRED")) {
+      document.dispatchEvent(new CustomEvent("fess:auth:required"));
+    }
   } finally {
     // Only the latest request clears the spinner. If this request was superseded,
     // currentSearchAbort already points at a newer controller, so leave it running.

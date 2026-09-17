@@ -892,6 +892,16 @@ async function runSearch() {
     const env = await api.get("/search", params, { signal });
     if (env.requested_time) state.requestedTime = env.requested_time;
 
+    // JSP parity (FessSearchAction.hookBefore): say so when the user's group and role
+    // permissions are still loading or failed to load, since the results may be incomplete.
+    const warningEl = document.getElementById("results-warning");
+    if (warningEl) {
+      const notice = env.permission_state === "PENDING" ? t("errors.user_permissions_loading")
+        : env.permission_state === "FAILED" ? t("errors.user_permissions_unavailable") : "";
+      warningEl.textContent = notice;
+      warningEl.hidden = notice === "";
+    }
+
     renderResults(env);
     renderSummary(env);
     renderPagination(env);
@@ -908,6 +918,10 @@ async function runSearch() {
         : (e && (e.code === "auth_required" || e.code === "AUTH_REQUIRED")) ? t("error.auth_required")
           : t("error.server");
     if (errBox) { errBox.textContent = msg; errBox.hidden = false; }
+    // The session is gone: app.js asks for login again when the site requires it.
+    if (e && (e.code === "auth_required" || e.code === "AUTH_REQUIRED")) {
+      document.dispatchEvent(new CustomEvent("fess:auth:required"));
+    }
     // Clear stale results/summary/pagination on a hard failure.
     const list = document.getElementById("results");
     if (list) list.innerHTML = "";
