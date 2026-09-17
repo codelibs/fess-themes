@@ -101,10 +101,18 @@
   Modal.prototype.hide = function () {
     var el = this._el;
     if (!el || !el.classList.contains("show")) return;
+    // Bootstrap parity: hide.bs.modal is cancelable (auth.js keeps the login modal open
+    // while login is required), and hidden.bs.modal follows once the dialog is gone.
+    // The backdrop, Escape and data-bs-dismiss controls all close through here.
+    var hideEvent = new CustomEvent("hide.bs.modal", { bubbles: true, cancelable: true });
+    if (!el.dispatchEvent(hideEvent)) return;
     el.classList.remove("show");
     el.setAttribute("aria-hidden", "true");
     el.removeAttribute("aria-modal");
-    var done = function () { el.style.display = "none"; };
+    var done = function () {
+      el.style.display = "none";
+      el.dispatchEvent(new CustomEvent("hidden.bs.modal", { bubbles: true }));
+    };
     if (prefersReducedMotion) done();
     else setTimeout(done, 200);
     removeBackdrop(this._backdrop);

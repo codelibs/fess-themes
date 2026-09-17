@@ -233,6 +233,8 @@ matches all 10. Diff before believing the hash.
   `getOrCreateInstance()`. It is a classic `defer` script and **must** run before `app.js`
   (`type="module"`) — see the load-order comment in any `index.html`. Break it and the
   login modal, facet offcanvas, and search-options drawer break in every theme.
+  Its `Modal` fires a cancelable `hide.bs.modal` before closing and `hidden.bs.modal` after,
+  like Bootstrap: `auth.js` relies on both to lock and reset the login modal.
 - **`thumbnail.png` ships.** Only `README.md` and `DESIGN.md` are excluded from the ZIP, so
   a thumbnail change needs a version bump like any other shipped file. Constraints:
   ≤512KB, ≤512×512, declared as `theme.yml#thumbnail`.
