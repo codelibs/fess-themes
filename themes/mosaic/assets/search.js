@@ -20,6 +20,7 @@ const state = {
   sort: "",
   lang: [],             // string[] — zero or more language codes; serialised as repeated lang= params
   sdh: "",              // similar_docs_hash for similarity search
+  as: {},               // advanced-search conditions from JSP URLs: name -> [values], sent as as.<name>
   facets: {},           // field -> [values]
   fields: {},           // extra field filters (e.g. label)
   facetQueries: [],     // string[] — active ex_q clause strings from facet_views (SRCH-4)
@@ -1258,15 +1259,14 @@ async function runSearch() {
       params.lang = state.lang;
     }
     if (state.sdh) params.sdh = state.sdh;
-    // Merge facet-based field filters (state.facets) and explicit field filters
-    // (state.fields) into a single deduplicated param per field.  The label field
-    // can appear in both stores (sidebar facet group writes state.facets.label;
-    // the label dropdown writes state.fields.label); emitting duplicates would
-    // produce redundant fields.label params and duplicate active chips.
+    for (const [name, values] of Object.entries(state.as)) params["as." + name] = values;
+    // Explicit field filters (state.fields: the URL, the label dropdown, the default labels)
+    // become one deduplicated fields.* param per field; the API ORs the values of a field.
+    // Facet selections (state.facets) are sent as ex_q clauses instead, which AND: facet
+    // counts are computed within the current filters, so a facet click must narrow the
+    // search (JSP parity: searchResults.jsp facet links add ex_q=label:<value>). Merging
+    // them into fields.* would widen the search to "default label OR clicked label".
     const fieldSets = {};
-    for (const [field, values] of Object.entries(state.facets)) {
-      (values || []).forEach(v => { (fieldSets[field] = fieldSets[field] || new Set()).add(v); });
-    }
     for (const [field, values] of Object.entries(state.fields)) {
       if (Array.isArray(values)) {
         values.forEach(v => { (fieldSets[field] = fieldSets[field] || new Set()).add(v); });
@@ -1274,6 +1274,9 @@ async function runSearch() {
     }
     for (const [field, valueSet] of Object.entries(fieldSets)) {
       valueSet.forEach(v => { (params["fields." + field] = params["fields." + field] || []).push(v); });
+    }
+    for (const [field, values] of Object.entries(state.facets)) {
+      (values || []).forEach(v => { (params["ex_q"] = params["ex_q"] || []).push(field + ":" + v); });
     }
     // facet query views — active ex_q clauses from server-driven facet_views (SRCH-4)
     if (Array.isArray(state.facetQueries) && state.facetQueries.length > 0) {
@@ -1721,14 +1724,22 @@ export function runFromUrl() {
   // the old facet label and the new one.
   state.facets = {};
   state.facetQueries = [];
-  // The similar-docs hash (sdh) is likewise memory-only and merged into the
-  // request, so it must be cleared on navigation too.
-  state.sdh = "";
+  // The similar-docs hash (sdh) is merged into the request. The SPA keeps it in memory,
+  // but JSP result and paging links carry it in the URL, so take it from there and clear
+  // it when the URL has none.
+  state.sdh = params.get("sdh") || "";
   state.fields = {};
+  // Advanced-search conditions (as.q, as.epq, ...) arrive in URLs made by the JSP pages;
+  // pass them to the API unchanged.
+  state.as = {};
   for (const [key, value] of params.entries()) {
-    if (key.startsWith("fields.") && value !== "") {
+    if (value === "") continue;
+    if (key.startsWith("fields.")) {
       const field = key.slice("fields.".length);
       (state.fields[field] = state.fields[field] || []).push(value);
+    } else if (key.startsWith("as.")) {
+      const name = key.slice("as.".length);
+      (state.as[name] = state.as[name] || []).push(value);
     }
   }
   state.exQ = params.getAll("ex_q").filter(v => v !== "");
@@ -1742,7 +1753,11 @@ export function runFromUrl() {
   const hasFields = Object.keys(state.fields).length > 0;
   const hasGeo = !!(state.geo.lat && state.geo.lon && state.geo.distance);
   const hasExQ = state.exQ.length > 0;
-  if (!state.q && !hasFields && !hasGeo && !hasExQ) {
+  // JSP parity (SearchRequestParams.hasConditionQuery): these advanced-search conditions
+  // are a search on their own; as.occt only narrows one.
+  const hasConditions = ["q", "epq", "oq", "nq", "timestamp", "sitesearch", "filetype"]
+    .some(name => (state.as[name] || []).length > 0);
+  if (!state.q && !hasFields && !hasGeo && !hasExQ && !hasConditions) {
     // A blank query with no conditions (e.g. a sort/num/lang-only URL such as
     // /search?num=10) is not a search. JSP parity: SearchAction.doSearch() redirects
     // such requests to the top page via redirectToRoot(), so mirror that here. Without
@@ -1793,6 +1808,7 @@ export function resetSearchState() {
   state.sort = (cfg && cfg.default_sort) || "";
   state.lang = [];
   state.sdh = "";
+  state.as = {};
   state.facets = {};
   state.fields = defaultLabels.length > 0 ? { label: [...defaultLabels] } : {};
   state.facetQueries = [];
@@ -1902,7 +1918,9 @@ export function attach() {
       if (q) params.set("q", q); else params.delete("q");
       params.delete("start");
       for (const key of [...params.keys()]) {
-        if (key.startsWith("fields.") || key === "ex_q") params.delete(key);
+        // JSP parity (header.jsp): the header form holds neither the similar-docs hash nor
+        // advanced-search conditions, so a new query drops them.
+        if (key.startsWith("fields.") || key.startsWith("as.") || key === "ex_q" || key === "sdh") params.delete(key);
       }
       // JSP parity: apply the current sort / num / lang drawer selections rather
       // than only carrying over the previous URL values, so a manual change to these
@@ -1921,6 +1939,9 @@ export function attach() {
           params.delete("lang");
           Array.from(langSel.selectedOptions).map(o => o.value).filter(Boolean).forEach(v => params.append("lang", v));
         }
+        // The drawer's labels ride along too: on the JSP page they sit inside the header form.
+        const labelSel = document.getElementById("labelSearchOption");
+        if (labelSel) Array.from(labelSel.selectedOptions).map(o => o.value).filter(Boolean).forEach(v => params.append("fields.label", v));
       }
       navigate("search?" + params.toString());
       // JSP parity: disable the submit button for 3s after the search has been
