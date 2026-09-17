@@ -215,4 +215,4 @@ serves, key parity across all of them, and help section-id parity. It does not c
 ids, baseline leaks, or behaviour — verify those by hand and by running the theme.
 
 A theme cannot be previewed from `file://`: it is an SPA on absolute `/themes/storefront/`
-paths calling `/api/v2/*`, so it only runs when served by Fess 15.8+.
+paths calling `/api/v2/*`, so it only runs when served by Fess 15.9+.

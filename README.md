@@ -12,14 +12,14 @@ theme can be reviewed, re-skinned, or used as a starting point for a new one.
 
 | Theme | Description |
 |---|---|
-| [`codesearch`](themes/codesearch/) | Source-code-search-optimised static theme — dark-first IDE aesthetic, inline qualifier syntax (`repo:` / `org:` / `path:` / `file:` / `lang:`), per-file code cards with line-number gutters, query-refining facet rail, grounded Ask-AI panel. Requires Fess 15.8+ and `query.additional.api.response.fields`. Ships its [`DESIGN.md`](themes/codesearch/DESIGN.md). |
+| [`codesearch`](themes/codesearch/) | Source-code-search-optimised static theme — dark-first IDE aesthetic, inline qualifier syntax (`repo:` / `org:` / `path:` / `file:` / `lang:`), per-file code cards with line-number gutters, query-refining facet rail, grounded Ask-AI panel. Requires Fess 15.9+ and `query.additional.api.response.fields`. Ships its [`DESIGN.md`](themes/codesearch/DESIGN.md). |
 | [`docuforge`](themes/docuforge/) | Documentation-style theme on the DocuForge design system — blue/purple/gray palette, persistent facet sidebar, docs-grade typography, **no Bootstrap**. Ships its [`DESIGN.md`](themes/docuforge/DESIGN.md) spec. |
 | [`helpdesk`](themes/helpdesk/) | FAQ / support site. Answers expand inline in an accordion — no navigation. Featured answers, category tiles, optional AI escalation. Ships its [`DESIGN.md`](themes/helpdesk/DESIGN.md) spec. |
 | [`docsearch`](themes/docsearch/) | Documentation search — ⌘K command palette, grouped results, breadcrumb cards, optional cited Ask-AI. DocSearch design language: indigo/slate palette, self-hosted Inter + JetBrains Mono, FOUC-safe light/dark mode, **no Bootstrap**. |
 | [`nomadkit`](themes/nomadkit/) | Free-spirited theme on the NomadKit design system — warm sand / ocean / forest palette, persistent facet sidebar, accessible (AA) contrast, **no Bootstrap**. Ships its [`DESIGN.md`](themes/nomadkit/DESIGN.md) spec. |
-| [`semanticlens`](themes/semanticlens/) | Hybrid keyword + semantic search theme — per-result searcher badges (Keyword / Semantic / Hybrid) with source-colored card spines (teal / violet / amber) and a "Matched by …" microcopy line; a **Search Composition band** above results showing a proportional keyword/semantic/hybrid bar and a plain-language verdict; and a **count-free unified filter sidebar** (File type / Updated / Size from `/api/v2/ui/config`) that stays present even for semantic-only queries, with a caption stating that filtering falls back to keyword-only search; and an advanced **"semantic-space" home/landing hero** with an animated vector-constellation canvas, converging amber/violet beams, a typewriter search-box, and three match-type preview cards. Requires Fess 15.8+ with core semantic search enabled (`content_chunker.*`) and `query.additional.api.response.fields=searcher`. Ships its [`DESIGN.md`](themes/semanticlens/DESIGN.md). |
-| [`mosaic`](themes/mosaic/) | Thumbnail-first visual gallery for multimodal (image + text) search. Requires Fess 15.8+. Ships its [`DESIGN.md`](themes/mosaic/DESIGN.md). |
-| [`storefront`](themes/storefront/) | EC / product-search theme — every result is a **product card** (photo, price, star rating, stock badge, brand) with **no text snippet**, and facet counts are drawn as **proportional count bars** so a price band shows how many products fall in it at a glance. Grid only. Requires Fess 15.8+, an externally supplied index mapping (`price` as `double`, `rating` as `float`) and `query.additional.*` configuration — see its [`README.md`](themes/storefront/README.md). Ships its [`DESIGN.md`](themes/storefront/DESIGN.md). |
+| [`semanticlens`](themes/semanticlens/) | Hybrid keyword + semantic search theme — per-result searcher badges (Keyword / Semantic / Hybrid) with source-colored card spines (teal / violet / amber) and a "Matched by …" microcopy line; a **Search Composition band** above results showing a proportional keyword/semantic/hybrid bar and a plain-language verdict; and a **count-free unified filter sidebar** (File type / Updated / Size from `/api/v2/ui/config`) that stays present even for semantic-only queries, with a caption stating that filtering falls back to keyword-only search; and an advanced **"semantic-space" home/landing hero** with an animated vector-constellation canvas, converging amber/violet beams, a typewriter search-box, and three match-type preview cards. Requires Fess 15.9+ with core semantic search enabled (`content_chunker.*`) and `query.additional.api.response.fields=searcher`. Ships its [`DESIGN.md`](themes/semanticlens/DESIGN.md). |
+| [`mosaic`](themes/mosaic/) | Thumbnail-first visual gallery for multimodal (image + text) search. Requires Fess 15.9+. Ships its [`DESIGN.md`](themes/mosaic/DESIGN.md). |
+| [`storefront`](themes/storefront/) | EC / product-search theme — every result is a **product card** (photo, price, star rating, stock badge, brand) with **no text snippet**, and facet counts are drawn as **proportional count bars** so a price band shows how many products fall in it at a glance. Grid only. Requires Fess 15.9+, an externally supplied index mapping (`price` as `double`, `rating` as `float`) and `query.additional.*` configuration — see its [`README.md`](themes/storefront/README.md). Ships its [`DESIGN.md`](themes/storefront/DESIGN.md). |
 | [`rawblock`](themes/rawblock/) | Brutalist anti-design theme on the RawBlock design system — raw black-on-white, thick borders (1/3/5px), sharp 0px corners, no shadows, full color-inversion hover/active states, **no Bootstrap**. Ships its [`DESIGN.md`](themes/rawblock/DESIGN.md) spec. |
 | [`voicebox`](themes/voicebox/) | Bold, magazine-style editorial theme on the VoiceBox design system — high-contrast black/white with a single red accent, flat (no shadows), sharp 0px corners, thick 2px borders, Archivo Black headlines, **no Bootstrap**. Ships its [`DESIGN.md`](themes/voicebox/DESIGN.md) spec. |
 
@@ -71,7 +71,7 @@ a checkout instead.
 **From a checkout:**
 
     ./scripts/package.sh docuforge
-    # → dist/docuforge-15.8.0.zip
+    # → dist/docuforge-15.9.0.zip
 
 Then open **Admin → Theme** (`/admin/theme/`) in Fess, upload the ZIP and
 activate it (or bind it to a virtual host).
@@ -85,15 +85,15 @@ activate it (or bind it to a virtual host).
 1. Create `themes/<name>/` (copy an existing theme as a starting point).
 2. Set `theme.yml#name` / `#displayName` to `<name>`, and update every
    `/themes/<old>/…` path in `index.html` / `assets/*.js` to `/themes/<name>/…`.
-3. Set `theme.yml#version` to the current Fess line's first patch — `"15.8.0"` today —
-   and `theme.yml#minFessVersion` to match (`"15.8"`); see [Versioning](#versioning).
+3. Set `theme.yml#version` to the current Fess line's first patch — `"15.9.0"` today —
+   and `theme.yml#minFessVersion` to match (`"15.9"`); see [Versioning](#versioning).
 4. Add a row to the **Themes** table above.
 
 ## Versioning
 
 A theme's version states which Fess line it targets: `<Fess major.minor>.<patch>`.
-Every theme in this repository is currently on the `15.8` line, so the newest
-version of each is `15.8.x`, and `theme.yml#minFessVersion` is `"15.8"`.
+Every theme in this repository is currently on the `15.9` line, so the newest
+version of each is `15.9.x`, and `theme.yml#minFessVersion` is `"15.9"`.
 
 Changing a theme's shipped files means bumping that theme's patch number in the
 same commit. Edits confined to `README.md` / `DESIGN.md` ship nothing and need no
@@ -101,7 +101,7 @@ bump. A change without a bump is never distributed — see [`CLAUDE.md`](CLAUDE.
 
 ## Requirements
 
-- Fess `15.8+` (static-theme support; see each theme's `theme.yml#minFessVersion`).
+- Fess `15.9+` (static-theme support; see each theme's `theme.yml#minFessVersion`).
 
 ## License
 

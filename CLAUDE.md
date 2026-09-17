@@ -58,7 +58,7 @@ Nothing outside these three is enforced anywhere.
 previewed from `file://`: it is an SPA on absolute `/themes/<name>/` paths calling
 `/api/v2/*`, so it only runs when served by Fess. The loop is package → upload at
 **Admin → Theme** (`/admin/theme/`) → activate, or set `theme.default=<name>` in
-`fess_config.properties` against a running Fess 15.8+.
+`fess_config.properties` against a running Fess 15.9+.
 
 ## Theme versioning
 
@@ -140,9 +140,15 @@ all 10 themes (and the `bootstrap` 11th copy) — a plain `md5` confirms them.
 Identical across all 10 themes:
 
 ```
-format.js  markdown.js                        (byte-identical, line 2 included)
-cache.js   error.js  profile.js  router.js    (identical, per-theme line-2 comment aside)
+format.js  markdown.js                                    (byte-identical, line 2 included)
+router.js  api.js  i18n.js  help.js  cache.js  error.js   (byte-identical copies of the fess bootstrap theme)
+profile.js                                                (identical, per-theme line-2 comment aside)
 ```
+
+`router.js`, `api.js`, `i18n.js`, `help.js`, `cache.js` and `error.js` are copied unchanged
+from `src/main/webapp/themes/bootstrap/assets/` in the fess repository, at the Fess release
+the themes target (`test/parity.test.js` checks that the ten copies stay identical). Update
+them by copying the new fess version into every theme, not by editing one copy.
 
 `advance.js` is identical across every theme **except `storefront`**, which imports
 `sortOptionsFor()` from its own `storefront.js` so the advanced-search sort select offers
@@ -153,7 +159,6 @@ them — so do **not** "restore" it by copying another theme's copy over it.
 
 Identical across 9, with `codesearch` diverged: `auth.js`.
 `chat.js` splits 8 / `codesearch` / `docsearch`.
-`help.js` / `i18n.js` differ only by name-bound `/themes/<name>/` paths.
 `compat.js` carries no `/themes/` path at all — it differs by header brand plus a
 CSS-class prefix (`df-` in eight, `vb-` in `voicebox`, `bs-` in `codesearch`).
 `assets/logo.png` and `assets/logo-head.png` are byte-identical across all 10.

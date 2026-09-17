@@ -17,8 +17,9 @@ import { sanitizeHtml } from "./format.js";
  * @param {string} locale - e.g. "en" or "ja"
  * @returns {Promise<{sections: Array<{id:string, title:string, html:string}>}>}
  */
-async function fetchHelpContent(locale) {
-  const url = `/themes/codesearch/help/${locale}.json`;
+export async function fetchHelpContent(locale) {
+  // Relative to this module, so the bundles load under any context path and theme name.
+  const url = new URL(`../help/${locale}.json`, import.meta.url).href;
   try {
     const r = await fetch(url, { credentials: "same-origin" });
     if (!r.ok) throw new Error(`help/${locale}.json HTTP ${r.status}`);
@@ -26,7 +27,7 @@ async function fetchHelpContent(locale) {
   } catch (e) {
     if (locale !== "en") {
       // Fallback to English.
-      const r2 = await fetch("/themes/codesearch/help/en.json", { credentials: "same-origin" });
+      const r2 = await fetch(new URL("../help/en.json", import.meta.url).href, { credentials: "same-origin" });
       if (!r2.ok) throw new Error(`help/en.json HTTP ${r2.status}`);
       return await r2.json();
     }
@@ -40,7 +41,7 @@ async function fetchHelpContent(locale) {
  * @param {HTMLElement} container
  * @param {{id:string, title:string, html:string}} section
  */
-function renderSection(container, section) {
+export function renderSection(container, section) {
   const sec = document.createElement("section");
   sec.id = `help-${section.id}`;
   sec.className = "help-section";

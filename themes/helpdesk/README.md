@@ -241,7 +241,7 @@ above:
    every answer the accordion cannot render. Fixed upstream by
    [codelibs/fess#3186](https://github.com/codelibs/fess/pull/3186), which
    landed after the `fess-15.7.0` tag and is included in `fess-15.8.0`. This
-   theme now declares `theme.yml#minFessVersion: "15.8"`, so any Fess build
+   theme declares `theme.yml#minFessVersion: "15.9"`, so any Fess build
    that meets the theme's own requirement already carries the fix; no
    theme-side workaround is needed.
 8. **Category tiles are not "every registered label".** `/api/v2/labels`

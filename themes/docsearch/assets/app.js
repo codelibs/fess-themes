@@ -570,7 +570,8 @@ async function main() {
   } catch (e) {
     console.error("Fess /ui/config failed:", e);
   }
-  await i18n.init();
+  // ui_locale honours ?browser_lang= and the session, as the JSP pages did.
+  await i18n.init(api.getConfig()?.ui_locale);
   palette.init();
   // Render warning indicators after config is loaded.
   renderWarnings();

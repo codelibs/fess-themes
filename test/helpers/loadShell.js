@@ -99,7 +99,7 @@ export async function loadProfile(theme) {
  *
  * @param {string} theme  - theme directory name under themes/
  * @param {object} config - the object api.getConfig() should return
- * @returns {Promise<{mod: object, get: Function, post: Function}>}
+ * @returns {Promise<{mod: object, get: Function, post: Function, i18nInit: Function}>}
  */
 export async function bootApp(theme, config = {}) {
   vi.resetModules();
@@ -119,14 +119,15 @@ export async function bootApp(theme, config = {}) {
       setCsrfToken: vi.fn(),
     };
   });
+  const i18nInit = vi.fn(async () => {});
   vi.doMock(i18nPath, async (importOriginal) => {
     const actual = await importOriginal();
-    return { ...actual, init: vi.fn(async () => {}) };
+    return { ...actual, init: i18nInit };
   });
   mountIndexBody(theme);
   const mod = await import(`../../themes/${theme}/assets/app.js`);
   vi.doUnmock(apiPath);
   vi.doUnmock(i18nPath);
   await settle();
-  return { mod, get, post };
+  return { mod, get, post, i18nInit };
 }

@@ -109,7 +109,7 @@ single source of truth) and the Fess static-theme API reference doc.
 
 ## Requirements
 
-Fess **15.8** or later.
+Fess **15.9** or later.
 
 ## CSP
 

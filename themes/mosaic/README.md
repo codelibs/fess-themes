@@ -29,7 +29,7 @@ in `fess_config.properties` (or as a Java system property) and restart Fess.
 
 ## Requirements / Configuration
 
-Mosaic works on any Fess 15.8+ install with zero extra configuration — it is a valid general-purpose theme on its own. The searcher-provenance features described below only activate when the backend is additionally configured for multimodal/hybrid search:
+Mosaic works on any Fess 15.9+ install with zero extra configuration — it is a valid general-purpose theme on its own. The searcher-provenance features described below only activate when the backend is additionally configured for multimodal/hybrid search:
 
 ```properties
 query.additional.api.response.fields=searcher
