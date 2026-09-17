@@ -198,6 +198,24 @@
               <button type="submit" class="btn btn-primary" data-i18n="auth.login">Login</button>
             </p>
           </form>
+          <!-- New-password form, shown instead of the login form when the password just used
+               must be changed (parity login/newpassword.jsp). auth.js switches between them;
+               the footer's Cancel serves both. -->
+          <form id="password-change-form" class="d-none">
+            <p data-i18n="auth.password_change_required">You need to update your password</p>
+            <div class="alert alert-danger d-none" id="password-change-error" role="alert"></div>
+            <p>
+              <label for="password-change-new" data-i18n="profile.new_password">New password</label><br>
+              <input class="btn login-modal-body-input" id="password-change-new" name="new_password" type="password" autocomplete="new-password" required>
+            </p>
+            <p>
+              <label for="password-change-confirm" data-i18n="profile.confirm_password">Confirm new password</label><br>
+              <input class="btn login-modal-body-input" id="password-change-confirm" name="confirm_password" type="password" autocomplete="new-password" required>
+            </p>
+            <p>
+              <button type="submit" class="btn btn-primary" data-i18n="profile.update">Update</button>
+            </p>
+          </form>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn" data-bs-dismiss="modal" data-i18n="auth.cancel">Cancel</button>

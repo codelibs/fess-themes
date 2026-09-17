@@ -188,28 +188,23 @@ Following the same pattern documented in this repository's `mosaic` theme
 
 ---
 
-## Why not copy `assets/auth.js` (or anything else) from the bundled `bootstrap` theme
+## `assets/auth.js` is copied from the bundled `bootstrap` theme
 
-Do not use Fess core's bundled `bootstrap` reference theme as a shortcut when
-touching this theme's modal/dropdown/offcanvas behavior. Two reasons:
+This theme (like every theme in this repository derived from `docuforge`) ships
+**no Bootstrap**: `assets/compat.js` is a ~13 KB shim that implements only the
+subset of the `window.bootstrap` API (`Modal`, `Collapse`, `Dropdown`, `Offcanvas`,
+`Tooltip`) the shared SPA modules call, in place of the real `/js/bootstrap.min.js`
++ `/js/popper.min.js` Fess core's bundled `bootstrap` reference theme loads.
 
-1. **It has no `compat.js`.** The bundled `bootstrap` theme loads the real
-   `/js/bootstrap.min.js` + `/js/popper.min.js` from Fess core. This theme
-   (like every theme in this repository derived from `docuforge`) ships
-   **no Bootstrap** — `assets/compat.js` is a ~13 KB shim that implements only
-   the subset of the `window.bootstrap` API (`Modal`, `Collapse`, `Dropdown`,
-   `Offcanvas`, `Tooltip`) the shared SPA modules call.
-2. **`compat.js` dispatches no `*.bs.modal` events.** The bundled theme's
-   `auth.js` is free to listen for real Bootstrap events such as
-   `hidden.bs.modal`, because the real library fires them. This theme's
-   `assets/auth.js` does **not** rely on that event — the login-form reset
-   logic instead watches the modal's `show` class directly with a
-   `MutationObserver` (see the comment above that observer in `auth.js`),
-   specifically because it needs to work identically "with both real
-   Bootstrap and the `compat.js` shim, which dispatches no `*.bs.modal`
-   events." Copying the bundled theme's `auth.js` verbatim into a
-   `compat.js`-based theme would silently break the login-form reset: the
-   `hidden.bs.modal` listener would simply never fire.
+`compat.js`'s `Modal` now fires the same `hide.bs.modal` (cancelable) and
+`hidden.bs.modal` events real Bootstrap does, so `auth.js`'s login-modal lock and
+login-form reset — which listen for exactly those two events — work unchanged on
+top of the shim. `assets/auth.js` is therefore copied unmodified from the fess
+bootstrap theme, like the other shared core modules (`router.js`, `api.js`,
+`i18n.js`, `help.js`, `cache.js`, `error.js`, `profile.js`): see "Shared core
+files" in the root `CLAUDE.md` for the update procedure. It no longer needs the
+`MutationObserver` fallback the pre-15.9 version of this theme used to work
+around `compat.js` dispatching no `*.bs.modal` events.
 
 ---
 

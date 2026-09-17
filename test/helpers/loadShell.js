@@ -50,36 +50,47 @@ export async function loadAuth(theme, config = {}) {
 }
 
 /**
- * Import a theme's own profile.js with the api + router surfaces stubbed.
+ * Import a theme's own profile.js with the api, router and auth surfaces stubbed.
  *
- * Unlike the bootstrap reference copy in the `fess` repo, the ten shipped copies
- * keep `localizePasswordError()` module-private — `attach()` is profile.js's only
- * export. So the password-error mapping can only be observed the way a user meets
- * it: mount #profile-view, let attach() build the real form, submit it, and read
- * what lands in #profile-error. api.post drives the rejection; router.navigate is
- * replaced so the success path can never mutate history.
+ * The page is for logged-in users (JSP parity: ProfileAction), so auth.js's
+ * getCurrentUser() is replaced to return `user`; promptLogin() and endSession() are
+ * doubles so a test can see that a lost session asks for a login again. The password
+ * error mapping itself (auth.js localizePasswordError) stays real, and is observed the
+ * way a user meets it: mount #profile-view, let attach() build the real form, submit
+ * it, and read what lands in #profile-error. api.post drives the rejection;
+ * router.navigate is replaced so the success path can never mutate history.
  *
  * i18n.js stays REAL (never init()'d), so t(key) returns the key itself and the
  * rendered message is an exact, assertable i18n key.
  *
  * @param {string} theme - theme directory name under themes/
- * @returns {Promise<{mod: object, post: Function, navigate: Function}>}
+ * @param {object|null} [user] - what getCurrentUser() returns (null for a guest)
+ * @returns {Promise<{mod: object, post: Function, navigate: Function,
+ *                     promptLogin: Function, endSession: Function}>}
  */
-export async function loadProfile(theme) {
+export async function loadProfile(theme, user = { name: "alice", editable: true }) {
   vi.resetModules();
   const apiPath = `../../themes/${theme}/assets/api.js`;
   const routerPath = `../../themes/${theme}/assets/router.js`;
+  const authPath = `../../themes/${theme}/assets/auth.js`;
   const post = vi.fn(async () => ({}));
   const navigate = vi.fn();
+  const promptLogin = vi.fn();
+  const endSession = vi.fn(async () => {});
   vi.doMock(apiPath, async (importOriginal) => {
     const actual = await importOriginal();
     return { ...actual, post };
   });
   vi.doMock(routerPath, () => ({ navigate }));
+  vi.doMock(authPath, async (importOriginal) => {
+    const actual = await importOriginal();
+    return { ...actual, getCurrentUser: () => user, promptLogin, endSession };
+  });
   const mod = await import(`../../themes/${theme}/assets/profile.js`);
   vi.doUnmock(apiPath);
   vi.doUnmock(routerPath);
-  return { mod, post, navigate };
+  vi.doUnmock(authPath);
+  return { mod, post, navigate, promptLogin, endSession };
 }
 
 /**

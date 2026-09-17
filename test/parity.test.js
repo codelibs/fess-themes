@@ -31,9 +31,9 @@ describe.each(["format.js", "markdown.js"])("cross-theme parity: %s", (moduleNam
   });
 });
 
-// router / api / i18n / help / cache / error are copied unchanged from the bootstrap theme
-// in the fess repository, so every theme's copy is byte-identical.
-describe.each(["router.js", "api.js", "i18n.js", "help.js", "cache.js", "error.js"])(
+// router / api / i18n / help / cache / error / auth / profile are copied unchanged from the
+// bootstrap theme in the fess repository, so every theme's copy is byte-identical.
+describe.each(["router.js", "api.js", "i18n.js", "help.js", "cache.js", "error.js", "auth.js", "profile.js"])(
   "cross-theme parity: %s",
   (moduleName) => {
     it("is byte-identical across all 10 themes", () => {

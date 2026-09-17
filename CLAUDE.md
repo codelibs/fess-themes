@@ -54,10 +54,9 @@ different:
 
 Nothing outside these three is enforced anywhere.
 
-**There is no build, no test runner, and no dev server.** A theme cannot be
-previewed from `file://`: it is an SPA on relative paths resolved against the
-`<base href>` Fess inserts and calls `/api/v2/*`, so it only runs when served by Fess.
-The loop is package → upload at
+**There is no build and no dev server.** A theme cannot be previewed from `file://`: it
+is an SPA on relative paths resolved against the `<base href>` Fess inserts and calls
+`/api/v2/*`, so it only runs when served by Fess. The loop is package → upload at
 **Admin → Theme** (`/admin/theme/`) → activate, or set `theme.default=<name>` in
 `fess_config.properties` against a running Fess 15.9+.
 
@@ -131,25 +130,30 @@ and in `themes/<name>/README.md` and update them to match.
 
 ## Shared core files
 
-Every theme carries its own copy of the same core modules. For most of them the copies are
-identical **except for the per-theme module comment on line 2** — they are not byte-identical,
-so a plain `md5` reports a difference for every theme and tells you nothing. The exception is
-`format.js` and `markdown.js`: their line-2 comment was neutralized to a theme-agnostic string
-(`// ... for the Fess static theme SPA.`), so those two are now **fully byte-identical** across
-all 10 themes (and the `bootstrap` 11th copy) — a plain `md5` confirms them.
+Every theme carries its own copy of the same core modules. Eight of them — `router.js`,
+`api.js`, `i18n.js`, `help.js`, `cache.js`, `error.js`, `auth.js`, `profile.js` — are copied
+unchanged from the fess bootstrap theme and are **byte-identical** across all 10 themes,
+enforced by `test/parity.test.js` (see below). `format.js` and `markdown.js` are also fully
+byte-identical, including line 2: their line-2 comment was neutralized to a theme-agnostic
+string (`// ... for the Fess static theme SPA.`), so a plain `md5` confirms all 10 copies
+(and the `bootstrap` 11th copy). The rest of the shared modules (`advance.js`, `chat.js`)
+still carry a per-theme module comment on line 2 — they are not byte-identical, so a plain
+`md5` reports a difference for every theme and tells you nothing there; strip line 2 before
+hashing (below).
 
 Identical across all 10 themes:
 
 ```
 format.js  markdown.js                                    (byte-identical, line 2 included)
 router.js  api.js  i18n.js  help.js  cache.js  error.js   (byte-identical copies of the fess bootstrap theme)
-profile.js                                                (identical, per-theme line-2 comment aside)
+auth.js    profile.js                                     (byte-identical copies of the fess bootstrap theme)
 ```
 
-`router.js`, `api.js`, `i18n.js`, `help.js`, `cache.js` and `error.js` are copied unchanged
-from `src/main/webapp/themes/bootstrap/assets/` in the fess repository, at the Fess release
-the themes target (`test/parity.test.js` checks that the ten copies stay identical). Update
-them by copying the new fess version into every theme, not by editing one copy.
+`router.js`, `api.js`, `i18n.js`, `help.js`, `cache.js`, `error.js`, `auth.js` and `profile.js`
+are copied unchanged from `src/main/webapp/themes/bootstrap/assets/` in the fess repository, at
+the Fess release the themes target (`test/parity.test.js` checks that the ten copies stay
+identical). Update them by copying the new fess version into every theme, not by editing one
+copy.
 
 `advance.js` is identical across every theme **except `storefront`**, which imports
 `sortOptionsFor()` from its own `storefront.js` so the advanced-search sort select offers
@@ -158,7 +162,6 @@ incoming `sort=price.asc`, and submit silently drops it back to relevance order.
 divergence is deliberate — a theme contributing its own sort fields has nowhere else to put
 them — so do **not** "restore" it by copying another theme's copy over it.
 
-Identical across 9, with `codesearch` diverged: `auth.js`.
 `chat.js` splits 8 / `codesearch` / `docsearch`.
 `compat.js` carries no `/themes/` path at all — it differs by header brand plus a
 CSS-class prefix (`df-` in eight, `vb-` in `voicebox`, `bs-` in `codesearch`).
@@ -172,8 +175,10 @@ of the `fess` repo (`src/main/webapp/themes/bootstrap/assets/format.js`), and so
 READMEs assert identity with it.
 
 **When patching a shared core file, patch every copy in the same PR and bump every
-affected theme**, otherwise the identity claims silently become false. Nothing enforces
-this: CI checks locale bundles only, and never compares these copies. Verify by hand.
+affected theme**, otherwise the identity claims silently become false.
+`test/parity.test.js` enforces identity for the byte-identical modules above; nothing
+compares the other shared files (`advance.js`, `chat.js`, `compat.js`), so verify those
+by hand.
 
 `format.js` and `markdown.js` are byte-identical including line 2, so a plain `md5`
 (no `sed`) confirms all 11 copies:
@@ -188,18 +193,17 @@ For the other shared modules, whose per-theme line-2 comment still varies, hash 
 comment line stripped:
 
 ```bash
-for f in themes/*/assets/router.js; do
+for f in themes/*/assets/advance.js; do
   printf '%s  %s\n' "$(sed '2d' "$f" | md5 -q)" "$f"
-done | sort   # a single distinct hash = all copies in sync
+done | sort   # one hash for nine themes, plus storefront's deliberate copy
 ```
 
 `sed '2d'` assumes line 1 is the SPDX header and line 2 the per-theme comment. That holds
-for `cache.js` / `error.js` / `profile.js` / `router.js` in every copy, so the recipe above
-is sound — but eight files put the brand comment on line 1 and carry no SPDX line at all
-(`codesearch`'s `api.js` / `app.js` / `auth.js` / `i18n.js` / `query.js`, `docsearch`'s
-`docsearch.js` / `palette.js` / `theme-init.js`). There the recipe deletes a real line and
-reports a difference that is not there: it is why `api.js` reads as diverged when its code
-matches all 10. Diff before believing the hash.
+for `advance.js` and `chat.js` in every copy, so the recipe above is sound — but five
+files put the brand comment on line 1 and carry no SPDX line at all (`codesearch`'s
+`app.js` / `query.js`, `docsearch`'s `docsearch.js` / `palette.js` / `theme-init.js`).
+There the recipe deletes a real line and reports a difference that is not there. Diff
+before believing the hash.
 
 ## Conventions
 
@@ -238,6 +242,9 @@ matches all 10. Diff before believing the hash.
 - **`thumbnail.png` ships.** Only `README.md` and `DESIGN.md` are excluded from the ZIP, so
   a thumbnail change needs a version bump like any other shipped file. Constraints:
   ≤512KB, ≤512×512, declared as `theme.yml#thumbnail`.
-- **New themes are copied from `docuforge`**, the de-facto baseline. The most common
-  copy-paste defect is a leftover `/themes/<baseline>/` path or baseline brand string in
-  the copy — grep for both (case-insensitively) before opening the PR.
+- **New themes are copied from `docuforge`**, the de-facto baseline. Asset paths in
+  `index.html` are relative (`themes/<name>/assets/…`) but still name-bound (see
+  "Conventions" above), and the JS carries no theme-name paths at all, so the common
+  copy-paste defect is now a leftover `themes/docuforge/` path in `index.html` or a
+  baseline brand string in the copy — grep for both (case-insensitively) before opening
+  the PR.
