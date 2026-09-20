@@ -230,19 +230,20 @@ above:
    untouched by the setting documented above, and needs the `file` variant
    raised instead. Both are index-time settings: changing either requires a
    re-crawl.
-7. **Opening a cached page can return 500 on Fess 15.7.** If the query
-   contains a `$` followed by a digit — a price like `$12` in a billing FAQ is
-   the realistic case — `ViewHelper.replaceHighlightQueries()` passes the
-   replacement to `Matcher.replaceAll()` unquoted, so `$1` is read as a group
-   reference into a pattern with no groups and throws, which the cache handler
-   turns into a 500. Search itself is unaffected (it is token-based, so `$12`
-   matches fine and the results render); only "View original page" fails, which
-   is this theme's headline feature and its documented fallback for every
-   answer the accordion cannot render. Fixed upstream by
+7. **Opening a cached page could return 500 on Fess 15.7.** If the query
+   contained a `$` followed by a digit — a price like `$12` in a billing FAQ is
+   the realistic case — `ViewHelper.replaceHighlightQueries()` passed the
+   replacement to `Matcher.replaceAll()` unquoted, so `$1` was read as a group
+   reference into a pattern with no groups and threw, which the cache handler
+   turned into a 500. Search itself was unaffected (it is token-based, so `$12`
+   matched fine and the results rendered); only "View original page" failed,
+   which is this theme's headline feature and its documented fallback for
+   every answer the accordion cannot render. Fixed upstream by
    [codelibs/fess#3186](https://github.com/codelibs/fess/pull/3186), which
-   landed on `master` (15.8.0-SNAPSHOT) **after** the `fess-15.7.0` tag — so
-   the bug is live on `theme.yml#minFessVersion: "15.7"`. There is no
-   theme-side workaround; it needs a Fess ≥ 15.8 build.
+   landed after the `fess-15.7.0` tag and is included in `fess-15.8.0`. This
+   theme now declares `theme.yml#minFessVersion: "15.8"`, so any Fess build
+   that meets the theme's own requirement already carries the fix; no
+   theme-side workaround is needed.
 8. **Category tiles are not "every registered label".** `/api/v2/labels`
    filters the label set by role, by virtual host, **and by locale**
    (`LabelTypeHelper.getLabelTypeItemList()`, `:126-140`), using the request's
