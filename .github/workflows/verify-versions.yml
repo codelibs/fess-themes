@@ -1,0 +1,32 @@
+# Fails a pull request that changes a theme's shipped files without bumping
+# that theme's theme.yml#version. Deployment only publishes versions that do
+# not already exist, so a missed bump means the change is silently never
+# distributed. A clean rebase can also swallow a bump when two PRs raise the
+# same theme to the same number, which no other check in this repository sees.
+name: Verify Versions
+
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  verify-versions:
+    name: Verify Theme Versions
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        # Full history: the check compares against the tip of the base branch,
+        # not just the merge base.
+        fetch-depth: 0
+
+    - name: Fetch base branch
+      run: git fetch origin +main:refs/remotes/origin/main
+
+    - name: Verify theme versions
+      run: ./scripts/verify-versions.sh origin/main
