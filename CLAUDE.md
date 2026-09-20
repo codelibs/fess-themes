@@ -20,48 +20,79 @@ See `README.md` for the theme list, repository layout, and install instructions.
 
 node scripts/verify-bundles.mjs            # locale-bundle contract, every theme
 node scripts/verify-bundles.mjs <name>     # one theme
+
+./scripts/verify-versions.sh [<base-ref>]  # fail if shipped files changed without a
+                                            # version bump (default base: origin/main)
+
+BASE_URL=<repository tree URL> ./scripts/stage-maven.sh [<theme> ...]
+                                            # the deploy job's staging step: stages
+                                            # unpublished theme versions under
+                                            # dist/upload for the job to copy into
+                                            # place; the upload target lives only in
+                                            # the job, never in this repository
 ```
 
 `zip` is required; `yq` is used if present, else the `^version:` grep fallback (below).
-The script checks only that the theme dir, `theme.yml`, and a non-empty version exist — it
-does **not** validate the version against the server's SemVer pattern, so a malformed
-version packages fine and only fails at install with `INVALID_VERSION`.
+`scripts/lib/version.sh#read_theme_version` (shared by `package.sh`, `stage-maven.sh` and
+`verify-versions.sh`) validates the extracted value against the same SemVer-subset
+pattern the server enforces (see below) and prints nothing when it doesn't match, so a
+malformed `version` fails `package.sh` with "could not read version" rather than
+packaging — it never reaches the server to fail there with `INVALID_VERSION`.
 
 `verify-bundles.mjs` is plain node with no dependencies — no install, no package.json.
-`.github/workflows/verify-bundles.yml` runs it over every theme on push and PR. It is
-the repo's only CI, and it checks **only** the locale-bundle contract: a bundle for
-every locale `i18n.js` serves, i18n key parity across them, and help section-id parity.
-Nothing else is enforced anywhere.
+Three GitHub Actions workflows run in this repository, each enforcing something
+different:
+
+- `.github/workflows/verify-bundles.yml` runs `verify-bundles.mjs` over every theme, on
+  push and PR: checks only the locale-bundle contract — a bundle for every locale
+  `i18n.js` serves, i18n key parity across them, and help section-id parity.
+- `.github/workflows/verify-versions.yml` runs `scripts/verify-versions.sh` on PR: fails
+  when a theme's shipped files changed but `theme.yml#version` still matches the base
+  branch (see "Theme versioning" below).
+- `.github/workflows/theme-js.yml` runs the `test/` npm suite, on push, PR and manual
+  dispatch: unit tests for the shared core JS modules.
+
+Nothing outside these three is enforced anywhere.
 
 **There is no build, no test runner, and no dev server.** A theme cannot be
 previewed from `file://`: it is an SPA on absolute `/themes/<name>/` paths calling
 `/api/v2/*`, so it only runs when served by Fess. The loop is package → upload at
 **Admin → Theme** (`/admin/theme/`) → activate, or set `theme.default=<name>` in
-`fess_config.properties` against a running Fess 15.7+.
+`fess_config.properties` against a running Fess 15.8+.
 
 ## Theme versioning
 
 **Every theme carries its own `version` in `themes/<name>/theme.yml`. Bump it in the same
 commit as the change — a change to a theme's shipped files without a version bump is
-incomplete.** Versions are per-theme and independent; only bump the themes you actually
-touched, and leave the rest alone.
+incomplete.** Versions are per-theme — only bump the themes you actually touched — though
+every theme's `major.minor` is the same Fess line.
 
-### Which part to bump
+### The version scheme
 
-`version` is `MAJOR.MINOR.PATCH`:
+`version` is `<Fess major.minor>.<patch>`: `15.8.0`, `15.8.1`, … When the Fess line
+moves, the patch resets to `0` and renumbering starts over on the new line (e.g.
+`15.9.0`).
 
-- **PATCH** (`1.0.0` → `1.0.1`) — bug fixes and hardening with no new user-facing
-  capability: sanitizer/security fixes, CSS or copy tweaks, a11y corrections, refactors.
-- **MINOR** (`1.0.1` → `1.1.0`) — backwards-compatible additions: a new user-facing
-  feature or panel, new i18n keys or locales, new optional `theme.yml` fields.
-- **MAJOR** (`1.1.0` → `2.0.0`) — breaking changes: raising `minFessVersion`, dropping
-  locales or features, renaming the theme, or depending on a new/incompatible server API.
+`theme.yml#version`'s `major.minor` and `theme.yml#minFessVersion` **must always
+agree**. A change that raises `minFessVersion` bumps the version onto the new line in
+the same commit.
 
-### When a bump is *not* needed
+### When to bump
 
-`scripts/package.sh` excludes `README.md` and `DESIGN.md` from the ZIP, so edits confined
-to those files change nothing that ships and need no bump. Everything else under
-`themes/<name>/` ships — bump it.
+Bump the patch whenever a shipped file changes — anything under `themes/<name>/`
+except `README.md` and `DESIGN.md`, which `scripts/package.sh` excludes from the ZIP
+and which therefore ship nothing.
+
+**A change without a version bump is never distributed.** Deployment only adds a
+version that doesn't already exist there; it never overwrites one that's already out.
+`scripts/verify-versions.sh`, wired into every pull request by
+`.github/workflows/verify-versions.yml`, fails the PR when a theme's shipped files
+changed but its `theme.yml#version` still matches the tip of the base branch.
+
+### No `maxFessVersion`
+
+There is no `maxFessVersion` field. A theme that stops working on a newer Fess line
+is expressed by not publishing a version on that line, not by declaring a ceiling.
 
 ### Format constraint (enforced by the server)
 
@@ -76,7 +107,7 @@ Three numeric parts are required; a pre-release suffix (`1.1.0-rc.1`) is allowed
 build metadata (`1.0.0+build.5`) is **not**. The field is mandatory, and a value outside
 this pattern fails theme install with `INVALID_VERSION`.
 
-Keep it as a quoted single-line scalar at column 0 (`version: "1.0.1"`): `package.sh`'s
+Keep it as a quoted single-line scalar at column 0 (`version: "15.8.0"`): `package.sh`'s
 fallback path, used when `yq` is absent, greps for `^version:` and cannot see it in any
 other position or style.
 
@@ -86,9 +117,13 @@ other position or style.
 - Fess echoes it in the `/api/v2/ui/config` theme payload (`UiConfigHandler`).
 - The admin UI lists it under **Admin → Theme** (`AdminThemeAction`, `admin_theme.jsp`).
 
-Fess does **not** compare theme versions — there is no upgrade detection, and reinstalling
-a same-named theme replaces it unconditionally, whatever the versions are. The version is
-for humans and for identifying artifacts, which is exactly why it has to be truthful.
+Fess validates the version's format against `ThemeManifest.SEMVER_PATTERN` (above); a
+value outside it fails install with `INVALID_VERSION`. It does **not** compare theme
+versions to each other — there is no upgrade detection, and reinstalling a same-named
+theme replaces it unconditionally, whatever the versions are. `minFessVersion` is
+currently informational: the server reads it and checks its length, but never compares
+it against the running Fess version, so the version's own line is the operative
+compatibility signal — which is exactly why it has to be truthful.
 
 When bumping, grep for stale `dist/<name>-<version>.zip` examples in the root `README.md`
 and in `themes/<name>/README.md` and update them to match.
