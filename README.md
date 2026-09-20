@@ -60,7 +60,11 @@ checkout always works, whether or not anything has been published yet.
 `https://maven.codelibs.org/release/org/codelibs/fess/themes/<name>/<version>/`, each
 holding that version's ZIP; a `maven-metadata.xml` one level up
 (`.../themes/<name>/maven-metadata.xml`) lists every version actually published for that
-theme. Once a version is published, fetch it by replacing `<name>` and `<version>`:
+theme, and `.../themes/theme-index.txt` names every theme, one per line. Together those
+two answer "which themes are there, and which versions of each" without depending on a
+directory listing, which the server generates on a schedule and does not serve for a tree
+it has not caught up with. Once a version is published, fetch it by replacing `<name>` and
+`<version>`:
 
     curl -O https://maven.codelibs.org/release/org/codelibs/fess/themes/<name>/<version>/<name>-<version>.zip
 

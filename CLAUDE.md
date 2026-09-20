@@ -26,7 +26,8 @@ node scripts/verify-bundles.mjs <name>     # one theme
 
 BASE_URL=<repository tree URL> ./scripts/stage-maven.sh [<theme> ...]
                                             # the deploy job's staging step: stages
-                                            # unpublished theme versions under
+                                            # unpublished theme versions, and the
+                                            # theme name index when it changes, under
                                             # dist/upload for the job to copy into
                                             # place; the upload target lives only in
                                             # the job, never in this repository
@@ -127,6 +128,27 @@ compatibility signal — which is exactly why it has to be truthful.
 
 When bumping, grep for stale `dist/<name>-<version>.zip` examples in the root `README.md`
 and in `themes/<name>/README.md` and update them to match.
+
+### What the deploy publishes
+
+`stage-maven.sh` stages three kinds of file, and every one of them is derived — none is
+kept in this repository:
+
+- `<name>/<version>/<name>-<version>.zip` and its `.sha1`, for versions not published yet
+- `<name>/maven-metadata.xml` and its `.sha1`, the published versions of that theme
+- `theme-index.txt` and its `.sha1`, the name of every published theme, one per line
+
+The index exists because a consumer cannot enumerate themes any other way. The server
+generates its directory listings on a schedule, so `.../themes/` answers **403** until
+that runs, and the listing for the parent group is already behind — a catalogue built
+from it would report that no themes exist. The index answers the names; each theme's own
+`maven-metadata.xml` answers its versions.
+
+Both the index and `maven-metadata.xml` are **merged with what is published, never
+replaced**: nothing here can tell a name missing from a run from a name that was retired,
+and `stage-maven.sh` can be called with a subset of themes. Retiring a theme is a
+deliberate edit of the published file. For the same reason, a repository that answers
+anything but 200 or 404 aborts the run instead of being read as "nothing is published".
 
 ## Shared core files
 

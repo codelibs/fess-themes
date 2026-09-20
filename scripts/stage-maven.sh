@@ -10,6 +10,8 @@
 #   dist/upload/org/codelibs/fess/themes/<name>/<version>/<name>-<version>.zip.sha1
 #   dist/upload/org/codelibs/fess/themes/<name>/maven-metadata.xml
 #   dist/upload/org/codelibs/fess/themes/<name>/maven-metadata.xml.sha1
+#   dist/upload/org/codelibs/fess/themes/theme-index.txt
+#   dist/upload/org/codelibs/fess/themes/theme-index.txt.sha1
 #
 # Only versions that do not already exist under $BASE_URL are staged, so the
 # upload never overwrites a published artifact. Existence is probed over public
@@ -21,6 +23,19 @@ BASE_URL="${BASE_URL%/}"
 
 GROUP_ID="org.codelibs.fess.themes"
 GROUP_PATH="org/codelibs/fess/themes"
+
+# Names the themes this repository publishes, one per line. The directory index a web
+# server generates is not usable for this: it is produced on a schedule, so a tree that
+# has just been published to answers 403 until it runs, and the listing for the parent
+# group is already behind. A consumer reads this file for the names and each theme's own
+# maven-metadata.xml for its versions.
+INDEX_NAME="theme-index.txt"
+
+# What a theme name may be, from ThemeManifest.NAME_PATTERN in Fess. Every line of the
+# index is checked against it, which is also what tells a real index from a proxy error
+# page that happens to answer 200.
+NAME_RE='^[a-z0-9][a-z0-9_-]{0,63}$'
+
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 THEMES_DIR="$REPO_ROOT/themes"
@@ -150,6 +165,76 @@ write_metadata() {
   printf '%s' "$(sha1_of "$out")" >"$out.sha1"
 }
 
+# The theme names already published, one per line (empty when the index is absent).
+# A confirmed 404 means "no index yet". Any other non-200 must not be read as "no names":
+# the index is rewritten from what this returns, so a transient error would erase the
+# published names. A 200 whose body is not an index is refused for the same reason.
+remote_index() {
+  local url="$BASE_URL/$GROUP_PATH/$INDEX_NAME"
+  local tmp
+  tmp="$(mktemp)"
+  local code
+  code="$(curl -s -o "$tmp" -w '%{http_code}' "$url" 2>/dev/null)" || true
+  code="${code:-000}"
+  case "$code" in
+    200)
+      local line
+      # `|| [ -n "$line" ]` keeps the last line of a body that does not end in a
+      # newline. Without it the final name is silently dropped, which is how a retired
+      # theme sitting last in the file would disappear from the union.
+      while IFS= read -r line || [ -n "$line" ]; do
+        [ -n "$line" ] || continue
+        if ! [[ "$line" =~ $NAME_RE ]]; then
+          rm -f "$tmp"
+          die "not a theme index: $url"
+        fi
+        printf '%s\n' "$line"
+      done <"$tmp"
+      rm -f "$tmp"
+      ;;
+    404)
+      rm -f "$tmp"
+      ;;
+    *)
+      rm -f "$tmp"
+      die "unexpected HTTP $code fetching $url"
+      ;;
+  esac
+}
+
+# Adds the themes in this checkout to the published index, and stages it when that
+# changes anything.
+#
+# The union is deliberate. Nothing here can know whether a name missing from the checkout
+# was retired or is simply not in this run -- stage-maven.sh can be called with a subset --
+# so a name is never dropped, exactly as a published version is never dropped. Retiring a
+# theme is a deliberate edit of the published file.
+stage_index() {
+  # Kept out of a pipeline on purpose. `x="$(remote_index | sort -u)"` reports sort's
+  # status, so a die inside remote_index -- an unreadable index, or a 200 that is not one --
+  # would be swallowed and the published names replaced by whatever the checkout holds.
+  local raw
+  raw="$(remote_index)"
+  local published desired
+  # sed, not `grep -v`: grep exits 1 when it prints nothing, and under `set -o pipefail`
+  # that fails the assignment -- so the very first run, with no index published yet, would
+  # abort instead of creating one.
+  published="$(printf '%s\n' "$raw" | sed '/^$/d' | sort -u)"
+  desired="$( { printf '%s\n' "$published"; printf '%s\n' "$@"; } | sed '/^$/d' | sort -u )"
+  local count
+  count="$(printf '%s\n' "$desired" | sed '/^$/d' | wc -l | tr -d ' ')"
+  if [ "$desired" = "$published" ]; then
+    log "index unchanged ($count theme(s))"
+    return 0
+  fi
+  mkdir -p "$UPLOAD_DIR"
+  local out="$UPLOAD_DIR/$INDEX_NAME"
+  printf '%s\n' "$desired" >"$out"
+  printf '%s' "$(sha1_of "$out")" >"$out.sha1"
+  STAGED=$((STAGED + 1))
+  log "staging index ($count theme(s))"
+}
+
 stage_one() {
   local name="$1"
   local dir="$THEMES_DIR/$name"
@@ -211,14 +296,20 @@ main() {
   rm -rf "$UPLOAD_ROOT"
   STAGED=0
 
+  local names=()
   if [ "$#" -ge 1 ]; then
-    for name in "$@"; do stage_one "$name"; done
+    names=("$@")
   else
     for d in "$THEMES_DIR"/*/; do
       [ -f "${d}theme.yml" ] || continue
-      stage_one "$(basename "$d")"
+      names+=("$(basename "$d")")
     done
   fi
+  for name in "${names[@]}"; do stage_one "$name"; done
+
+  # After the themes, so a name only reaches the index once its archive is staged or was
+  # already published: stage_one dies on a bad theme and takes the whole run with it.
+  stage_index "${names[@]}"
 
   if [ "$STAGED" -eq 0 ]; then
     log "nothing to upload"
