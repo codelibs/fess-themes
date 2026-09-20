@@ -95,7 +95,7 @@ export function hasCache(hit) {
 export function cacheHref(hit, highlightParams, q) {
   if (!hasCache(hit) || !hit.doc_id) return null;
   const hl = highlightParams || ("&hq=" + encodeURIComponent(q || ""));
-  return "/cache/?docId=" + encodeURIComponent(hit.doc_id) + hl;
+  return "cache/?docId=" + encodeURIComponent(hit.doc_id) + hl;
 }
 
 /**

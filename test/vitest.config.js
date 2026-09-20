@@ -22,6 +22,10 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     include: ["test/**/*.test.js"],
+    // Drains the jsdom timer queue after each case: a theme booted for real keeps
+    // rescheduling animation timers, and one that fires after the environment is
+    // torn down fails the whole run. See test/setup.js.
+    setupFiles: ["test/setup.js"],
     coverage: {
       provider: "v8",
       // Write file-emitting reporters into the git-ignored test/coverage rather

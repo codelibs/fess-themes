@@ -79,7 +79,7 @@ describe.each(themes)("%s: auth.js branches on the v2 wire codes", (theme) => {
 describe.each(themes)("%s: profile.js branches on the v2 wire codes", (theme) => {
   /** Mount the real password form, reject the POST, return #profile-error. */
   async function passwordErrorFor(rejection) {
-    const { mod, post } = await loadProfile(theme);
+    const { mod, post, promptLogin, endSession } = await loadProfile(theme);
     mountBody('<div id="profile-view"></div>');
     mod.attach();
 
@@ -90,19 +90,27 @@ describe.each(themes)("%s: profile.js branches on the v2 wire codes", (theme) =>
     submit("password-form");
     await settle();
 
-    return document.getElementById("profile-error");
+    return { err: document.getElementById("profile-error"), promptLogin, endSession };
   }
 
   it("maps rate_limited to the rate-limit message", async () => {
-    const err = await passwordErrorFor({ code: "rate_limited" });
+    const { err } = await passwordErrorFor({ code: "rate_limited" });
     expect(err.textContent).toBe("auth.error_rate_limited");
     expect(err.classList.contains("d-none")).toBe(false);
   });
 
-  it("maps auth_required to the wrong-current-password message", async () => {
-    const err = await passwordErrorFor({ code: "auth_required" });
+  it("maps auth_required with invalid_current_password to the wrong-current-password message", async () => {
+    const { err, endSession } = await passwordErrorFor({ code: "auth_required", details: { reason: "invalid_current_password" } });
     expect(err.textContent).toBe("profile.error_wrong_current");
     expect(err.classList.contains("d-none")).toBe(false);
+    expect(endSession).not.toHaveBeenCalled();
+  });
+
+  it("treats auth_required without a reason as a lost session and asks for a login", async () => {
+    const { err, promptLogin, endSession } = await passwordErrorFor({ code: "auth_required" });
+    expect(err.textContent).toBe("flash.login_required");
+    expect(endSession).toHaveBeenCalledTimes(1);
+    expect(promptLogin).toHaveBeenCalledTimes(1);
   });
 });
 

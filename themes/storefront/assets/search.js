@@ -21,6 +21,7 @@ const state = {
   sort: "",
   lang: [],             // string[] — zero or more language codes; serialised as repeated lang= params
   sdh: "",              // similar_docs_hash for similarity search
+  as: {},               // advanced-search conditions from JSP URLs: name -> [values], sent as as.<name>
   facets: {},           // field -> [values]
   fields: {},           // extra field filters (e.g. label)
   facetQueries: [],     // string[] — active ex_q clause strings from facet_views (SRCH-4)
@@ -73,7 +74,7 @@ function buildGoUrl(originalUrl, docId, queryId, order, rt) {
     return "#";
   }
 
-  let goUrl = "/go/?rt=" + encodeURIComponent(rt) +
+  let goUrl = "go/?rt=" + encodeURIComponent(rt) +
               "&docId=" + encodeURIComponent(docId || "") +
               "&queryId=" + encodeURIComponent(queryId || "") +
               "&order=" + encodeURIComponent(order || 0);
@@ -96,7 +97,7 @@ function buildGoUrl(originalUrl, docId, queryId, order, rt) {
 const THUMB_RETRY_MS = [2000, 5000, 15000, 30000];
 
 function thumbUrl(docId, queryId) {
-  return `/thumbnail/?docId=${encodeURIComponent(docId)}&queryId=${encodeURIComponent(queryId)}`;
+  return `thumbnail/?docId=${encodeURIComponent(docId)}&queryId=${encodeURIComponent(queryId)}`;
 }
 
 /**
@@ -589,15 +590,14 @@ async function runSearch() {
       params.lang = state.lang;
     }
     if (state.sdh) params.sdh = state.sdh;
-    // Merge facet-based field filters (state.facets) and explicit field filters
-    // (state.fields) into a single deduplicated param per field.  The label field
-    // can appear in both stores (sidebar facet group writes state.facets.label;
-    // the label dropdown writes state.fields.label); emitting duplicates would
-    // produce redundant fields.label params and duplicate active chips.
+    for (const [name, values] of Object.entries(state.as)) params["as." + name] = values;
+    // Explicit field filters (state.fields: the URL, the label dropdown, the default labels)
+    // become one deduplicated fields.* param per field; the API ORs the values of a field.
+    // Facet selections (state.facets) are sent as ex_q clauses instead, which AND: facet
+    // counts are computed within the current filters, so a facet click must narrow the
+    // search (JSP parity: searchResults.jsp facet links add ex_q=label:<value>). Merging
+    // them into fields.* would widen the search to "default label OR clicked label".
     const fieldSets = {};
-    for (const [field, values] of Object.entries(state.facets)) {
-      (values || []).forEach(v => { (fieldSets[field] = fieldSets[field] || new Set()).add(v); });
-    }
     for (const [field, values] of Object.entries(state.fields)) {
       if (Array.isArray(values)) {
         values.forEach(v => { (fieldSets[field] = fieldSets[field] || new Set()).add(v); });
@@ -605,6 +605,9 @@ async function runSearch() {
     }
     for (const [field, valueSet] of Object.entries(fieldSets)) {
       valueSet.forEach(v => { (params["fields." + field] = params["fields." + field] || []).push(v); });
+    }
+    for (const [field, values] of Object.entries(state.facets)) {
+      (values || []).forEach(v => { (params["ex_q"] = params["ex_q"] || []).push(field + ":" + v); });
     }
     // facet query views — active ex_q clauses from server-driven facet_views (SRCH-4)
     if (Array.isArray(state.facetQueries) && state.facetQueries.length > 0) {
@@ -641,14 +644,21 @@ async function runSearch() {
     if (env.requested_time) state.requestedTime = env.requested_time;
     // A.5: store server-supplied highlight params for cache link construction.
     state.highlightParams = (typeof env.highlight_params === "string" && env.highlight_params) ? env.highlight_params : "";
-    // A.6: show/hide the partial-results warning banner. A timeout and a failed shard are
-    // different causes; a partial result that names neither is not called a timeout.
+    // A.6: show/hide the warning banner above the results. JSP parity
+    // (FessSearchAction.hookBefore): say so when the user's group and role permissions are
+    // still loading or failed to load, since the results may then be incomplete. A timeout
+    // and a failed shard are different causes; a partial result that names neither is not
+    // called a timeout.
     const warningEl = document.getElementById("results-warning");
     if (warningEl) {
+      const warnings = [];
+      if (env.permission_state === "PENDING") warnings.push(t("errors.user_permissions_loading"));
+      else if (env.permission_state === "FAILED") warnings.push(t("errors.user_permissions_unavailable"));
       if (env.partial) {
-        const warnings = [];
         if (env.timed_out) warnings.push(t("labels.process_time_is_exceeded"));
         if (env.shard_failed || !env.timed_out) warnings.push(t("labels.search_partially_failed"));
+      }
+      if (warnings.length > 0) {
         warningEl.textContent = warnings.join(" ");
         warningEl.classList.remove("d-none");
       } else {
@@ -685,6 +695,10 @@ async function runSearch() {
               : t("error.server");
     if (errBox) { errBox.textContent = msg; errBox.classList.remove("d-none"); }
     else { const meta = document.getElementById("results-meta"); if (meta) meta.textContent = msg; }
+    // The session is gone: app.js asks for login again when the site requires it.
+    if (e && (e.code === "auth_required" || e.code === "AUTH_REQUIRED")) {
+      document.dispatchEvent(new CustomEvent("fess:auth:required"));
+    }
   } finally {
     // Only the latest request clears the spinner. If this request was superseded,
     // currentSearchAbort already points at a newer controller, so leave it running.
@@ -1005,12 +1019,15 @@ export function runFromUrl() {
   const q = params.get("q");
   state.q = q || "";
   state.start = Number(params.get("start")) || 0;
-  // URL num= always wins when present (e.g. carried over from the drawer's num select
-  // on a header-form submit). Otherwise (first visit, a bookmarked/external link, or the
-  // reset-to-home redirect below) fall back to the server's configured default page size
-  // rather than the fixed num_options[0] -- see defaultNum().
+  // JSP parity (SearchAction, session attribute resultsPerPage): an explicit num is
+  // remembered for this tab; a URL without one uses the remembered or default size.
   const numVal = Number(params.get("num"));
-  state.num = numVal > 0 ? numVal : defaultNum();
+  if (numVal > 0) {
+    state.num = numVal;
+    rememberNum(numVal);
+  } else {
+    state.num = initialNum();
+  }
   state.sort = params.get("sort") || "";
   // C.16: sync both inputs to reflect the URL query.
   syncSearchInputs(state.q);
@@ -1034,27 +1051,25 @@ export function runFromUrl() {
   // the old facet label and the new one.
   state.facets = {};
   state.facetQueries = [];
-  // The similar-docs hash (sdh) is likewise memory-only and merged into the
-  // request, so it must be cleared on navigation too.
-  state.sdh = "";
+  // The similar-docs hash (sdh) is merged into the request. The SPA keeps it in memory,
+  // but JSP result and paging links carry it in the URL, so take it from there and clear
+  // it when the URL has none.
+  state.sdh = params.get("sdh") || "";
   state.fields = {};
+  // Advanced-search conditions (as.q, as.epq, ...) arrive in URLs made by the JSP pages;
+  // pass them to the API unchanged.
+  state.as = {};
   for (const [key, value] of params.entries()) {
-    if (key.startsWith("fields.") && value !== "") {
+    if (value === "") continue;
+    if (key.startsWith("fields.")) {
       const field = key.slice("fields.".length);
       (state.fields[field] = state.fields[field] || []).push(value);
+    } else if (key.startsWith("as.")) {
+      const name = key.slice("as.".length);
+      (state.as[name] = state.as[name] || []).push(value);
     }
   }
   state.exQ = params.getAll("ex_q").filter(v => v !== "");
-  // Re-sync the search-options drawer selects (sort / num / lang / label) to the
-  // freshly hydrated state. attach() renders them only once, so without this a
-  // navigation (link click, back/forward, facet submit) would leave the selects
-  // showing stale values. That matters now that the selects are applied on the
-  // Search button: a stale displayed value would otherwise be written back into the
-  // URL on the next submit, silently reverting the user's actual sort/num/lang.
-  // Guarded on config so the option lists exist before we re-render them.
-  if (api.getConfig()) {
-    renderSearchOptions();
-  }
   // Run a search when a keyword OR any active filter is present in the URL (label /
   // other fields, geo, or ex_q). The classic JSP theme issues the request for
   // filter-only URLs such as /search?fields.label=fess, so mirror that here instead
@@ -1065,7 +1080,11 @@ export function runFromUrl() {
   const hasFields = Object.keys(state.fields).length > 0;
   const hasGeo = !!(state.geo.lat && state.geo.lon && state.geo.distance);
   const hasExQ = state.exQ.length > 0;
-  if (!state.q && !hasFields && !hasGeo && !hasExQ) {
+  // JSP parity (SearchRequestParams.hasConditionQuery): these advanced-search conditions
+  // are a search on their own; as.occt only narrows one.
+  const hasConditions = ["q", "epq", "oq", "nq", "timestamp", "sitesearch", "filetype"]
+    .some(name => (state.as[name] || []).length > 0);
+  if (!state.q && !hasFields && !hasGeo && !hasExQ && !hasConditions) {
     // A blank query with no conditions (e.g. a sort/num/lang-only URL such as
     // /search?num=10) is not a search. JSP parity: SearchAction.doSearch() redirects
     // such requests to the top page via redirectToRoot(), so mirror that here. Without
@@ -1073,8 +1092,26 @@ export function runFromUrl() {
     // results DOM is re-rendered only when runSearch() runs and neither showView() nor
     // resetSearchState() clears it. Use replace: true so the empty /search entry does
     // not linger in history (matching the server-side redirect).
-    navigate("/", { replace: true });
+    navigate("./", { replace: true });
     return;
+  }
+  const cfg = api.getConfig();
+  if (cfg) {
+    // JSP parity (FessSearchAction.buildFormParams): apply the user's default labels when
+    // the URL has no fields.label, and the default sort when it names no sort. This runs
+    // after the empty-search check, so the defaults never turn an empty URL into a search.
+    if (!params.has("fields.label") && Array.isArray(cfg.default_label_values) && cfg.default_label_values.length > 0) {
+      state.fields.label = [...cfg.default_label_values];
+    }
+    if (!state.sort && cfg.default_sort) state.sort = cfg.default_sort;
+    // Re-sync the search-options drawer selects (sort / num / lang / label) to the
+    // freshly hydrated state. attach() renders them only once, so without this a
+    // navigation (link click, back/forward, facet submit) would leave the selects
+    // showing stale values. That matters now that the selects are applied on the
+    // Search button: a stale displayed value would otherwise be written back into the
+    // URL on the next submit, silently reverting the user's actual sort/num/lang.
+    // Guarded on config so the option lists exist before we re-render them.
+    renderSearchOptions();
   }
   runSearch();
 }
@@ -1088,14 +1125,19 @@ export function runFromUrl() {
  * triggers a search on the home view.
  */
 export function resetSearchState() {
+  // JSP parity (RootAction → buildFormParams): the home page starts from the remembered or
+  // default page size and pre-selects the user's default labels and sort.
+  const cfg = api.getConfig();
+  const defaultLabels = cfg && Array.isArray(cfg.default_label_values) ? cfg.default_label_values : [];
   state.q = "";
   state.start = 0;
-  state.num = defaultNum();
-  state.sort = "";
+  state.num = initialNum();
+  state.sort = (cfg && cfg.default_sort) || "";
   state.lang = [];
   state.sdh = "";
+  state.as = {};
   state.facets = {};
-  state.fields = {};
+  state.fields = defaultLabels.length > 0 ? { label: [...defaultLabels] } : {};
   state.facetQueries = [];
   state.exQ = [];
   state.geo = { lat: "", lon: "", distance: "" };
@@ -1115,20 +1157,47 @@ export function resetSearchState() {
       sel.selectedIndex = 0;
     }
   });
-  // The num select's default is config-driven (page_size_default, which may not be
-  // in num_options at all) rather than a fixed first option, so select the option
-  // matching the just-computed default instead of leaving the generic
-  // selectedIndex = 0 the loop above set. If the default isn't one of the options
-  // (server misconfiguration), fall back to whatever ended up selected so state and
-  // the visible control stay in agreement.
-  const numSel = document.getElementById("numSearchOption");
-  if (numSel) {
-    const idx = Array.from(numSel.options).findIndex(o => Number(o.value) === state.num);
-    if (idx >= 0) numSel.selectedIndex = idx;
-    else if (numSel.value) state.num = Number(numSel.value) || state.num;
-  }
-  const sortSel = document.getElementById("sortSearchOption");
-  state.sort = (sortSel && sortSel.value) || "";
+  // Show the defaults in the drawer selects once the option lists can be built. Reading the
+  // selects back instead would turn the default sort into the empty placeholder.
+  if (cfg) renderSearchOptions();
+}
+
+/** sessionStorage key of the page size last searched with (JSP: session attribute resultsPerPage). */
+const NUM_STORAGE_KEY = "fess.search.num";
+
+/**
+ * Page size for a search whose URL has no num: the size remembered for this tab, capped at
+ * page_size_max and rounded down to an offered num option (the smallest option when it is
+ * below all of them); otherwise defaultNum().
+ */
+export function initialNum() {
+  const cfg = api.getConfig() || {};
+  const fallback = defaultNum();
+  let stored = 0;
+  try {
+    stored = Math.trunc(Number(sessionStorage.getItem(NUM_STORAGE_KEY)));
+  } catch { /* storage unavailable (e.g. blocked site data) */ }
+  if (!(stored > 0)) return fallback;
+  const max = Number(cfg.page_size_max);
+  const capped = max > 0 ? Math.min(stored, max) : stored;
+  const options = (cfg.num_options || []).map(Number).filter(n => n > 0).sort((a, b) => a - b);
+  if (options.length === 0) return capped;
+  const lower = options.filter(n => n <= capped);
+  return lower.length > 0 ? lower[lower.length - 1] : options[0];
+}
+
+/** Remember the page size of an explicit search for this tab. */
+function rememberNum(num) {
+  try {
+    sessionStorage.setItem(NUM_STORAGE_KEY, String(num));
+  } catch { /* storage unavailable */ }
+}
+
+/** Forget the remembered page size (on logout, as the JSP session attribute ended with the session). */
+export function forgetNum() {
+  try {
+    sessionStorage.removeItem(NUM_STORAGE_KEY);
+  } catch { /* storage unavailable */ }
 }
 
 function ensureOsddLink() {
@@ -1139,7 +1208,7 @@ function ensureOsddLink() {
   link.setAttribute("rel", "search");
   link.setAttribute("type", "application/opensearchdescription+xml");
   link.setAttribute("title", cfg.site_name || "Fess");
-  link.setAttribute("href", "/osdd");
+  link.setAttribute("href", "osdd");
   document.head.appendChild(link);
 }
 
@@ -1176,7 +1245,9 @@ export function attach() {
       if (q) params.set("q", q); else params.delete("q");
       params.delete("start");
       for (const key of [...params.keys()]) {
-        if (key.startsWith("fields.") || key === "ex_q") params.delete(key);
+        // JSP parity (header.jsp): the header form holds neither the similar-docs hash nor
+        // advanced-search conditions, so a new query drops them.
+        if (key.startsWith("fields.") || key.startsWith("as.") || key === "ex_q" || key === "sdh") params.delete(key);
       }
       // JSP parity: apply the current sort / num / lang drawer selections rather
       // than only carrying over the previous URL values, so a manual change to these
@@ -1195,8 +1266,11 @@ export function attach() {
           params.delete("lang");
           Array.from(langSel.selectedOptions).map(o => o.value).filter(Boolean).forEach(v => params.append("lang", v));
         }
+        // The drawer's labels ride along too: on the JSP page they sit inside the header form.
+        const labelSel = document.getElementById("labelSearchOption");
+        if (labelSel) Array.from(labelSel.selectedOptions).map(o => o.value).filter(Boolean).forEach(v => params.append("fields.label", v));
       }
-      navigate("/search?" + params.toString());
+      navigate("search?" + params.toString());
       // JSP parity: disable the submit button for 3s after the search has been
       // triggered, to prevent rapid double-submits.
       disableSubmitBriefly(document.getElementById("searchButton"));
@@ -1256,7 +1330,7 @@ export function attach() {
         params.set("geo.location.point", geoLat + "," + geoLon);
         params.set("geo.location.distance", geoDist);
       }
-      navigate("/search?" + params.toString());
+      navigate("search?" + params.toString());
     });
   }
   if (input) {
@@ -1771,7 +1845,7 @@ export function renderPopularWords(words, targetEl) {
       className: "me-1" + (i >= 3 ? " d-sm-inline-block d-none" : ""),
       text: w,
       attrs: {
-        href: "/search?q=" + encodeURIComponent(w),
+        href: "search?q=" + encodeURIComponent(w),
         "data-spa": ""
       }
     });

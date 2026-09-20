@@ -38,7 +38,7 @@ describe("static-theme file: link fix", () => {
     // exists so that gap cannot recur.
     it("routes result links through the /go/ File Proxy", () => {
       expect(src, `${theme}/assets/search.js never references the /go/ File Proxy`)
-        .toContain("/go/");
+        .toContain('"go/?rt="');
     });
   });
 });

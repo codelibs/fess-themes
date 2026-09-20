@@ -16,7 +16,7 @@ A Search Composition band above the results list is shown whenever at least one 
 
 ## Requirements
 
-- Fess 15.8+, with semantic search enabled (`content_chunker.enabled` and
+- Fess 15.9+, with semantic search enabled (`content_chunker.enabled` and
   `content_chunker.search.enabled` in `system.properties`)
 - To show searcher badges, set in `fess_config.properties` (or via Java system properties):
   ```
@@ -186,7 +186,7 @@ Key DOM landmarks added by the redesign:
 ```bash
 cd repos/fess-themes
 ./scripts/package.sh semanticlens
-# Produces dist/semanticlens-15.8.0.zip
+# Produces dist/semanticlens-15.9.0.zip
 ```
 
 Upload the ZIP via `/admin/theme/` or place it in Fess's theme directory.

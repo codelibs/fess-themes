@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Error page renderer for the HelpDesk SPA.
+// Error page renderer for the Fess bootstrap SPA.
 // All DOM construction uses createElement/textContent — no innerHTML.
 
 import { t } from "./i18n.js";
@@ -40,7 +40,7 @@ const PATH_TO_CODE = {
  * @param {string} pathname - e.g. "/error/404", "/error/not_found", "/error/notFound"
  * @returns {string} - one of "400", "404", "429", "500", "503"
  */
-function codeFromPath(pathname) {
+export function codeFromPath(pathname) {
   const segments = pathname.split("/").filter(Boolean);
   for (let i = segments.length - 1; i >= 0; i--) {
     // Normalise: lowercase and remove underscores so snake_case and camelCase
@@ -150,7 +150,7 @@ function render(container, code, requestedUrl, errorDetailKey) {
   actions.className = "error-actions";
 
   const homeLink = document.createElement("a");
-  homeLink.href = "/";
+  homeLink.href = "./";
   homeLink.setAttribute("data-spa", "");
   homeLink.className = "btn btn-primary me-2";
   homeLink.textContent = t("error.go_home");

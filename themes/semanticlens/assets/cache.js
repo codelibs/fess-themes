@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPA cache viewer for the SemanticLens theme.
+// SPA cache viewer for the Fess bootstrap theme.
 // Fetches cached content from /api/v2/cache/{docId} and renders it inside a
 // sandboxed iframe (no allow-same-origin, no allow-scripts) so that arbitrary
 // crawled HTML is fully isolated from the SPA shell.
@@ -97,7 +97,7 @@ export function attach() {
   // Use a simple fallback to /search if nothing is available.
   const backHref = document.referrer
     ? new URL(document.referrer).pathname + new URL(document.referrer).search
-    : "/search";
+    : "search";
 
   if (!docId) {
     renderError(host, t("labels.cache_not_found"), backHref);

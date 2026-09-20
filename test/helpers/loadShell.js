@@ -50,36 +50,77 @@ export async function loadAuth(theme, config = {}) {
 }
 
 /**
- * Import a theme's own profile.js with the api + router surfaces stubbed.
+ * Import a theme's own profile.js with the api, router and auth surfaces stubbed.
  *
- * Unlike the bootstrap reference copy in the `fess` repo, the ten shipped copies
- * keep `localizePasswordError()` module-private — `attach()` is profile.js's only
- * export. So the password-error mapping can only be observed the way a user meets
- * it: mount #profile-view, let attach() build the real form, submit it, and read
- * what lands in #profile-error. api.post drives the rejection; router.navigate is
- * replaced so the success path can never mutate history.
+ * The page is for logged-in users (JSP parity: ProfileAction), so auth.js's
+ * getCurrentUser() is replaced to return `user`; promptLogin() and endSession() are
+ * doubles so a test can see that a lost session asks for a login again. The password
+ * error mapping itself (auth.js localizePasswordError) stays real, and is observed the
+ * way a user meets it: mount #profile-view, let attach() build the real form, submit
+ * it, and read what lands in #profile-error. api.post drives the rejection;
+ * router.navigate is replaced so the success path can never mutate history.
  *
  * i18n.js stays REAL (never init()'d), so t(key) returns the key itself and the
  * rendered message is an exact, assertable i18n key.
  *
  * @param {string} theme - theme directory name under themes/
- * @returns {Promise<{mod: object, post: Function, navigate: Function}>}
+ * @param {object|null} [user] - what getCurrentUser() returns (null for a guest)
+ * @returns {Promise<{mod: object, post: Function, navigate: Function,
+ *                     promptLogin: Function, endSession: Function}>}
  */
-export async function loadProfile(theme) {
+export async function loadProfile(theme, user = { name: "alice", editable: true }) {
   vi.resetModules();
   const apiPath = `../../themes/${theme}/assets/api.js`;
   const routerPath = `../../themes/${theme}/assets/router.js`;
+  const authPath = `../../themes/${theme}/assets/auth.js`;
   const post = vi.fn(async () => ({}));
   const navigate = vi.fn();
+  const promptLogin = vi.fn();
+  const endSession = vi.fn(async () => {});
   vi.doMock(apiPath, async (importOriginal) => {
     const actual = await importOriginal();
     return { ...actual, post };
   });
   vi.doMock(routerPath, () => ({ navigate }));
+  vi.doMock(authPath, async (importOriginal) => {
+    const actual = await importOriginal();
+    return { ...actual, getCurrentUser: () => user, promptLogin, endSession };
+  });
   const mod = await import(`../../themes/${theme}/assets/profile.js`);
   vi.doUnmock(apiPath);
   vi.doUnmock(routerPath);
-  return { mod, post, navigate };
+  vi.doUnmock(authPath);
+  return { mod, post, navigate, promptLogin, endSession };
+}
+
+/**
+ * Record the listeners added to document and window until stop(), so a test can remove
+ * them with detach(). app.js, router.js and search.js add document-level listeners at
+ * boot; without removing them, a theme booted by an earlier case would still answer the
+ * events a later case sends (and could make its assertion pass on its behalf).
+ */
+function recordListeners() {
+  const added = [];
+  const patched = [document, window].map((target) => {
+    const own = Object.prototype.hasOwnProperty.call(target, "addEventListener");
+    const original = target.addEventListener;
+    target.addEventListener = function (type, listener, options) {
+      added.push([target, type, listener, options]);
+      return original.call(this, type, listener, options);
+    };
+    return { target, own, original };
+  });
+  return {
+    stop() {
+      for (const { target, own, original } of patched) {
+        if (own) target.addEventListener = original;
+        else delete target.addEventListener;
+      }
+    },
+    detach() {
+      for (const [target, type, listener, options] of added) target.removeEventListener(type, listener, options);
+    },
+  };
 }
 
 /**
@@ -92,26 +133,33 @@ export async function loadProfile(theme) {
  * #home-notification / #results-notification, so the DOM must be in place first.
  *
  * api.init() is stubbed to a no-op and getConfig() returns `config`, standing in
- * for the /api/v2/ui/config payload. i18n.init() is stubbed too — the real one
- * fetches /themes/<name>/i18n/messages.<locale>.json, which would make the suite
- * depend on a network round trip failing fast. Everything else in both modules
- * (including t()) stays real.
+ * for the /api/v2/ui/config payload; api.get / api.post answer with `get` / `post` when
+ * given (by default /auth/me reports a guest). i18n.init() is stubbed too — the real one
+ * fetches the theme's i18n/messages.<locale>.json, which would make the suite depend on
+ * a network round trip failing fast. router.redirect() is replaced, because jsdom cannot
+ * leave the page. Everything else (auth.js, router.js, search.js, t()) stays real.
  *
  * @param {string} theme  - theme directory name under themes/
  * @param {object} config - the object api.getConfig() should return
- * @returns {Promise<{mod: object, get: Function, post: Function}>}
+ * @param {{get?: Function, post?: Function}} [impl] - api.get / api.post implementations
+ * @returns {Promise<{mod: object, get: Function, post: Function, i18nInit: Function,
+ *                     apiInit: Function, redirect: Function, detach: Function}>}
  */
-export async function bootApp(theme, config = {}) {
+export async function bootApp(theme, config = {}, impl = {}) {
   vi.resetModules();
   const apiPath = `../../themes/${theme}/assets/api.js`;
   const i18nPath = `../../themes/${theme}/assets/i18n.js`;
-  const get = vi.fn(async () => ({ authenticated: false }));
-  const post = vi.fn(async () => ({}));
+  const routerPath = `../../themes/${theme}/assets/router.js`;
+  const get = vi.fn(impl.get || (async () => ({ authenticated: false })));
+  const post = vi.fn(impl.post || (async () => ({})));
+  const apiInit = vi.fn(async () => {});
+  const i18nInit = vi.fn(async () => {});
+  const redirect = vi.fn();
   vi.doMock(apiPath, async (importOriginal) => {
     const actual = await importOriginal();
     return {
       ...actual,
-      init: vi.fn(async () => {}),
+      init: apiInit,
       getConfig: () => config,
       get,
       post,
@@ -121,12 +169,23 @@ export async function bootApp(theme, config = {}) {
   });
   vi.doMock(i18nPath, async (importOriginal) => {
     const actual = await importOriginal();
-    return { ...actual, init: vi.fn(async () => {}) };
+    return { ...actual, init: i18nInit };
+  });
+  vi.doMock(routerPath, async (importOriginal) => {
+    const actual = await importOriginal();
+    return { ...actual, redirect };
   });
   mountIndexBody(theme);
-  const mod = await import(`../../themes/${theme}/assets/app.js`);
-  vi.doUnmock(apiPath);
-  vi.doUnmock(i18nPath);
-  await settle();
-  return { mod, get, post };
+  const listeners = recordListeners();
+  let mod;
+  try {
+    mod = await import(`../../themes/${theme}/assets/app.js`);
+    await settle();
+  } finally {
+    listeners.stop();
+    vi.doUnmock(apiPath);
+    vi.doUnmock(i18nPath);
+    vi.doUnmock(routerPath);
+  }
+  return { mod, get, post, i18nInit, apiInit, redirect, detach: listeners.detach };
 }

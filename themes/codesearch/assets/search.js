@@ -37,9 +37,12 @@ const CODE_FIELDS = ["domain", "organization", "repository", "path", "repository
 /** Density preference key (persisted to localStorage). */
 const DENSITY_KEY = "codesearch.density";
 
-/** Sort options offered in the summary sort control. Values map to Fess sort keys. */
+/**
+ * Sort options offered in the summary sort control. Values map to Fess sort keys.
+ * Relevance is an explicit score.desc: an empty sort now means the user's default sort.
+ */
 const SORT_OPTIONS = [
-  { value: "",                   key: "search.sort.relevance" },
+  { value: "score.desc",         key: "search.sort.relevance" },
   { value: "last_modified.desc", key: "search.sort.created_desc" },
   { value: "last_modified.asc",  key: "search.sort.created_asc" },
   { value: "content_length.desc", key: "search.sort.length_desc" },
@@ -126,7 +129,7 @@ function buildGoUrl(originalUrl, docId, queryId, order, rt) {
     return "#";
   }
 
-  let goUrl = "/go/?rt=" + encodeURIComponent(rt) +
+  let goUrl = "go/?rt=" + encodeURIComponent(rt) +
               "&docId=" + encodeURIComponent(docId || "") +
               "&queryId=" + encodeURIComponent(queryId || "") +
               "&order=" + encodeURIComponent(order || 0);
@@ -553,7 +556,7 @@ function renderSummary(env) {
     const params = new URLSearchParams(location.search);
     if (sortSel.value) params.set("sort", sortSel.value); else params.delete("sort");
     params.delete("start"); // new sort → back to first page
-    navigate("/search?" + params.toString());
+    navigate("search?" + params.toString());
   });
   sortWrap.appendChild(sortSel);
   controls.appendChild(sortWrap);
@@ -603,7 +606,7 @@ function renderPagination(env) {
   const goToPage = (start) => {
     const params = new URLSearchParams(location.search);
     params.set("start", String(Math.max(0, start)));
-    navigate("/search?" + params.toString());
+    navigate("search?" + params.toString());
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -746,7 +749,7 @@ function renderFacets(env) {
         const params = new URLSearchParams(location.search);
         params.set("q", newQuery);
         params.delete("start");
-        navigate("/search?" + params.toString());
+        navigate("search?" + params.toString());
       });
 
       const valueSpan = document.createElement("span");
@@ -849,7 +852,7 @@ function renderActiveChips() {
       const params = new URLSearchParams(location.search);
       params.set("q", newQuery);
       params.delete("start");
-      navigate("/search?" + params.toString());
+      navigate("search?" + params.toString());
     });
 
     chip.appendChild(removeBtn);
@@ -892,6 +895,16 @@ async function runSearch() {
     const env = await api.get("/search", params, { signal });
     if (env.requested_time) state.requestedTime = env.requested_time;
 
+    // JSP parity (FessSearchAction.hookBefore): say so when the user's group and role
+    // permissions are still loading or failed to load, since the results may be incomplete.
+    const warningEl = document.getElementById("results-warning");
+    if (warningEl) {
+      const notice = env.permission_state === "PENDING" ? t("errors.user_permissions_loading")
+        : env.permission_state === "FAILED" ? t("errors.user_permissions_unavailable") : "";
+      warningEl.textContent = notice;
+      warningEl.hidden = notice === "";
+    }
+
     renderResults(env);
     renderSummary(env);
     renderPagination(env);
@@ -908,6 +921,10 @@ async function runSearch() {
         : (e && (e.code === "auth_required" || e.code === "AUTH_REQUIRED")) ? t("error.auth_required")
           : t("error.server");
     if (errBox) { errBox.textContent = msg; errBox.hidden = false; }
+    // The session is gone: app.js asks for login again when the site requires it.
+    if (e && (e.code === "auth_required" || e.code === "AUTH_REQUIRED")) {
+      document.dispatchEvent(new CustomEvent("fess:auth:required"));
+    }
     // Clear stale results/summary/pagination on a hard failure.
     const list = document.getElementById("results");
     if (list) list.innerHTML = "";
@@ -945,9 +962,14 @@ export function runFromUrl() {
   // with the server redirectToRoot). replace:true so the empty /search entry
   // does not linger in history.
   if (!state.q) {
-    navigate("/", { replace: true });
+    navigate("./", { replace: true });
     return;
   }
+  // JSP parity (FessSearchAction.buildFormParams): the default sort applies when the URL
+  // names none. Labels and the page size stay as they are: this theme filters with query
+  // qualifiers and pages 20 results at a time.
+  const cfg = api.getConfig();
+  if (!state.sort && cfg && cfg.default_sort) state.sort = cfg.default_sort;
   runSearch();
 }
 
@@ -964,7 +986,7 @@ export function submitQuery(rawInput, base) {
   const params = base ? new URLSearchParams(base) : new URLSearchParams(location.search);
   if (fessQuery) params.set("q", fessQuery); else params.delete("q");
   params.delete("start"); // new query → first page
-  navigate("/search?" + params.toString());
+  navigate("search?" + params.toString());
 }
 
 /**
@@ -1070,7 +1092,7 @@ export function renderPopularWords(words, targetEl) {
     const a = el("a", {
       className: "popular-word",
       text: w,
-      attrs: { href: "/search?q=" + encodeURIComponent(w), "data-spa": "" }
+      attrs: { href: "search?q=" + encodeURIComponent(w), "data-spa": "" }
     });
     targetEl.appendChild(a);
   });

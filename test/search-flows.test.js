@@ -42,6 +42,7 @@ const STD_THEMES = [
 
 beforeEach(() => {
   resetDom();
+  sessionStorage.clear();
   // renderPagination / facet click handlers scroll to top; jsdom has no scrollTo.
   window.scrollTo = () => {};
 });
@@ -214,7 +215,7 @@ describe.each(DNONE_THEMES)("runSearch pipeline [%s]", (theme) => {
     setLocation("/search?num=10");
     mod.runFromUrl();
     await settle();
-    expect(navigate).toHaveBeenCalledWith("/", { replace: true });
+    expect(navigate).toHaveBeenCalledWith("./", { replace: true });
     expect(get.mock.calls.some((c) => c[0] === "/search")).toBe(false);
   });
 
