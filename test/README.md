@@ -38,8 +38,9 @@ The suites:
   theme's `search.js` admits the file-system crawl schemes alongside
   http/https/ftp/ftps when gating result links.
 - `search.test.js` — theme-specific `search.js` unit cases: the accessible
-  copy-URL button, `plainTitle`, and facet-chip recoverability / zero-count
-  suppression.
+  copy-URL button, `plainTitle`, facet-chip recoverability / zero-count
+  suppression, and the `features.osdd_link` gate on the OpenSearch
+  description link.
 - `search-flows.test.js` — the full `runSearch()` render pipeline (results,
   facets, pagination, active-filter chips, related content, favorites,
   similar docs) plus the type-ahead suggest (`attachSuggest`), across every

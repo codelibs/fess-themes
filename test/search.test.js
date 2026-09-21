@@ -18,7 +18,7 @@
 // helpers/loadSearch.js, which mocks the theme's api.js to inject the fixture config.
 // See that helper for why a config-injection loader is required.
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach } from "vitest";
 import { loadSearch } from "./helpers/loadSearch.js";
 
 /** A result document with the fields buildResultCard reads on the common path. */
@@ -196,5 +196,39 @@ describe.each(SUPPRESS_THEMES)("facet zero-count suppression [%s]", (theme) => {
     expect(body.querySelectorAll(rowSelector).length).toBe(1);
     expect(body.textContent).toContain("Small");
     expect(body.textContent).not.toContain("Large");
+  });
+});
+
+// ─── OpenSearch description link: only when the server serves it ─────────────────
+// JSP parity (osddLink): the pages emitted <link rel="search"> only when
+// OsddHelper#hasOpenSearchFile() was true, which /api/v2/ui/config exposes as
+// features.osdd_link. codesearch never adds the link, so it is not listed.
+const OSDD_THEMES = [
+  "docsearch", "docuforge", "helpdesk", "mosaic", "nomadkit",
+  "rawblock", "semanticlens", "storefront", "voicebox",
+];
+
+describe.each(OSDD_THEMES)("ensureOsddLink [%s]", (theme) => {
+  const osddLinks = () => document.head.querySelectorAll('link[rel="search"]');
+  afterEach(() => osddLinks().forEach((l) => l.remove()));
+
+  it("adds the OpenSearch description link once when features.osdd_link is on", async () => {
+    const mod = await loadSearch(theme, { site_name: "Site", features: { osdd_link: true } });
+    mod.ensureOsddLink();
+    mod.ensureOsddLink();
+    expect(osddLinks().length).toBe(1);
+    const link = osddLinks()[0];
+    expect(link.getAttribute("href")).toBe("osdd");
+    expect(link.getAttribute("type")).toBe("application/opensearchdescription+xml");
+  });
+
+  it.each([
+    ["osdd_link off", { features: { osdd_link: false } }],
+    ["osdd_link absent", { features: {} }],
+    ["no features", {}],
+  ])("adds no link when the server does not serve the OSDD (%s)", async (_label, config) => {
+    const mod = await loadSearch(theme, config);
+    mod.ensureOsddLink();
+    expect(osddLinks().length).toBe(0);
   });
 });
