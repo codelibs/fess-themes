@@ -133,7 +133,10 @@ function copyToClipboard(text) {
  * @param {string} originalUrl - the document's url_link / url value
  * @param {string} docId       - document identifier
  * @param {string} queryId     - query identifier from the search response
- * @param {number} order       - 1-based rank of the result
+ * @param {number} order       - 0-based position of the result on the page,
+ *                               the same value as the link's data-order (JSP
+ *                               sends searchResults.jsp's ${s.index}); GoAction
+ *                               stores it as ClickLog.order
  * @param {number} rt          - requestedTime in epoch ms
  * @returns {string} the /go/ redirect URL, or "#" for unsafe schemes
  */
@@ -362,7 +365,7 @@ function buildResultCard(d, queryId, order) {
 
   // Build /go/ URL so click-logging + server-side redirect work for all click types.
   const originalUrl = d.url_link || d.url || "";
-  const goHref = buildGoUrl(originalUrl, d.doc_id, queryId, order, state.requestedTime);
+  const goHref = buildGoUrl(originalUrl, d.doc_id, queryId, idx0, state.requestedTime);
 
   // --- h3.title > a.link ---
   const h3 = el("h3", { className: "title text-truncate" });
@@ -667,7 +670,7 @@ function buildGallerySearcherBadge(kind) {
  *
  * @param {Object} doc - result document (env.data[i])
  * @param {string} queryId - env.query_id from the search response
- * @param {number} rank - 1-based result rank
+ * @param {number} rank - 1-based result rank (data-rank)
  * @returns {HTMLLIElement}
  */
 function buildGalleryTile(doc, queryId, rank) {
@@ -714,9 +717,8 @@ function buildGalleryTile(doc, queryId, rank) {
 //
 // `rank` in openLightbox()/state.lbRank is the 0-based index into
 // state.currentEnv.data[] — NOT the 1-based `data-rank` tile attribute
-// buildGalleryTile() sets above (that value feeds buildGoUrl's 1-based
-// `order` param, an unrelated contract). The tile click/keydown wiring in
-// attach() converts data-rank -> 0-based index before calling openLightbox().
+// buildGalleryTile() sets above. The tile click/keydown wiring in attach()
+// converts data-rank -> 0-based index before calling openLightbox().
 
 /**
  * Focusable elements within the lightbox, recomputed on every Tab keydown
@@ -765,7 +767,8 @@ function trapLightboxTab(ev, lb) {
  *
  * @param {Object} doc - result document (env.data[i])
  * @param {string} [queryId] - query identifier from the search response
- * @param {number} [order] - 1-based result rank (embedded in the /go/ URL)
+ * @param {number} [order] - 0-based position of the result on the page (the
+ *                           /go/ order, as the JSP sent)
  * @returns {HTMLDivElement}
  */
 function buildLightboxMeta(doc, queryId, order) {
@@ -849,9 +852,9 @@ function openLightbox(rank) {
   const safeUrl = safeHref(rawUrl);
   img.src = (isImage && safeUrl !== "#" && isDisplayableImageUrl(safeUrl)) ? safeUrl : thumbUrl(doc.doc_id, env.query_id);
   img.alt = plainTitle(doc);
-  // rank is the 0-based env.data[] index, so the 1-based /go/ `order` is rank + 1
-  // (matches buildGalleryTile's `idx + 1` in renderResults).
-  lb.querySelector(".lightbox__meta").replaceChildren(buildLightboxMeta(doc, env.query_id, rank + 1));
+  // rank is the 0-based env.data[] index, which is also the /go/ `order`
+  // (the same value the list card's data-order and the JSP send).
+  lb.querySelector(".lightbox__meta").replaceChildren(buildLightboxMeta(doc, env.query_id, rank));
   // Boundary hint for the nav buttons (styles.css dims + inert-s a disabled
   // edge button); Next/Prev themselves already no-op at the boundary
   // (see lightboxNext/lightboxPrev), so this is a pure a11y/visual affordance.
@@ -1166,8 +1169,8 @@ function renderResults(env) {
   if (queryIdEl) queryIdEl.value = env.query_id || "";
   const rtEl = document.getElementById("rt");
   if (rtEl) rtEl.value = String(state.requestedTime || "");
-  // Pass 1-based order/rank so buildResultCard/buildGalleryTile can embed it in
-  // the /go/ URL and the data-rank attribute respectively.
+  // Pass the 1-based order/rank; buildResultCard derives the 0-based data-order
+  // and /go/ order from it, buildGalleryTile writes it as data-rank.
   if (state.viewMode === "grid") {
     data.forEach((d, idx) => list.appendChild(buildGalleryTile(d, env.query_id, idx + 1)));
   } else {
@@ -2088,7 +2091,7 @@ export function attach() {
   // #results (a persistent container across renderResults' innerHTML-based
   // re-renders) rather than per-tile, since tiles are torn down and rebuilt
   // on every search/page/facet change. tile.dataset.rank is the 1-based rank
-  // buildGalleryTile() set (shared with buildGoUrl's `order` param) — convert
+  // buildGalleryTile() set — convert
   // to the 0-based env.data[] index openLightbox() expects.
   const resultsList = document.getElementById("results");
   if (resultsList) {

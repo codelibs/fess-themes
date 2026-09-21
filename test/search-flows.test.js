@@ -327,6 +327,78 @@ describe.each(STD_THEMES)("runSearch facet & pagination render [%s]", (theme) =>
   });
 });
 
+// ─── /go/ click-log order: the 0-based position on the page (JSP parity) ─────────
+// searchResults.jsp sent ${s.index} — the 0-based loop index within the page, the
+// same value as the link's data-order — and GoAction stores it as ClickLog.order.
+
+const orderOf = (a) => new URL(a.getAttribute("href"), "http://localhost/").searchParams.get("order");
+
+describe.each(DNONE_THEMES)("/go/ click-log order [%s]", (theme) => {
+  it("sends the 0-based position on the page, the same value as data-order", async () => {
+    const flow = await loadSearchFlow(theme, FULL_CFG);
+    installDispatch(flow.get);
+    mountBody(SEARCH_FIXTURE);
+    flow.mod._state.q = "foo";
+    // mosaic defaults to its gallery grid, whose tiles open the lightbox instead.
+    if (theme === "mosaic") flow.mod._state.viewMode = "list";
+    // A later page: the order is the position on this page, not the overall rank.
+    flow.mod._state.start = 10;
+    await flow.mod.runSearch();
+    await settle();
+
+    const cards = [...document.getElementById("results").children];
+    expect(cards.length).toBe(SAMPLE_DOCS.length);
+    cards.forEach((card, i) => {
+      const links = [...card.querySelectorAll('a[href^="go/"]')];
+      expect(links.length).toBeGreaterThan(0);
+      for (const a of links) {
+        expect(orderOf(a)).toBe(String(i));
+        if (a.hasAttribute("data-order")) expect(a.getAttribute("data-order")).toBe(String(i));
+      }
+    });
+  });
+});
+
+describe("/go/ click-log order [mosaic lightbox]", () => {
+  it("sends the tile's 0-based position from the lightbox's open-original link", async () => {
+    const flow = await loadSearchFlow("mosaic", FULL_CFG);
+    installDispatch(flow.get);
+    mountBody(SEARCH_FIXTURE);
+    // The lightbox markup mosaic's index.html ships.
+    document.getElementById("lightbox").innerHTML =
+      '<button class="lightbox__close" data-lb="close"></button>' +
+      '<button class="lightbox__nav lightbox__prev" data-lb="prev"></button>' +
+      '<figure class="lightbox__figure"><img class="lightbox__img" alt="">' +
+      '<figcaption class="lightbox__meta"></figcaption></figure>' +
+      '<button class="lightbox__nav lightbox__next" data-lb="next"></button>';
+    flow.mod._state.q = "foo";
+    flow.mod.attach();
+    await flow.mod.runSearch();
+    await settle();
+
+    const tiles = [...document.querySelectorAll("#results .tile")];
+    expect(tiles.length).toBe(SAMPLE_DOCS.length);
+    tiles[1].click();
+    const a = document.querySelector("#lightbox .lightbox__link");
+    expect(orderOf(a)).toBe("1");
+  });
+});
+
+describe("/go/ click-log order [codesearch]", () => {
+  it("sends the 0-based position for a file-system result routed through /go/", async () => {
+    const flow = await loadSearchFlow("codesearch", FULL_CFG);
+    const fileDoc = (id) => ({ doc_id: id, title: id, content_title: id, url: `file:///share/${id}.txt` });
+    installDispatch(flow.get, { search: makeSearchEnv([fileDoc("f1"), fileDoc("f2")]) });
+    mountBody(SEARCH_FIXTURE);
+    flow.mod._state.q = "foo";
+    await flow.mod.runSearch();
+    await settle();
+
+    const links = [...document.querySelectorAll('#results a[href^="go/"]')];
+    expect(links.map(orderOf)).toEqual(["0", "1"]);
+  });
+});
+
 // ─── Related content via the /related-content endpoint (STD minus helpdesk) ──────
 // helpdesk reads related queries/content off the search envelope instead of the
 // standalone endpoints, so the endpoint-driven content path is the other five.

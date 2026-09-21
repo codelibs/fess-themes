@@ -110,7 +110,10 @@ function safeHref(url) {
  * @param {string} originalUrl - the document's url_link / url value
  * @param {string} docId       - document identifier
  * @param {string} queryId     - query identifier from the search response
- * @param {number} order       - 1-based rank of the result
+ * @param {number} order       - 0-based position of the result on the page,
+ *                               the same value as the link's data-order (JSP
+ *                               sends searchResults.jsp's ${s.index}); GoAction
+ *                               stores it as ClickLog.order
  * @param {number} rt          - requestedTime in epoch ms
  * @returns {string} the /go/ redirect URL, or "#" for unsafe schemes
  */
@@ -251,7 +254,7 @@ function buildCodeBlock(raw) {
  *
  * @param {Object} d - one element of env.data
  * @param {string} [queryId] - server query_id (for favorite attribution)
- * @param {number} [order] - 1-based result rank (embedded in the /go/ URL)
+ * @param {number} [order] - 1-based result rank (the /go/ URL gets order - 1)
  * @returns {HTMLLIElement}
  */
 function buildResultCard(d, queryId, order) {
@@ -346,7 +349,8 @@ function buildResultCard(d, queryId, order) {
  * @param {HTMLLIElement} li - the (already-created) card element to fill
  * @param {Object} d
  * @param {string} [queryId] - server query_id (for the /go/ click-log URL)
- * @param {number} [order] - 1-based result rank (for the /go/ click-log URL)
+ * @param {number} [order] - 1-based result rank; the /go/ click-log URL gets the
+ *                           0-based position (order - 1), as the JSP sent
  */
 function buildGenericCard(li, d, queryId, order) {
   li.classList.add("result-generic");
@@ -361,7 +365,7 @@ function buildGenericCard(li, d, queryId, order) {
     const proto = new URL(url, location.href).protocol;
     if (proto === "file:" || proto === "smb:" || proto === "smb1:" ||
         proto === "storage:" || proto === "s3:" || proto === "gcs:") {
-      href = buildGoUrl(url, d.doc_id, queryId, order, state.requestedTime);
+      href = buildGoUrl(url, d.doc_id, queryId, order - 1, state.requestedTime);
     }
   } catch (e) {
     // Unparseable URL — leave href as the safeHref result (already "#").
@@ -493,7 +497,7 @@ function renderResults(env) {
   }
   if (empty) empty.hidden = true;
 
-  // Pass 1-based order so buildResultCard can embed it in the /go/ URL.
+  // Pass 1-based order; the generic card derives the 0-based /go/ order from it.
   data.forEach((d, idx) => list.appendChild(buildResultCard(d, env.query_id, idx + 1)));
 
   // Wire favorite click handlers + bulk-sync state for authenticated users.

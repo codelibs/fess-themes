@@ -55,7 +55,10 @@ function el(tag, opts) {
  * @param {string} originalUrl - the document's url_link / url value
  * @param {string} docId       - document identifier
  * @param {string} queryId     - query identifier from the search response
- * @param {number} order       - 1-based rank of the result
+ * @param {number} order       - 0-based position of the result on the page,
+ *                               the same value as the link's data-order (JSP
+ *                               sends searchResults.jsp's ${s.index}); GoAction
+ *                               stores it as ClickLog.order
  * @param {number} rt          - requestedTime in epoch ms
  * @returns {string} the /go/ redirect URL, or "#" for unsafe schemes
  */
@@ -208,7 +211,8 @@ function buildStars(stars, rating) {
  *
  * @param {Object} doc - result document (env.data[i])
  * @param {string} queryId - env.query_id from the search response
- * @param {number} rank - 1-based result rank
+ * @param {number} rank - 1-based result rank (data-rank); the /go/ URL gets the
+ *                        0-based position (rank - 1), as the JSP sent
  * @returns {HTMLLIElement}
  */
 function buildGalleryTile(doc, queryId, rank) {
@@ -227,7 +231,7 @@ function buildGalleryTile(doc, queryId, rank) {
     : String(doc.filename || doc.url_link || "");
 
   const originalUrl = doc.url_link || doc.url || "";
-  const goHref = buildGoUrl(originalUrl, doc.doc_id, queryId, rank, state.requestedTime);
+  const goHref = buildGoUrl(originalUrl, doc.doc_id, queryId, rank - 1, state.requestedTime);
   // No tabIndex/role="button" here — that was lightbox scaffolding on the <li>.
   // An <a href> is focusable and activatable by default.
   const link = el("a", { className: "tile__link", attrs: { href: goHref } });
@@ -549,8 +553,8 @@ function renderResults(env) {
   if (queryIdEl) queryIdEl.value = env.query_id || "";
   const rtEl = document.getElementById("rt");
   if (rtEl) rtEl.value = String(state.requestedTime || "");
-  // Pass 1-based order/rank so buildGalleryTile can embed it in the /go/ URL
-  // and the data-rank attribute respectively.
+  // Pass the 1-based rank; buildGalleryTile writes it as data-rank and derives
+  // the 0-based /go/ order from it.
   data.forEach((d, idx) => list.appendChild(buildGalleryTile(d, env.query_id, idx + 1)));
   // No favorites wiring here: the star lived on the list card this theme removed,
   // and a product tile has no room for one. See this theme's README.
