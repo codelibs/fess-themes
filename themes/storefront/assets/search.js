@@ -55,7 +55,10 @@ function el(tag, opts) {
  * @param {string} originalUrl - the document's url_link / url value
  * @param {string} docId       - document identifier
  * @param {string} queryId     - query identifier from the search response
- * @param {number} order       - 1-based rank of the result
+ * @param {number} order       - 0-based position of the result on the page,
+ *                               the same value as the link's data-order (JSP
+ *                               sends searchResults.jsp's ${s.index}); GoAction
+ *                               stores it as ClickLog.order
  * @param {number} rt          - requestedTime in epoch ms
  * @returns {string} the /go/ redirect URL, or "#" for unsafe schemes
  */
@@ -208,7 +211,8 @@ function buildStars(stars, rating) {
  *
  * @param {Object} doc - result document (env.data[i])
  * @param {string} queryId - env.query_id from the search response
- * @param {number} rank - 1-based result rank
+ * @param {number} rank - 1-based result rank (data-rank); the /go/ URL gets the
+ *                        0-based position (rank - 1), as the JSP sent
  * @returns {HTMLLIElement}
  */
 function buildGalleryTile(doc, queryId, rank) {
@@ -227,7 +231,7 @@ function buildGalleryTile(doc, queryId, rank) {
     : String(doc.filename || doc.url_link || "");
 
   const originalUrl = doc.url_link || doc.url || "";
-  const goHref = buildGoUrl(originalUrl, doc.doc_id, queryId, rank, state.requestedTime);
+  const goHref = buildGoUrl(originalUrl, doc.doc_id, queryId, rank - 1, state.requestedTime);
   // No tabIndex/role="button" here — that was lightbox scaffolding on the <li>.
   // An <a href> is focusable and activatable by default.
   const link = el("a", { className: "tile__link", attrs: { href: goHref } });
@@ -549,8 +553,8 @@ function renderResults(env) {
   if (queryIdEl) queryIdEl.value = env.query_id || "";
   const rtEl = document.getElementById("rt");
   if (rtEl) rtEl.value = String(state.requestedTime || "");
-  // Pass 1-based order/rank so buildGalleryTile can embed it in the /go/ URL
-  // and the data-rank attribute respectively.
+  // Pass the 1-based rank; buildGalleryTile writes it as data-rank and derives
+  // the 0-based /go/ order from it.
   data.forEach((d, idx) => list.appendChild(buildGalleryTile(d, env.query_id, idx + 1)));
   // No favorites wiring here: the star lived on the list card this theme removed,
   // and a product tile has no room for one. See this theme's README.
@@ -566,7 +570,27 @@ function showSearchLoading(show) {
   if (el) el.classList.toggle("d-none", !show);
 }
 
+/**
+ * Keep the address bar's start= in step with state.start, as the JSP paging links
+ * did, so reload, back/forward and a shared link land on the same page. Only start
+ * is written: facet selections stay in memory (see runFromUrl), which is also why
+ * paging does not go through navigate() - the runFromUrl() it dispatches would
+ * drop them.
+ *
+ * @param {boolean} push - add a history entry (paging) instead of correcting the
+ *                         current one (a filter change resetting to the first page)
+ */
+function syncStartParam(push) {
+  const params = new URLSearchParams(location.search);
+  if ((Number(params.get("start")) || 0) === state.start) return;
+  if (state.start > 0) params.set("start", String(state.start)); else params.delete("start");
+  const qs = params.toString();
+  const url = location.pathname + (qs ? "?" + qs : "");
+  if (push) history.pushState(null, "", url); else history.replaceState(null, "", url);
+}
+
 async function runSearch() {
+  syncStartParam(false);
   // Cancel any in-flight request before issuing a new one.
   if (currentSearchAbort) currentSearchAbort.abort();
   currentSearchAbort = new AbortController();
@@ -1202,7 +1226,9 @@ export function forgetNum() {
 
 function ensureOsddLink() {
   const cfg = api.getConfig();
-  if (!cfg) return;
+  // JSP parity (osddLink): emit the link only when the server serves the OpenSearch
+  // description document (OsddHelper#hasOpenSearchFile).
+  if (!cfg || !(cfg.features || {}).osdd_link) return;
   if (document.querySelector('link[rel="search"]')) return;
   const link = document.createElement("link");
   link.setAttribute("rel", "search");
@@ -1986,6 +2012,7 @@ function renderPagination(env) {
   // Navigate to a page and scroll back to the top so the new results start in view.
   const goToPage = (start) => {
     state.start = Math.max(0, start);
+    syncStartParam(true);
     runSearch();
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -2046,4 +2073,4 @@ export const _state = state;
 // renderPopularWords is exported inline at its declaration (line ~1515); do NOT
 // re-export it here — a duplicate export is a module-level SyntaxError that aborts
 // the entire SPA bootstrap (app.js never runs, so the home view never renders).
-export { runSearch, el, buildGoUrl, renderSearchOptions, syncSearchInputs, renderFilterGroups };
+export { runSearch, el, buildGoUrl, renderSearchOptions, syncSearchInputs, renderFilterGroups, ensureOsddLink };
