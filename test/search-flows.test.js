@@ -327,6 +327,72 @@ describe.each(STD_THEMES)("runSearch facet & pagination render [%s]", (theme) =>
   });
 });
 
+// ─── start= in the address bar (JSP parity: the paging links carried start=) ─────
+
+describe.each(DNONE_THEMES)("page offset in the URL [%s]", (theme) => {
+  async function boot(overrides) {
+    const flow = await loadSearchFlow(theme, FULL_CFG);
+    installDispatch(flow.get, overrides);
+    mountBody(SEARCH_FIXTURE);
+    flow.mod._state.q = "foo";
+    return flow;
+  }
+
+  it("pushes the page offset into the URL without re-dispatching the route", async () => {
+    setLocation("/search?q=foo&start=10&num=10");
+    const { mod, get, navigate } = await boot({
+      search: makeSearchEnv(SAMPLE_DOCS, { prev_page: true, next_page: true, page_number: 2 }),
+    });
+    mod._state.start = 10;
+    await mod.runSearch();
+    await settle();
+    const before = searchCalls(get);
+    const historyLength = history.length;
+    document.querySelector("#pagination li:last-child a").click();
+    await settle();
+    const params = new URLSearchParams(location.search);
+    expect(location.pathname).toBe("/search");
+    expect(params.get("start")).toBe("20");
+    expect(params.get("q")).toBe("foo");
+    expect(history.length).toBe(historyLength + 1);
+    // One fetch: the URL is pushed directly, not via navigate() -> runFromUrl(),
+    // which would also clear the in-memory facet selections.
+    expect(navigate).not.toHaveBeenCalled();
+    expect(searchCalls(get)).toBe(before + 1);
+  });
+
+  it("corrects a stale start= in place when a search runs from the first page", async () => {
+    setLocation("/search?q=foo&start=20");
+    const { mod } = await boot();
+    const historyLength = history.length;
+    mod._state.start = 0;
+    await mod.runSearch();
+    await settle();
+    expect(location.search).toBe("?q=foo");
+    // A filter change is not a new page in history.
+    expect(history.length).toBe(historyLength);
+  });
+});
+
+describe.each(STD_THEMES)("page offset in the URL on a facet click [%s]", (theme) => {
+  it("drops start from the URL when a facet click resets to the first page", async () => {
+    setLocation("/search?q=foo&start=20");
+    const flow = await loadSearchFlow(theme, FULL_CFG);
+    installDispatch(flow.get);
+    mountBody(SEARCH_FIXTURE);
+    flow.mod._state.q = "foo";
+    flow.mod._state.start = 20;
+    await flow.mod.runSearch();
+    await settle();
+    const historyLength = history.length;
+    document.querySelector("#facet-body ul li.list-group-item a").click();
+    await settle();
+    expect(flow.mod._state.start).toBe(0);
+    expect(location.search).toBe("?q=foo");
+    expect(history.length).toBe(historyLength);
+  });
+});
+
 // ─── /go/ click-log order: the 0-based position on the page (JSP parity) ─────────
 // searchResults.jsp sent ${s.index} — the 0-based loop index within the page, the
 // same value as the link's data-order — and GoAction stores it as ClickLog.order.
