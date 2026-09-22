@@ -59,7 +59,7 @@ voicebox/
 │   ├── logo.svg          # home hero logo
 │   └── logo-head.svg     # header brand logo (sits on the stark black masthead)
 ├── i18n/                 # messages.<locale>.json (16 locales)
-├── help/                 # <locale>.json help content (8 locales)
+├── help/                 # <locale>.json help content (16 locales)
 └── README.md
 ```
 

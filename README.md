@@ -75,7 +75,7 @@ a checkout instead.
 **From a checkout:**
 
     ./scripts/package.sh docuforge
-    # → dist/docuforge-15.9.0.zip
+    # → dist/docuforge-15.9.3.zip
 
 Then open **Admin → Theme** (`/admin/theme/`) in Fess, upload the ZIP and
 activate it (or bind it to a virtual host).

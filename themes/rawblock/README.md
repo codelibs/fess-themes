@@ -58,7 +58,7 @@ rawblock/
 │   ├── logo.png          # home hero logo
 │   └── logo-head.png     # header brand logo (white, sits on the dark top-bar)
 ├── i18n/                 # messages.<locale>.json (16 locales)
-├── help/                 # <locale>.json help content (8 locales)
+├── help/                 # <locale>.json help content (16 locales)
 └── README.md
 ```
 

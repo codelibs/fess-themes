@@ -59,7 +59,7 @@ nomadkit/
 │   ├── logo.png          # home hero logo
 │   └── logo-head.png     # header brand logo (light, sits on the warm-dark top-bar)
 ├── i18n/                 # messages.<locale>.json (16 locales)
-├── help/                 # <locale>.json help content (8 locales)
+├── help/                 # <locale>.json help content (16 locales)
 └── README.md
 ```
 

@@ -239,10 +239,12 @@ before believing the hash.
   name-bound, so renaming a theme means updating `theme.yml#name`, `#displayName`, and
   those paths.
 - i18n lives in `i18n/messages.<locale>.json`. Every theme ships **16** message bundles and
-  **8** `help/<locale>.json` bundles, but 9 of the 10 themes declare only 8 locales in
+  **16** `help/<locale>.json` bundles, but 9 of the 10 themes declare only 8 locales in
   `theme.yml#supportedLocales` (`codesearch` declares all 16) — the undeclared bundles ship
   but the server never lists them. Keep key parity across *every shipped bundle*, not just
-  the declared ones. `help.js` falls back to `help/en.json` for locales with no help bundle.
+  the declared ones. A help bundle is required for every locale `i18n.js` serves: `help.js`
+  falls back to `help/en.json` only after the locale's own fetch 404s, and the browser logs
+  that 404 as a console error.
 - **A missing i18n key renders as the raw key, not as English.** `i18n.js` loads exactly one
   bundle and `t()` returns `messages[key] || key`; the English fallback only fires when the
   whole bundle fails to fetch, never per key. So a key present in `messages.en.json` but

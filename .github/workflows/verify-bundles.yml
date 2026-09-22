@@ -1,4 +1,4 @@
-# Checks the locale-bundle contract of every theme: 16 message bundles and 8
+# Checks the locale-bundle contract of every theme: 16 message bundles and 16
 # help bundles each, key parity across all of them, and matching help section
 # ids. A key missing from a single bundle renders as the raw key for that
 # locale, which is not something a human sees when reading a 16-bundle diff.
