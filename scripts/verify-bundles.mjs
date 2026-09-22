@@ -32,7 +32,6 @@ import { fileURLToPath } from "node:url";
 // Resolved from this file, not the caller's cwd, so it works from anywhere.
 const REPO_ROOT = fileURLToPath(new URL("..", import.meta.url));
 const THEMES_DIR = join(REPO_ROOT, "themes");
-const HELP_BUNDLES = 8; // themes/<name>/help/<locale>.json
 
 /** Parse JSON, reporting the file with the error rather than a bare position. */
 function readJson(file) {
@@ -190,16 +189,10 @@ function verifyTheme(name) {
   const helpFiles = existsSync(helpDir)
     ? readdirSync(helpDir).filter(f => f.endsWith(".json")).sort()
     : [];
-  // Help ships for a subset of the served locales, and help.js falls back to
-  // help/en.json for the rest, so there is no list to derive the subset from —
-  // hence a count. The names are still checked against the served locales,
-  // which catches the typo a count cannot see.
-  if (helpFiles.length !== HELP_BUNDLES) {
-    errors.push(`expected ${HELP_BUNDLES} help bundles, found ${helpFiles.length}`);
-  }
-  const helpLocales = helpFiles.map(f => localeOf(f, "", ".json"));
-  const stray = helpLocales.filter(l => !served.has(l)).sort();
-  if (stray.length) errors.push(`help: bundle for unserved locale ${stray.join(", ")}`);
+  // One help bundle per served locale, the same set as i18n. help.js does fall
+  // back to help/en.json, but only after the locale's own fetch has failed, and
+  // the browser logs that 404 as a console error on every help page view.
+  errors.push(...compareLocales("help", served, new Set(helpFiles.map(f => localeOf(f, "", ".json")))));
 
   // Section ids must match en.json's, in the same order: help.js renders
   // whatever each bundle lists, so a drifted id silently drops or reorders a

@@ -60,7 +60,7 @@ docsearch/
 │       ├── jetbrains-mono-400.woff2
 │       └── jetbrains-mono-500.woff2
 ├── i18n/                 # messages.<locale>.json (16 locales)
-├── help/                 # <locale>.json help content (8 locales)
+├── help/                 # <locale>.json help content (16 locales)
 └── README.md
 ```
 
@@ -123,7 +123,7 @@ the `--bs-*` custom properties the SPA modules already reference. Key choices:
 # 1. Package
 cd /path/to/fess-themes
 ./scripts/package.sh docsearch
-# → dist/docsearch-15.9.0.zip
+# → dist/docsearch-15.9.3.zip
 
 # 2. Upload
 # In Fess admin UI: /admin/theme/ → Upload ZIP → Activate
