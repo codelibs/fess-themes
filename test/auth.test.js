@@ -26,6 +26,7 @@ vi.mock("../themes/docuforge/assets/api.js", () => ({
 
 vi.mock("../themes/docuforge/assets/router.js", () => ({
   redirect: vi.fn(),
+  currentPath: vi.fn(() => "/"),
 }));
 
 import * as api from "../themes/docuforge/assets/api.js";
@@ -383,6 +384,32 @@ describe("promptLogin", () => {
     promptLogin();
     expect(router.redirect).toHaveBeenCalledWith("sso/");
     expect(show).not.toHaveBeenCalled();
+  });
+
+  it("carries the search the user opened to the SSO login", () => {
+    document.body.innerHTML = MODAL;
+    api.getConfig.mockReturnValue({ login_required: true, features: { sso_enabled: true, login_link: "sso/" } });
+    router.currentPath.mockReturnValue("/search");
+    window.history.pushState({}, "", "/search/?q=kerberos&num=20&sort=score.desc");
+    try {
+      promptLogin();
+      expect(router.redirect).toHaveBeenCalledWith("sso/?q=kerberos&num=20&sort=score.desc");
+    } finally {
+      window.history.pushState({}, "", "/");
+    }
+  });
+
+  it("carries no query string from a page other than the search results", () => {
+    document.body.innerHTML = MODAL;
+    api.getConfig.mockReturnValue({ login_required: true, features: { sso_enabled: true, login_link: "sso/" } });
+    router.currentPath.mockReturnValue("/cache");
+    window.history.pushState({}, "", "/cache/?docId=abc");
+    try {
+      promptLogin();
+      expect(router.redirect).toHaveBeenCalledWith("sso/");
+    } finally {
+      window.history.pushState({}, "", "/");
+    }
   });
 
   it("opens a modal without close controls while login is required", () => {
