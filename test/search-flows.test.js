@@ -393,6 +393,32 @@ describe.each(STD_THEMES)("page offset in the URL on a facet click [%s]", (theme
   });
 });
 
+// ─── Search-options drawer keeps the URL's filters ──────────────────────────────
+// Changing the sort from the drawer's Search button must not drop the ex_q clauses the
+// results were narrowed by (a sidebar label facet, a facet query view).
+
+describe.each(DNONE_THEMES)("search-options drawer Search [%s]", (theme) => {
+  it("keeps the URL's ex_q clauses when the sort is changed", async () => {
+    setLocation("/search?q=fess&ex_q=label%3AlblA&ex_q=filetype%3Ahtml&start=20");
+    const flow = await loadSearchFlow(theme, FULL_CFG);
+    installDispatch(flow.get);
+    mountBody(SEARCH_FIXTURE + '<div id="searchOptions"><button type="submit">go</button></div>');
+    flow.mod.attach();
+    await settle();
+    document.getElementById("home-view").setAttribute("hidden", "");
+    document.getElementById("query").value = "fess";
+    document.getElementById("sortSearchOption").value = "last_modified.desc";
+    flow.navigate.mockClear();
+    document.querySelector('#searchOptions button[type="submit"]').click();
+    const target = flow.navigate.mock.calls.at(-1)[0];
+    const params = new URLSearchParams(target.slice(target.indexOf("?") + 1));
+    expect(params.get("q")).toBe("fess");
+    expect(params.get("sort")).toBe("last_modified.desc");
+    expect(params.getAll("ex_q")).toEqual(["label:lblA", "filetype:html"]);
+    expect(params.has("start")).toBe(false);
+  });
+});
+
 // ─── /go/ click-log order: the 0-based position on the page (JSP parity) ─────────
 // searchResults.jsp sent ${s.index} — the 0-based loop index within the page, the
 // same value as the link's data-order — and GoAction stores it as ClickLog.order.
