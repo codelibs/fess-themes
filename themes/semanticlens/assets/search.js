@@ -1751,9 +1751,9 @@ function orByField(clauses) {
  * no zero-suppression — the option set is stable for every search, which is why it is
  * sourced from the config rather than from result buckets.
  *
- * Note that on Fess 15.8 an ex_q clause is search syntax, and Fess skips the semantic
- * branch for any query that carries syntax — so a filtered search is keyword-only.
- * The sidebar caption says so (sidebar.caption_*).
+ * On Fess 15.9 these clauses are applied to the vector search as a filter too, so a
+ * filtered search keeps its semantic matches. The sidebar caption says so
+ * (sidebar.caption_*).
  *
  * @param {Element} body - the facet-body container element
  */
@@ -1842,7 +1842,7 @@ function renderFacets(env, labels) {
   }
 
   // SemanticLens: mode-aware caption from a read-only page tally (display only) —
-  // says how this page was matched and warns that filtering drops to keyword-only.
+  // says how this page was matched and that filters apply to both kinds of match.
   // Skipped gracefully when no hit carries searcher provenance.
   const tally = tallyKinds(env.data || []);
   if (tally.total > 0) {

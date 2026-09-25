@@ -70,16 +70,16 @@ The rows are checkboxes, so two checked rows of one group are alternatives: MS W
 
 A caption (`.facet-cap`) derived from `tallyKinds` sits at the top of the sidebar. It states how the current page was matched and what applying a filter will do:
 
-- Semantic-dominant (semantic ≥ 60%): violet border, notes that most results are meaning-matched and that filtering falls back to keyword-only search.
-- Otherwise: teal border, notes that filtering falls back to keyword-only search.
+- Semantic-dominant (semantic ≥ 60%): violet border, notes that most results are meaning-matched and that filters apply to both keyword and meaning matches.
+- Otherwise: teal border, notes that filters apply to both keyword and meaning matches.
 
 The caption is absent when `searcher` is not in the response.
 
-## Filtering is keyword-only on Fess 15.8
+## Filters reach the semantic search on Fess 15.9
 
-Fess 15.8 skips the semantic branch for any query containing search syntax, judged on the **assembled** query. Every filter this theme offers adds such syntax — an `ex_q` clause from the sidebar, `label:"…"` from the label picker, `sort:…` from the options bar — so a filtered request never reaches the vector searcher.
+Fess 15.9 splits the **assembled** query before the semantic branch runs. Field clauses — an `ex_q` clause from the sidebar, `label:"…"` from the label picker — are applied to the vector search as a filter, and only the free text is embedded, so a filtered request keeps its meaning matches within the filter. The sidebar caption says so, and the per-result badges show which hits came from which searcher.
 
-The theme cannot change that from the client, so it surfaces it instead of hiding it: the sidebar caption says so up front, and the per-result badges independently show the truth (every hit on a filtered page is labelled Keyword).
+The semantic branch is still skipped for `sort:…` from the options bar, a quoted phrase or a wildcard in the free text, and `allintitle:` / `allinurl:`. Fess 15.8 skipped it for any query containing search syntax, so every filtered search there was keyword-only; the caption used to warn about that.
 
 ### Why the quote-on-filter workaround was removed in 2.0.0
 
