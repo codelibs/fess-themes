@@ -641,6 +641,22 @@ describe("runSearch pipeline [codesearch]", () => {
     expect(fired).toBe(true);
   });
 
+  it("opens the first facet group and every group holding a checked value", async () => {
+    const facet_field = [
+      { name: "repository", result: [{ value: "fess", count: 3 }] },
+      { name: "filetype", result: [{ value: "java", count: 2 }, { value: "js", count: 1 }] },
+      { name: "organization", result: [{ value: "codelibs", count: 3 }] },
+    ];
+    const { mod } = await boot({ search: makeSearchEnv(SAMPLE_DOCS, { facet_field }) });
+    document.getElementById("query-input").value = "foo lang:java";
+    await mod.runSearch();
+    await settle();
+    const groups = [...document.querySelectorAll("#facet-rail details.facet-group")];
+    expect(groups.map((d) => d.open)).toEqual([true, true, false]);
+    const checked = [...groups[1].querySelectorAll(".facet-check")].map((c) => c.checked);
+    expect(checked).toEqual([true, false]);
+  });
+
   it("renders the zero-result empty state via the hidden attribute", async () => {
     const { mod } = await boot({ search: makeSearchEnv([]) });
     await mod.runSearch();

@@ -659,6 +659,7 @@ function renderPagination(env) {
  * Populate #facet-rail from env.facet_field.
  * Builds collapsible <details>/<summary> groups for: Repository, Language,
  * Organization, Path/Filename. Each item is a checkbox label with count.
+ * The first group and every group with a checked item render open.
  * Checked state is derived from the current query qualifiers.
  * XSS-safe: all facet values written via textContent only.
  */
@@ -742,6 +743,7 @@ function renderFacets(env) {
       checkbox.type = "checkbox";
       checkbox.className = "facet-check";
       checkbox.checked = isChecked;
+      if (isChecked) details.open = true;
 
       checkbox.addEventListener("change", () => {
         const qi = document.getElementById("query-input");
