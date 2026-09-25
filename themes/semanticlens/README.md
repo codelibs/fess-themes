@@ -29,7 +29,7 @@ A Search Composition band above the results list is shown whenever at least one 
 
 The theme still reads the plugin's `semantic` searcher name, so badges remain correct
 against an older deployment, but 15.7 is no longer supported — see
-[Filtering is keyword-only](#filtering-is-keyword-only).
+[Filters and semantic search](#filters-and-semantic-search).
 
 ## Hybrid search experience
 
@@ -62,16 +62,16 @@ Options are rendered as clickable `li.filter-opt` rows with a `.filter-chk` chec
 
 A **mode-aware caption** (`.facet-cap`) at the top of the sidebar states how the current page was matched and what a filter will do:
 
-- Semantic-dominant page (semantic ≥ 60%): violet-bordered "Most results are meaning-matched. Applying a filter falls back to keyword-only search."
-- Otherwise: teal-bordered "Applying a filter falls back to keyword-only search."
+- Semantic-dominant page (semantic ≥ 60%): violet-bordered "Most results are meaning-matched. Filters apply to both keyword and meaning matches."
+- Otherwise: teal-bordered "Filters apply to both keyword and meaning matches."
 
 The caption is omitted when `searcher` is absent (standard deployments).
 
-### Filtering is keyword-only
+### Filters and semantic search
 
-Fess 15.8 skips the semantic branch for **any** query that contains search syntax, and it makes that decision on the assembled query — so a facet click (`filetype:…`), a label (`label:"…"`), a sort order (`sort:…`) or a quoted phrase all disable semantic matching for that request. A filtered search is therefore keyword-only, and the badges on the page will say so.
+Fess 15.9 splits the assembled query before the semantic branch runs: field clauses — a sidebar option (`filetype:…`, a `timestamp` or `content_length` range), a label (`label:"…"`) — become a filter that is applied to the vector search as well as to the keyword search, and only the free text is embedded. A filtered search therefore keeps its meaning matches, restricted to the documents the filter allows, and the badges on the page show both kinds.
 
-This is a core behaviour the theme cannot work around; it is surfaced rather than hidden, through the sidebar caption above and the per-result badges.
+The semantic branch is still skipped for a sort order (`sort:…`), a quoted phrase or a wildcard in the free text, and `allintitle:` / `allinurl:`. Fess 15.8 skipped it for every query that carried any search syntax, which made every filtered search keyword-only.
 
 Up to version 1.0.7 this theme collapsed a multi-word query into a single quoted phrase whenever a filter was active, to dodge an HTTP 400 in the 15.7 `fess-webapp-semantic-search` plugin (`[inner_hits] already contains an entry for key [content_vector]`). **That transform is gone.** The 400 does not exist in 15.8 core, and the quotes it added would themselves be search syntax — the workaround would silently make every filtered search keyword-only *and* narrow the BM25 branch to a phrase match. Queries are now sent verbatim, the same as every other theme.
 
