@@ -186,7 +186,7 @@ Key DOM landmarks added by the redesign:
 ```bash
 cd repos/fess-themes
 ./scripts/package.sh semanticlens
-# Produces dist/semanticlens-15.9.3.zip
+# Produces dist/semanticlens-15.9.6.zip
 ```
 
 Upload the ZIP via `/admin/theme/` or place it in Fess's theme directory.
