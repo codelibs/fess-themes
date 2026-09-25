@@ -62,6 +62,10 @@ In a hybrid deployment, the server's facet counts come exclusively from the BM25
 
 Filter options are built at render time from `api.getConfig()` — a query-independent endpoint that is always populated regardless of whether the current query has BM25 matches. This solves the "empty sidebar for semantic-only results" problem: the three groups (File type from `filetype_options`, Updated and Size from `facet_views`) are structurally stable across every search.
 
+### Checked rows of one field OR together
+
+The rows are checkboxes, so two checked rows of one group are alternatives: MS Word and MS Excel means "either". Every `ex_q` the API receives is ANDed with the others, so `runSearch` joins the checked clauses on the same field into one `(filetype:word) OR (filetype:excel)` clause (`orByField`); clauses on different fields stay separate `ex_q` values and still narrow each other. Sending one `ex_q` per row asked for documents that are Word and Excel at once and always returned nothing.
+
 ### Mode-aware caption
 
 A caption (`.facet-cap`) derived from `tallyKinds` sits at the top of the sidebar. It states how the current page was matched and what applying a filter will do:

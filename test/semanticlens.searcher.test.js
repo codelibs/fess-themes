@@ -139,3 +139,80 @@ describe("semanticlens sends the query verbatim", () => {
     expect(await qAfterFiltering({})).toBe(MULTI_WORD);
   });
 });
+
+// The count-free sidebar is a set of checkboxes, so two checked rows of one group are
+// alternatives. Each ex_q the API receives is ANDed with the others, so sending one per
+// row asked for documents that are Word AND Excel at once and always found nothing.
+describe("semanticlens filter sidebar ORs the checked rows of one field", () => {
+  beforeEach(() => {
+    resetDom();
+    window.scrollTo = () => {};
+  });
+
+  /** The ex_q values sent on a search run with the given facetQueries. */
+  async function exQFor(facetQueries, extra = {}) {
+    const flow = await loadSearchFlow("semanticlens", FULL_CFG);
+    installDispatch(flow.get, { search: makeSearchEnv(SAMPLE_DOCS) });
+    mountBody(SEARCH_FIXTURE);
+    Object.assign(flow.mod._state, { q: "cat", facetQueries, ...extra });
+    await flow.mod.runSearch();
+    await settle();
+    const calls = flow.get.mock.calls.filter((c) => c[0] === "/search");
+    expect(calls.length).toBe(1);
+    return calls[0][1].ex_q;
+  }
+
+  it("sends a single checked row unchanged", async () => {
+    expect(await exQFor(["filetype:word"])).toEqual(["filetype:word"]);
+  });
+
+  it("ORs two checked file types into one clause", async () => {
+    expect(await exQFor(["filetype:word", "filetype:excel"]))
+      .toEqual(["(filetype:word) OR (filetype:excel)"]);
+  });
+
+  it("keeps different fields ANDed, each field ORed within", async () => {
+    expect(await exQFor([
+      "filetype:word", "content_length:[0 TO 9999]", "filetype:excel", "content_length:[10000 TO 99999]",
+    ])).toEqual([
+      "(filetype:word) OR (filetype:excel)",
+      "(content_length:[0 TO 9999]) OR (content_length:[10000 TO 99999])",
+    ]);
+  });
+
+  it("leaves a clause without a leading field on its own", async () => {
+    expect(await exQFor(["-filetype:html", "filetype:pdf"])).toEqual(["-filetype:html", "filetype:pdf"]);
+  });
+
+  it("does not merge sidebar rows into label facet or advance-search clauses", async () => {
+    expect(await exQFor(["filetype:word", "filetype:excel"], {
+      facets: { label: ["docs"] }, exQ: ["filetype:pdf"],
+    })).toEqual(["label:docs", "(filetype:word) OR (filetype:excel)", "filetype:pdf"]);
+  });
+
+  it("wires a real click on two rows to one ORed clause", async () => {
+    const flow = await loadSearchFlow("semanticlens", {
+      ...FULL_CFG,
+      filetype_options: [{ value: "word" }, { value: "excel" }, { value: "pdf" }],
+    });
+    installDispatch(flow.get, { search: makeSearchEnv(SAMPLE_DOCS) });
+    mountBody(SEARCH_FIXTURE);
+    flow.mod._state.q = "cat";
+    const body = document.createElement("div");
+    document.body.appendChild(body);
+    const rows = () => [...body.querySelectorAll("li.filter-opt")];
+    const click = async (label) => {
+      while (body.firstChild) body.removeChild(body.firstChild);
+      flow.mod.renderFilterGroups(body);
+      rows().find((li) => li.textContent === label).click();
+      await settle();
+    };
+    await click("word");
+    await click("excel");
+    const calls = flow.get.mock.calls.filter((c) => c[0] === "/search");
+    expect(calls.map((c) => c[1].ex_q)).toEqual([
+      ["filetype:word"],
+      ["(filetype:word) OR (filetype:excel)"],
+    ]);
+  });
+});

@@ -862,11 +862,13 @@ async function runSearch() {
     for (const [field, values] of Object.entries(state.facets)) {
       (values || []).forEach(v => { (params["ex_q"] = params["ex_q"] || []).push(field + ":" + v); });
     }
-    // facet query views — active ex_q clauses from server-driven facet_views (SRCH-4)
+    // facet query views — active ex_q clauses from server-driven facet_views (SRCH-4).
+    // The sidebar rows are checkboxes, so checked rows on one field are alternatives
+    // (Word + Excel = either), while different fields still narrow each other.
     if (Array.isArray(state.facetQueries) && state.facetQueries.length > 0) {
       params["ex_q"] = params["ex_q"] || [];
       if (!Array.isArray(params["ex_q"])) params["ex_q"] = [params["ex_q"]];
-      state.facetQueries.forEach(v => params["ex_q"].push(v));
+      params["ex_q"].push(...orByField(state.facetQueries));
     }
     // ADV-2: extra ex_q clauses forwarded from advance search (e.g. time range)
     if (Array.isArray(state.exQ) && state.exQ.length > 0) {
@@ -1721,11 +1723,31 @@ function buildFacetGroup(title, entries, fieldKey) {
 }
 
 /**
+ * Joins filter clauses on the same field into one `a OR b` clause; each ex_q the API
+ * receives is ANDed with the others. A clause with no leading `field:` (a negation, a
+ * compound query) is kept on its own.
+ *
+ * @param {string[]} clauses - e.g. ["filetype:word", "filetype:excel", "content_length:[0 TO 9999]"]
+ * @returns {string[]} e.g. ["(filetype:word) OR (filetype:excel)", "content_length:[0 TO 9999]"]
+ */
+function orByField(clauses) {
+  const groups = new Map();
+  clauses.forEach(c => {
+    const m = /^([A-Za-z0-9_.]+):/.exec(c);
+    const key = m ? m[1] : "\u0000" + c;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(c);
+  });
+  return Array.from(groups.values(), g => (g.length === 1 ? g[0] : g.map(c => "(" + c + ")").join(" OR ")));
+}
+
+/**
  * SemanticLens: build the count-free, always-present filter groups from
  * /api/v2/ui/config (NOT from result tallies — honors "no client-side facet
  * computation"). File type options come from cfg.filetype_options; Updated and
  * Size from the cfg.facet_views timestamp & content_length groups. Every option
- * toggles its ex_q clause in state.facetQueries and re-queries the server. No counts,
+ * toggles its ex_q clause in state.facetQueries and re-queries the server; runSearch
+ * ORs the checked options of one field together (see orByField). No counts,
  * no zero-suppression — the option set is stable for every search, which is why it is
  * sourced from the config rather than from result buckets.
  *
