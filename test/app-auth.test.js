@@ -114,7 +114,7 @@ describe.each(themes.filter((t) => t !== "codesearch"))("%s: home search", (them
     app = await bootApp(theme, {
       features: { display_label_type: true },
       notifications: {},
-      label_options: [{ value: "lblA", label: "Label A" }, { value: "lblB", label: "Label B" }],
+      label_options: [{ value: "lblA", name: "Label A" }, { value: "lblB", name: "Label B" }],
     });
     document.getElementById("labelSearchOption").value = "lblA";
     document.getElementById("contentQuery").value = "hello";
