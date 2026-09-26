@@ -850,7 +850,18 @@ function openLightbox(rank) {
   const isImage = (doc.mimetype || "").startsWith("image/");
   const rawUrl = doc.url_link || doc.url || "";
   const safeUrl = safeHref(rawUrl);
-  img.src = (isImage && safeUrl !== "#" && isDisplayableImageUrl(safeUrl)) ? safeUrl : thumbUrl(doc.doc_id, env.query_id);
+  const directImage = isImage && safeUrl !== "#" && isDisplayableImageUrl(safeUrl);
+  // Same gate as buildGalleryTile(): without a thumbnail the endpoint can only fail,
+  // so show the tile's file-type icon instead of the browser's broken-image glyph.
+  const thumbOk = window.__mosaicThumbEnabled === true && !!doc.thumbnail;
+  lb.querySelector(".lightbox__icon")?.remove();
+  img.hidden = false;
+  img.onerror = () => showLightboxIcon(img, doc.filetype);
+  if (directImage || thumbOk) {
+    img.src = directImage ? safeUrl : thumbUrl(doc.doc_id, env.query_id);
+  } else {
+    showLightboxIcon(img, doc.filetype);
+  }
   img.alt = plainTitle(doc);
   // rank is the 0-based env.data[] index, which is also the /go/ `order`
   // (the same value the list card's data-order and the JSP send).
@@ -865,6 +876,25 @@ function openLightbox(rank) {
   if (lb.hidden) state.lbPrevFocus = document.activeElement;
   lb.hidden = false;
   lb.querySelector(".lightbox__close").focus();
+}
+
+/**
+ * Replace the lightbox image with the no-thumbnail file-type icon (the same icon a
+ * gallery tile falls back to). Used when a hit has no thumbnail, and when the image
+ * fails to load.
+ *
+ * @param {HTMLImageElement} img - the .lightbox__img element
+ * @param {string} [filetype] - doc.filetype
+ */
+function showLightboxIcon(img, filetype) {
+  img.onerror = null;
+  img.removeAttribute("src");
+  img.hidden = true;
+  if (img.parentNode && !img.parentNode.querySelector(".lightbox__icon")) {
+    const icon = buildTileIcon(filetype);
+    icon.classList.replace("tile__icon", "lightbox__icon");
+    img.parentNode.insertBefore(icon, img);
+  }
 }
 
 /** Close the lightbox and restore focus to whatever was focused before it opened. */
@@ -1086,7 +1116,9 @@ function renderOptionsBar() {
 
   // Label (only when display_label_type is enabled)
   if (cfg.features && cfg.features.display_label_type) {
-    const activeLabels = state.fields.label || [];
+    // A label can be active through the drawer (fields.label) or the sidebar facet /
+    // a shared URL (ex_q=label:..., kept in state.facets.label); show both.
+    const activeLabels = [...new Set([...(state.fields.label || []), ...(state.facets.label || [])])];
     let labelText;
     if (activeLabels.length === 0) {
       labelText = t("search.all");
@@ -1145,6 +1177,9 @@ function renderResults(env) {
       dnm.textContent = t("search.did_not_match", [state.q || ""]);
     }
     empty.classList.remove("d-none");
+    // The empty state's popular words (searchNoResult.jsp parity). Loaded here, when
+    // the slot becomes visible; the home view renders its own list (app.js).
+    loadPopularWords();
     meta.textContent = "";
     const statusEl = document.getElementById("results-status");
     if (statusEl) statusEl.textContent = "";
@@ -2139,7 +2174,6 @@ export function attach() {
   // listeners and populates the input once — it no longer triggers a search itself.
   const urlQ = new URLSearchParams(location.search).get("q");
   if (urlQ && input) { input.value = urlQ; state.q = urlQ; }
-  if (!urlQ) loadPopularWords();
 
   // A3: open the lightbox when a gallery tile is activated. Delegated on
   // #results (a persistent container across renderResults' innerHTML-based
@@ -2484,9 +2518,15 @@ function renderActiveChips() {
     (Array.isArray(values) ? values : []).forEach(v => { (chipFieldSets[field] = chipFieldSets[field] || new Set()).add(v); });
   }
 
+  const labelOptions = (api.getConfig() || {}).label_options || [];
+  const chipText = (field, v) => {
+    if (field !== "label") return field + ": " + v;
+    const opt = labelOptions.find(o => o.value === v);
+    return t("labels.facet_label_title") + ": " + (opt ? (opt.name || opt.value) : v);
+  };
   for (const [field, valueSet] of Object.entries(chipFieldSets)) {
     valueSet.forEach(v => chips.push({
-      label: field + ": " + v,
+      label: chipText(field, v),
       remove: () => {
         // Remove from whichever store(s) hold this value.
         if (state.facets[field]) {

@@ -1443,6 +1443,15 @@ li[id^="result"].result--keyword {
   border-radius: var(--df-radius);
   box-shadow: 0 20px 60px rgba(0, 0, 0, .45);
 }
+/* No-thumbnail fallback: the gallery tile's file-type icon, shown in place of the image. */
+.lightbox__icon {
+  font-size: 6rem;
+  line-height: 1;
+  padding: 2.5rem 3.5rem;
+  color: var(--df-stone-300);
+  background: var(--df-stone-800);
+  border-radius: var(--df-radius);
+}
 .lightbox__meta {
   max-width: min(90vw, 640px);
   max-height: 24vh;
