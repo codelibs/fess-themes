@@ -51,6 +51,9 @@ The suites:
 - `mosaic.searcher.test.js` / `semanticlens.searcher.test.js` — searcher-
   provenance and query-verbatim behaviour for the two vector-search themes
   against Fess's core semantic search.
+- `mosaic.gallery.test.js` — mosaic's label-filter chip and options bar for a
+  label set through `ex_q`, the lightbox's no-thumbnail fallback, and the
+  single popular-words request on the home view.
 - `notification-banners.test.js` — the five notification/error banners whose
   visibility the shared JS owns through the `d-none` class alone
   (`#home-notification`, `#results-notification`, `#home-flash`,
