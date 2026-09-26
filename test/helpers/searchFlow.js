@@ -76,7 +76,7 @@ export const FULL_CFG = {
   ],
   num_options: [10, 20, 50],
   lang_options: [{ value: "ja" }, { value: "en" }],
-  label_options: [{ value: "lblA", label: "Label A" }, { value: "lblB", label: "Label B" }],
+  label_options: [{ value: "lblA", name: "Label A" }, { value: "lblB", name: "Label B" }],
   facet_views: [
     {
       group_name: "labels.facet_filetype_title",

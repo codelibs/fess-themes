@@ -94,6 +94,11 @@ The suites:
   `/search` URLs, a facet click narrowing the search with an `ex_q` clause,
   and the header search form dropping both while carrying the drawer's
   labels — for the same nine themes.
+- `label-names.test.js` — a label from `ui/config`'s `label_options`
+  (`{ value, name }`) is shown by its name, falling back to its value: in the
+  search-options label select, the current-filters badge and the options bar
+  (the nine themes above), and in the advanced-search checkboxes and the chat
+  filter panel (all 10 themes).
 - `app-boot.test.js` — the UI language `app.js` requests at boot
   (`?browser_lang=`, session, `Accept-Language`), in every theme.
 - `app-auth.test.js` — the `login.required` gate at boot, and what a login, a
