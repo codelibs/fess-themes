@@ -214,6 +214,8 @@
   "labels.development_mode_warning": "Fess は開発モードで動作しています。本番環境については、インストールガイドを参照してください。",
   "labels.search_result_status": "{bq} の回答 {b0} 件中 {b1} - {b2} 件目",
   "labels.search_result_status_over": "{bq} の回答 約 {b0} 件以上 {b1} - {b2} 件目",
+  "labels.search_result_status_noquery": "回答 {b0} 件中 {b1} - {b2} 件目",
+  "labels.search_result_status_noquery_over": "回答 約 {b0} 件以上 {b1} - {b2} 件目",
   "labels.search_result_time": "({0} 秒)",
   "labels.similar_doc_result_status": "類似結果を表示しています。",
   "labels.search_result_more": "もっと見る..",
