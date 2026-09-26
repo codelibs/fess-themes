@@ -34,7 +34,7 @@ vanilla JS and CSS (no Bootstrap, no CDN).
 1. Package the theme:
    ```bash
    ./scripts/package.sh codesearch
-   # → dist/codesearch-15.9.6.zip
+   # → dist/codesearch-15.9.7.zip
    ```
 2. Open **Admin → Theme** (`/admin/theme/`) and upload the ZIP.
 3. Activate it or set `theme.default=codesearch`.
