@@ -388,7 +388,7 @@ describe.each(STD_THEMES)("page offset in the URL on a facet click [%s]", (theme
     document.querySelector("#facet-body ul li.list-group-item a").click();
     await settle();
     expect(flow.mod._state.start).toBe(0);
-    expect(location.search).toBe("?q=foo");
+    expect(location.search).toBe("?q=foo&ex_q=label%3AlblA");
     expect(history.length).toBe(historyLength);
   });
 });
@@ -416,6 +416,133 @@ describe.each(DNONE_THEMES)("search-options drawer Search [%s]", (theme) => {
     expect(params.get("sort")).toBe("last_modified.desc");
     expect(params.getAll("ex_q")).toEqual(["label:lblA", "filetype:html"]);
     expect(params.has("start")).toBe(false);
+  });
+});
+
+// ─── Facet selections in the URL ────────────────────────────────────────────────
+// A sidebar facet click writes its ex_q clause to the address bar, so a reload, a shared
+// link, Back from a result, or the drawer's Search button (which copies the URL's ex_q)
+// keeps the filter; runFromUrl() sorts the URL's clauses back into the facet stores so
+// the restored selection renders active and a click removes it again.
+
+describe.each(DNONE_THEMES)("facet selections in the URL [%s]", (theme) => {
+  const lastSearch = (get) => get.mock.calls.filter((c) => c[0] === "/search").at(-1)[1];
+  const labelFacet = (text) =>
+    [...document.querySelectorAll("#facet-body ul.list-group li.list-group-item")]
+      .find((li) => li.textContent.startsWith(text));
+
+  it("keeps a clicked label facet through the drawer's Search and a reload", async () => {
+    setLocation("/search?q=fess");
+    const flow = await loadSearchFlow(theme, FULL_CFG);
+    installDispatch(flow.get);
+    mountBody(SEARCH_FIXTURE + '<div id="searchOptions"><button type="submit">go</button></div>');
+    flow.mod.attach();
+    flow.mod.runFromUrl();
+    await settle();
+    document.getElementById("home-view").setAttribute("hidden", "");
+
+    labelFacet("Label A").querySelector("a").click();
+    await settle();
+    expect(lastSearch(flow.get)["ex_q"]).toEqual(["label:lblA"]);
+    expect(new URLSearchParams(location.search).getAll("ex_q")).toEqual(["label:lblA"]);
+
+    // Change the sort in the drawer and press its Search button.
+    document.getElementById("sortSearchOption").value = "last_modified.desc";
+    flow.navigate.mockClear();
+    document.querySelector('#searchOptions button[type="submit"]').click();
+    const target = flow.navigate.mock.calls.at(-1)[0];
+    const params = new URLSearchParams(target.slice(target.indexOf("?") + 1));
+    expect(params.get("sort")).toBe("last_modified.desc");
+    expect(params.getAll("ex_q")).toEqual(["label:lblA"]);
+
+    // The router lands on that URL: the facet is still applied and shown active.
+    setLocation("/" + target);
+    flow.mod.runFromUrl();
+    await settle();
+    expect(flow.mod._state.facets).toEqual({ label: ["lblA"] });
+    expect(flow.mod._state.exQ).toEqual([]);
+    expect(lastSearch(flow.get)).toMatchObject({ sort: "last_modified.desc", ex_q: ["label:lblA"] });
+    expect(labelFacet("Label A").classList.contains("active")).toBe(true);
+
+    // Clicking the restored facet removes it from the request and the URL.
+    labelFacet("Label A").querySelector("a").click();
+    await settle();
+    expect(lastSearch(flow.get)).not.toHaveProperty("ex_q");
+    expect(new URLSearchParams(location.search).has("ex_q")).toBe(false);
+  });
+
+  it("sorts the URL's ex_q clauses back into the facet stores", async () => {
+    setLocation("/search?q=foo&ex_q=label%3AlblB&ex_q=filetype%3Ahtml"
+      + "&ex_q=timestamp%3A%5Bnow%2Fd-1d+TO+*%5D&ex_q=label%3AlblB");
+    const flow = await loadSearchFlow(theme, { ...FULL_CFG, filetype_options: [{ value: "pdf" }] });
+    installDispatch(flow.get);
+    mountBody(SEARCH_FIXTURE);
+    flow.mod.runFromUrl();
+    await settle();
+    expect(flow.mod._state.facets).toEqual({ label: ["lblB"] });
+    expect(flow.mod._state.facetQueries).toEqual(["filetype:html"]);
+    expect(flow.mod._state.exQ).toEqual(["timestamp:[now/d-1d TO *]"]);
+    expect(labelFacet("Label B").classList.contains("active")).toBe(true);
+    expect(flow.navigate).not.toHaveBeenCalled();
+  });
+
+  it("runs a search for a URL carrying only a facet selection", async () => {
+    setLocation("/search?ex_q=label%3AlblA");
+    const flow = await loadSearchFlow(theme, FULL_CFG);
+    installDispatch(flow.get);
+    mountBody(SEARCH_FIXTURE);
+    flow.mod.runFromUrl();
+    await settle();
+    expect(flow.navigate).not.toHaveBeenCalled();
+    expect(lastSearch(flow.get)["ex_q"]).toEqual(["label:lblA"]);
+  });
+});
+
+describe.each(STD_THEMES)("facet query views in the URL [%s]", (theme) => {
+  it("writes a facet query view to the URL and restores it as active", async () => {
+    setLocation("/search?q=foo");
+    const flow = await loadSearchFlow(theme, FULL_CFG);
+    installDispatch(flow.get);
+    mountBody(SEARCH_FIXTURE);
+    flow.mod.runFromUrl();
+    await settle();
+    const row = () => [...document.querySelectorAll("#facet-body li.list-group-item")]
+      .find((li) => li.textContent.startsWith("labels.facet_filetype_html"));
+    row().querySelector("a").click();
+    await settle();
+    expect(new URLSearchParams(location.search).getAll("ex_q")).toEqual(["filetype:html"]);
+
+    flow.mod.runFromUrl();
+    await settle();
+    expect(flow.mod._state.facetQueries).toEqual(["filetype:html"]);
+    expect(flow.mod._state.exQ).toEqual([]);
+    expect(row().classList.contains("active")).toBe(true);
+  });
+});
+
+// mosaic, semanticlens and storefront draw File type from filetype_options, not facet_views.
+describe.each(["mosaic", "semanticlens", "storefront"])("filter groups in the URL [%s]", (theme) => {
+  it("writes a File type option to the URL and restores it as active", async () => {
+    setLocation("/search?q=foo");
+    const cfg = { ...FULL_CFG, filetype_options: [{ value: "pdf" }] };
+    const flow = await loadSearchFlow(theme, cfg);
+    installDispatch(flow.get, {
+      search: makeSearchEnv(SAMPLE_DOCS, { facet_query: [{ value: "filetype:pdf", count: 4 }] }),
+    });
+    mountBody(SEARCH_FIXTURE);
+    flow.mod.runFromUrl();
+    await settle();
+    const row = () => [...document.querySelectorAll("#facet-body .filter-group .filter-opt")]
+      .find((li) => li.querySelector(".filter-opt__label")?.textContent === "pdf");
+    row().click();
+    await settle();
+    expect(new URLSearchParams(location.search).getAll("ex_q")).toEqual(["filetype:pdf"]);
+
+    flow.mod.runFromUrl();
+    await settle();
+    expect(flow.mod._state.facetQueries).toEqual(["filetype:pdf"]);
+    expect(flow.mod._state.exQ).toEqual([]);
+    expect(row().classList.contains("is-active")).toBe(true);
   });
 });
 
