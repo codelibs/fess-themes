@@ -102,6 +102,10 @@ The suites:
   search-options label select, the current-filters badge and the options bar
   (the nine themes above), and in the advanced-search checkboxes and the chat
   filter panel (all 10 themes).
+- `results-status.test.js` — the results-status banner for a blank query (a
+  category tile's `/search?q=&fields.label=x`): it names the active labels in
+  place of `{bq}`, or uses the `_noquery` wording when there is no label either,
+  rendered with each theme's real English bundle (the nine themes above).
 - `app-boot.test.js` — the UI language `app.js` requests at boot
   (`?browser_lang=`, session, `Accept-Language`), in every theme.
 - `app-auth.test.js` — the `login.required` gate at boot, and what a login, a

@@ -214,6 +214,8 @@
   "labels.development_mode_warning": "Fess is running in development mode. See the installation guide for production setup.",
   "labels.search_result_status": "Answers {b1} - {b2} of {b0} for {bq}",
   "labels.search_result_status_over": "Answers {b1} - {b2} of over {b0} for {bq}",
+  "labels.search_result_status_noquery": "Answers {b1} - {b2} of {b0}",
+  "labels.search_result_status_noquery_over": "Answers {b1} - {b2} of over {b0}",
   "labels.search_result_time": "({0} seconds)",
   "labels.similar_doc_result_status": "Showing similar results.",
   "labels.search_result_more": "More..",

@@ -394,8 +394,27 @@ function buildResultCard(d, queryId, order) {
 }
 
 /**
+ * What the results-status banner says the results are "for": the query, or — for a
+ * blank query such as a category tile's /search?q=&fields.label=x — the names of the
+ * active labels (drawer fields.label or an ex_q label facet), resolved from
+ * label_options like the current-filters badge. "" when there is neither, so the
+ * caller picks the _noquery wording instead of rendering an empty {bq}.
+ */
+function resultsStatusSubject() {
+  const q = (state.q || "").trim();
+  if (q) return state.q;
+  const cfg = api.getConfig() || {};
+  const labels = [...new Set([...(state.fields.label || []), ...(state.facets.label || [])])];
+  return labels.map(val => {
+    const opt = (cfg.label_options || []).find(o => o.value === val);
+    return opt ? (opt.name || opt.value) : val;
+  }).join(", ");
+}
+
+/**
  * C.1: Populate the results-status banner.
- * Uses _over variant when record_count_relation !== "EQUAL_TO".
+ * Uses _over variant when record_count_relation !== "EQUAL_TO", and the _noquery
+ * variants when resultsStatusSubject() has nothing to put in {bq}.
  */
 function renderResultsStatus(env) {
   const statusEl = document.getElementById("results-status");
@@ -404,10 +423,11 @@ function renderResultsStatus(env) {
   const count = env.record_count || 0;
   const start = env.start_record_number || 1;
   const end   = env.end_record_number   || 0;
-  const q     = state.q || "";
   const isOver = env.record_count_relation && env.record_count_relation !== "EQUAL_TO";
-  const statusKey = isOver ? "labels.search_result_status_over" : "labels.search_result_status";
-  const values = { b0: count.toLocaleString(), b1: String(start), b2: String(end), bq: q };
+  const bq = resultsStatusSubject();
+  const statusKey = (bq ? "labels.search_result_status" : "labels.search_result_status_noquery")
+    + (isOver ? "_over" : "");
+  const values = { b0: count.toLocaleString(), b1: String(start), b2: String(end), bq };
   t(statusKey).split(/(\{b[012q]\})/).forEach(part => {
     const m = part.match(/^\{(b[012q])\}$/);
     if (m) {
