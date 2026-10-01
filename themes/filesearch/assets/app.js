@@ -627,16 +627,35 @@ function registerRoutes() {
     }
   );
 
-  // Fallback: unknown paths show error view with code 404.
+  // Fallback: unknown paths show the error view with code 404.
   router.register(
     () => true,
     () => {
       setChatNavSearchMode(false);
       setSearchFormVisible(false);
       showView("error-view");
-      errorView.attach();
+      attachNotFound();
     }
   );
+}
+
+/**
+ * Render the error view as a 404. error.js takes the code from the x-fess-error-code meta tag
+ * and otherwise infers it from the path, which gives 500 ("System Error") for an address it
+ * does not know. So that this one render says 404 (and shows the address), the tag is put in
+ * front of any other for the length of the call and removed again: left in place it would
+ * make hasUnconsumedErrorMeta() show the error view on every later navigation.
+ */
+function attachNotFound() {
+  const meta = document.createElement("meta");
+  meta.name = "x-fess-error-code";
+  meta.content = "404";
+  document.head.prepend(meta);
+  try {
+    errorView.attach();
+  } finally {
+    meta.remove();
+  }
 }
 
 async function main() {
