@@ -375,6 +375,49 @@ describe("a path too deep for an ex_q clause", () => {
   });
 });
 
+describe("paging", () => {
+  // /search?num=500 is capped by the server (page_size_max, 100 by default) and the answer says
+  // so in page_size: the pager must step by the size that was served.
+  const CAPPED = { page_size: 100, page_number: 1, page_numbers: ["1", "2", "3"], next_page: true, prev_page: false };
+  const pageLink = n => [...document.querySelectorAll("#pagination .page-link")].find(a => a.textContent === String(n));
+
+  it("pages by the size the server served when num is above its cap", async () => {
+    const { get } = await boot({ url: "/search?q=foo&num=500", mainExtra: CAPPED });
+    expect(lastMain(get)).toMatchObject({ num: 500, start: 0 });
+    pageLink(2).click();
+    await settle();
+    expect(lastMain(get)).toMatchObject({ num: 100, start: 100 });
+    expect(new URLSearchParams(location.search).get("start")).toBe("100");
+    pageLink(3).click();
+    await settle();
+    expect(lastMain(get)).toMatchObject({ num: 100, start: 200 });
+  });
+
+  it("steps the Next link by that size too", async () => {
+    const { get } = await boot({ url: "/search?q=foo&num=500", mainExtra: CAPPED });
+    document.querySelector("#pagination li:last-child a").click();
+    await settle();
+    expect(lastMain(get)).toMatchObject({ num: 100, start: 100 });
+  });
+
+  it("steps the Previous link by that size too", async () => {
+    const { get } = await boot({
+      url: "/search?q=foo&num=500&start=200",
+      mainExtra: { ...CAPPED, page_number: 3, prev_page: true },
+    });
+    document.querySelector("#pagination li:first-child a").click();
+    await settle();
+    expect(lastMain(get)).toMatchObject({ num: 100, start: 100 });
+  });
+
+  it("leaves a page size the server served as asked alone", async () => {
+    const { get } = await boot({ url: "/search?q=foo&num=20", mainExtra: { ...CAPPED, page_size: 20 } });
+    pageLink(2).click();
+    await settle();
+    expect(lastMain(get)).toMatchObject({ num: 20, start: 20 });
+  });
+});
+
 describe("sorting", () => {
   it("a column heading sorts by it, pushes the sort into the address bar, and flips on a second click", async () => {
     const { get } = await boot({ url: "/search?q=foo" });
@@ -555,6 +598,66 @@ describe("rows and their actions", () => {
     expect(document.querySelector(".favorite-btn")).toBeNull();
     await boot({ url: "/search?q=foo", cfg: { ...CFG, features: { ...CFG.features, user_favorite: true } } });
     expect(document.querySelectorAll(".favorite-btn").length).toBe(3);
+  });
+
+  describe("the favourite star (the API can add a favourite, never remove one)", () => {
+    const FAV_CFG = { ...CFG, features: { ...CFG.features, user_favorite: true } };
+
+    /** Signed in; the server already lists `favorites` (doc ids) as favourites. */
+    async function bootFavorites(favorites = []) {
+      const flow = await loadSearchFlow(THEME, FAV_CFG);
+      flow.isAuthenticated.mockReturnValue(true);
+      install(flow.get);
+      const base = flow.get.getMockImplementation();
+      flow.get.mockImplementation(async (path, params) => (path === "/favorites" ? { data: favorites.map(doc_id => ({ doc_id })) } : base(path, params)));
+      setLocation("/search?q=foo");
+      mountIndexBody(THEME);
+      flow.mod.attach();
+      flow.mod.runFromUrl();
+      await settle();
+      return flow;
+    }
+    const star = i => rows()[i].querySelector(".favorite-btn");
+
+    it("an unfavourited star offers to add, and is pressed and named a favourite once the add succeeded", async () => {
+      const flow = await bootFavorites();
+      flow.post.mockResolvedValue({ favorite: true, count: 3 });
+      expect(star(0).getAttribute("aria-pressed")).toBe("false");
+      expect(star(0).getAttribute("aria-label")).toBe("result.favorite_add");
+      expect(star(0).hasAttribute("aria-disabled")).toBe(false);
+      star(0).click();
+      await settle();
+      expect(flow.post).toHaveBeenCalledTimes(1);
+      expect(flow.post.mock.calls[0][0]).toBe("/documents/a1/favorite");
+      expect(star(0).getAttribute("aria-pressed")).toBe("true");
+      expect(star(0).getAttribute("aria-label")).toBe("result.favorite_added");
+      expect(star(0).title).toBe("result.favorite_added");
+      expect(star(0).querySelector(".favorite-count").textContent).toBe("3");
+    });
+
+    it("a favourited star never offers removal, and a click on it sends nothing", async () => {
+      const flow = await bootFavorites(["a1"]);
+      expect(star(0).getAttribute("aria-pressed")).toBe("true");
+      expect(star(0).getAttribute("aria-label")).toBe("result.favorite_added");
+      expect(star(0).getAttribute("aria-label")).not.toBe("result.favorite_remove");
+      expect(star(0).getAttribute("aria-disabled")).toBe("true");
+      star(0).click();
+      star(0).click();
+      await settle();
+      expect(flow.post).not.toHaveBeenCalled();
+      expect(star(0).getAttribute("aria-pressed")).toBe("true");
+      // the other rows are unaffected
+      expect(star(1).getAttribute("aria-pressed")).toBe("false");
+    });
+
+    it("stays unpressed when the add did not happen", async () => {
+      const flow = await bootFavorites();
+      flow.post.mockResolvedValue({ favorite: false, count: 0 });
+      star(0).click();
+      await settle();
+      expect(star(0).getAttribute("aria-pressed")).toBe("false");
+      expect(star(0).getAttribute("aria-label")).toBe("result.favorite_add");
+    });
   });
 
   it("switches between details, list and tiles, remembers the choice, and works with storage blocked", async () => {

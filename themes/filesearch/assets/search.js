@@ -317,7 +317,7 @@ function renderResults(env) {
       const docId = li.dataset.docId;
       if (!btn || !docId) return;
       setFavoriteUi(btn, false, Number(btn.dataset.count) || 0);
-      btn.addEventListener("click", () => toggleFavorite(docId, btn, li.dataset.queryId || ""));
+      btn.addEventListener("click", () => addFavorite(docId, btn, li.dataset.queryId || ""));
     });
   }
   // Bulk-sync the *per-user* favorited state (solid vs outline star) for all rows in one
@@ -465,6 +465,10 @@ async function runSearch(opts = {}) {
       : Promise.resolve(null);
     const [env, typeFacet] = await Promise.all([mainRequest, typesToo]);
     ui.typeFacet = typeFacet;
+    // The server caps num at page_size_max and says what it served. The page links step by that
+    // size, not by the one asked for: with num=500 capped to 100, page 2 starts at 100, not 500.
+    const served = Number(env.page_size);
+    if (served > 0 && served < state.num) state.num = served;
     // Prefer the server-supplied requested_time when available (more accurate).
     if (env.requested_time) state.requestedTime = env.requested_time;
     // A.5: store server-supplied highlight params for cache link construction.
@@ -1910,9 +1914,18 @@ function renderPagination(env) {
 }
 
 
+/**
+ * The star's state. /api/v2 can only add a favorite (POST .../favorite; there is no way to remove
+ * one), so a favorited star says it is a favorite and offers nothing: it is not a toggle that a
+ * second click could undo.
+ */
 function setFavoriteUi(btn, on, count) {
+  const label = on ? t("result.favorite_added") : t("result.favorite_add");
   btn.setAttribute("aria-pressed", on ? "true" : "false");
-  btn.setAttribute("aria-label", on ? t("result.favorite_remove") : t("result.favorite_add"));
+  btn.setAttribute("aria-label", label);
+  btn.title = label;
+  // aria-disabled, not disabled: a button that disables itself under the keyboard drops the focus.
+  if (on) btn.setAttribute("aria-disabled", "true"); else btn.removeAttribute("aria-disabled");
   // The star is an inline SVG; styles.css fills it while aria-pressed is true.
   btn.dataset.count = String(count);
   // Show or hide the count badge next to the star icon
@@ -1928,7 +1941,8 @@ function setFavoriteUi(btn, on, count) {
   }
 }
 
-async function toggleFavorite(docId, btn, queryId) {
+async function addFavorite(docId, btn, queryId) {
+  if (btn.getAttribute("aria-pressed") === "true") return;
   try {
     // #3 (parity js/search.js:137): include query_id so the click is attributed to its query.
     const env = await api.post("/documents/" + encodeURIComponent(docId) + "/favorite", { query_id: queryId || "" });

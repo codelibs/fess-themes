@@ -462,6 +462,18 @@ textarea.form-control { min-height: 2.5rem; }
 .fs-header .btn-light:hover { background: #34495c; }
 .fs-header .btn-primary { background: #237a92; border-color: #237a92; color: #fff; }
 .fs-header .btn-primary:hover { background: #1b6a82; border-color: #1b6a82; }
+/* Below 768px the nav is a menu: #headerNavToggle opens it as a panel under the header. The row is
+   tightened so that the search box keeps its width next to the extra button. */
+#headerNavToggle { align-self: stretch; }
+@media (max-width: 767.98px) {
+  .fs-header-row { gap: .5rem; padding: 0 .6rem; }
+  #header-nav.show {
+    position: absolute; top: 100%; right: .6rem; z-index: 1056; flex-direction: column; align-items: stretch; gap: 0;
+    min-width: 12rem; padding: .35rem; background: var(--fs-header-bg); border: 1px solid var(--fs-header-border);
+    border-radius: var(--fs-radius); box-shadow: var(--fs-shadow-3);
+  }
+  #header-nav.show .nav-link { padding: .6rem .75rem; }
+}
 
 /* ---- Dropdown (user menu) ---- */
 .dropdown { position: relative; }
@@ -518,9 +530,12 @@ body.modal-open { overflow: hidden; }
 #searchOptions .container {
   width: 440px; max-width: 100%; height: 100%; overflow: auto; position: fixed; top: 0; bottom: 0; right: -460px;
   padding-top: calc(var(--fs-header-h) + 1.25rem); padding-bottom: 1.5rem;
-  color: #dfe6ed; background-color: #1b2631; box-shadow: var(--fs-shadow-3); transition: right .3s ease;
+  color: #dfe6ed; background-color: #1b2631; box-shadow: var(--fs-shadow-3);
+  /* Off screen is not enough: a closed drawer is also out of the tab order and the
+     accessibility tree. The delay lets the slide-out finish before it is hidden. */
+  visibility: hidden; transition: right .3s ease, visibility 0s linear .3s;
 }
-#searchOptions.show .container { right: 0; }
+#searchOptions.show .container { right: 0; visibility: visible; transition: right .3s ease, visibility 0s; }
 #searchOptions h3 { color: #fff; }
 #searchOptions label, #searchOptions legend { color: #b8c4d0; font-size: .85rem; }
 #searchOptions .form-control { background: #243342; border-color: #3b4d5e; color: #fff; }
@@ -768,6 +783,8 @@ body.modal-open { overflow: hidden; }
 .fs-act.is-copied { color: var(--fs-success); }
 .favorite-btn[aria-pressed="true"] { color: var(--fs-warning); }
 .favorite-btn[aria-pressed="true"] svg { fill: currentColor; }
+/* a favorite cannot be removed (the API only adds): nothing to click */
+.favorite-btn[aria-disabled="true"] { cursor: default; }
 .favorite-count { font-size: .7rem; margin-inline-start: .1rem; color: var(--fs-text-3); }
 
 /* file-type colours */

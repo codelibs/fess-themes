@@ -364,6 +364,26 @@ function syncHeaderOffset() {
   document.documentElement.style.setProperty("--fs-header-h", header.offsetHeight + "px");
 }
 
+/**
+ * Below 768px the header nav (sign-in, AI search, help) is a menu behind #headerNavToggle.
+ * It closes when a choice is made, on a route change and on Escape (focus goes back to the button).
+ */
+function attachHeaderMenu() {
+  const nav = document.getElementById("header-nav");
+  const toggle = document.getElementById("headerNavToggle");
+  if (!nav || !toggle || !window.bootstrap || !window.bootstrap.Collapse) return;
+  const close = () => window.bootstrap.Collapse.getOrCreateInstance(nav, { toggle: false }).hide();
+  nav.addEventListener("click", ev => {
+    if (ev.target.closest("a.nav-link:not(.dropdown-toggle), .dropdown-item")) close();
+  });
+  document.addEventListener("fess:route:change", close);
+  document.addEventListener("keydown", ev => {
+    if (ev.key !== "Escape" || !nav.classList.contains("show")) return;
+    close();
+    toggle.focus();
+  });
+}
+
 /** Attach back-to-top button behaviour. */
 function attachBackToTop() {
   const btn = document.getElementById("back-to-top");
@@ -607,16 +627,35 @@ function registerRoutes() {
     }
   );
 
-  // Fallback: unknown paths show error view with code 404.
+  // Fallback: unknown paths show the error view with code 404.
   router.register(
     () => true,
     () => {
       setChatNavSearchMode(false);
       setSearchFormVisible(false);
       showView("error-view");
-      errorView.attach();
+      attachNotFound();
     }
   );
+}
+
+/**
+ * Render the error view as a 404. error.js takes the code from the x-fess-error-code meta tag
+ * and otherwise infers it from the path, which gives 500 ("System Error") for an address it
+ * does not know. So that this one render says 404 (and shows the address), the tag is put in
+ * front of any other for the length of the call and removed again: left in place it would
+ * make hasUnconsumedErrorMeta() show the error view on every later navigation.
+ */
+function attachNotFound() {
+  const meta = document.createElement("meta");
+  meta.name = "x-fess-error-code";
+  meta.content = "404";
+  document.head.prepend(meta);
+  try {
+    errorView.attach();
+  } finally {
+    meta.remove();
+  }
 }
 
 async function main() {
@@ -671,6 +710,8 @@ async function main() {
       window.bootstrap.Collapse.getOrCreateInstance(so, { toggle: false }).hide();
     }
   });
+
+  attachHeaderMenu();
 
   // Wire back-to-top button.
   attachBackToTop();
