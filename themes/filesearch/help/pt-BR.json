@@ -1,0 +1,69 @@
+{
+  "sections": [
+    {
+      "id": "basic",
+      "title": "Pesquisa básica",
+      "html": "<p>Para pesquisar, digite sua consulta na caixa de pesquisa e pressione Enter (ou clique no botão Pesquisar).</p><p>Várias palavras são combinadas com AND por padrão. Por exemplo, <code>open source</code> encontra documentos que contêm tanto \"open\" quanto \"source\".</p>"
+    },
+    {
+      "id": "folders",
+      "title": "Navegar por pasta",
+      "html": "<p>A árvore de pastas à esquerda lista as fontes que o Fess rastreou (um servidor de arquivos, uma pasta compartilhada, um site) e, abaixo de cada uma, suas pastas. Clique na seta para abrir uma pasta ou clique no nome dela para pesquisar somente dentro dela. O número ao lado de uma pasta indica quantos documentos correspondentes ela contém.</p><p>Um número escrito como <code>≥120</code> é um limite inferior: a pasta é grande e somente parte dela foi contada, então o valor real é pelo menos esse. Abra a pasta para obter uma contagem mais exata.</p><p>A barra de local acima da lista mostra a pasta em que você está. Clique em qualquer parte dela para voltar a essa pasta, use a seta para cima para subir um nível ou clique em <strong>Todas as fontes</strong> para pesquisar em tudo. O botão de copiar coloca o caminho da pasta na área de transferência, escrito <code>\\\\server\\share\\folder</code> para um compartilhamento do Windows e <code>/home/user/folder</code> para um caminho local.</p><p>A pasta faz parte do endereço no navegador, então você pode adicioná-la aos favoritos, compartilhá-la e ir e voltar entre pastas. Uma pesquisa iniciada dentro de uma pasta procura somente nessa pasta.</p>"
+    },
+    {
+      "id": "filters",
+      "title": "Filtros",
+      "html": "<p>Pressione <strong>Filtros</strong> acima da lista para refinar os resultados por tipo de arquivo, por quando um arquivo foi modificado pela última vez ou por tamanho. Escolha um botão para aplicá-lo e escolha-o novamente para removê-lo. Os filtros aplicados também aparecem como chips acima da lista.</p><p>Você pode escolher vários tipos de arquivo ao mesmo tempo; os grupos de modificação e de tamanho aceitam uma escolha cada.</p><p>Os números nos botões contam os resultados que correspondem aos filtros já aplicados. Depois de escolher um botão de modificação ou de tamanho, os demais botões desse grupo somem até você removê-lo.</p>"
+    },
+    {
+      "id": "views",
+      "title": "Exibições e ordenação",
+      "html": "<p>Use os botões de exibição para alternar entre <strong>Detalhes</strong> (uma tabela com nome, local, data de modificação, tamanho e tipo), <strong>Lista</strong> (uma linha compacta por arquivo) e <strong>Blocos</strong> (ícones grandes ou miniaturas). Sua escolha é lembrada neste navegador.</p><p>Na exibição Detalhes, clique no título de uma coluna para ordenar por ela e clique de novo para inverter a ordem. O controle de ordenação na barra de ferramentas faz o mesmo nas outras exibições. Os resultados ficam em ordem de relevância quando você digitou uma palavra-chave e em ordem de nome quando está apenas navegando.</p><p>Ordenar por <strong>Tipo</strong> ou <strong>Local</strong> exige uma configuração no servidor. Se o seu servidor não a tiver, um aviso informa isso e a ordem padrão é usada.</p>"
+    },
+    {
+      "id": "preview",
+      "title": "Visualização e ações",
+      "html": "<p>Selecione um arquivo para ver os detalhes dele no painel à direita: onde está, quando foi alterado, seu tamanho e tipo, e ações para abri-lo, copiar seu caminho ou mostrar sua pasta. <strong>Abrir original</strong> abre o arquivo pelo Fess, de modo que seus direitos de acesso são verificados.</p><p>Abaixo dos detalhes, o Fess mostra uma visualização quando possível: um PDF, um arquivo de texto ou de código-fonte, uma imagem ou a cópia armazenada pelo rastreador. Os outros tipos mostram apenas os detalhes. A visualização é carregada somente para o arquivo selecionado.</p><p>Uma página da web não consegue abrir uma pasta no seu sistema operacional, então <strong>Mostrar na pasta</strong> leva você a essa pasta dentro desta página, e <strong>Copiar caminho</strong> fornece o caminho para colar no seu gerenciador de arquivos.</p><p>Em uma tela estreita, a árvore de pastas e a visualização abrem sobre a lista, em vez de ao lado dela.</p>"
+    },
+    {
+      "id": "shortcuts",
+      "title": "Atalhos de teclado",
+      "html": "<ul><li><code>/</code> &mdash; Focar a caixa de pesquisa</li><li><code>&uarr;</code> <code>&darr;</code> &mdash; Percorrer os resultados (<code>Home</code> e <code>End</code> vão para o primeiro e o último)</li><li><code>Enter</code> &mdash; Abrir o arquivo selecionado</li><li><code>Space</code> &mdash; Mostrar ou ocultar a visualização</li><li><code>&larr;</code> <code>&rarr;</code> &mdash; Na árvore de pastas, fechar e abrir pastas; nos resultados, <code>&larr;</code> volta para a árvore</li><li><code>Esc</code> &mdash; Fechar a visualização, o painel de pastas ou as sugestões</li></ul>"
+    },
+    {
+      "id": "operators",
+      "title": "Operadores de pesquisa",
+      "html": "<table class=\"table table-sm\"><thead><tr><th scope=\"col\">Operador</th><th scope=\"col\">Descrição</th><th scope=\"col\">Exemplo</th></tr></thead><tbody><tr><td><code>AND</code> / <code>&amp;&amp;</code></td><td>Ambos os termos devem aparecer</td><td><code>fess AND search</code></td></tr><tr><td><code>OR</code> / <code>||</code></td><td>Qualquer um dos termos pode aparecer</td><td><code>fess OR opensearch</code></td></tr><tr><td><code>NOT</code> / <code>-</code></td><td>Excluir o termo</td><td><code>fess -lucene</code></td></tr><tr><td><code>\"...\"</code></td><td>Frase exata</td><td><code>\"full text search\"</code></td></tr><tr><td><code>site:</code></td><td>Restringir a um site</td><td><code>site:example.com fess</code></td></tr><tr><td><code>filetype:</code></td><td>Restringir a um tipo de arquivo</td><td><code>filetype:pdf fess</code></td></tr></tbody></table>"
+    },
+    {
+      "id": "wildcards",
+      "title": "Curingas",
+      "html": "<p>Você pode usar <code>*</code> para corresponder a qualquer sequência de caracteres e <code>?</code> para corresponder a um único caractere.</p><p>Exemplos: <code>fess*</code> corresponde a \"fess\", \"fessbook\", \"fessful\". <code>te?t</code> corresponde a \"test\" ou \"text\".</p>"
+    },
+    {
+      "id": "ranges",
+      "title": "Consultas de intervalo",
+      "html": "<p>Use colchetes para pesquisar um intervalo de valores: <code>content_length:[1024 TO 10240]</code> encontra documentos com tamanhos entre 1KB e 10KB.</p> Os colchetes <code>[ ]</code> incluem os limites; as chaves <code>{ }</code> os excluem, por exemplo <code>content_length:{1024 TO 10240}</code> corresponde a tamanhos estritamente maiores que 1KB e estritamente menores que 10KB."
+    },
+    {
+      "id": "field",
+      "title": "Pesquisa por campo",
+      "html": "<p>Você pode pesquisar em qualquer campo digitando o nome do campo seguido de dois pontos <code>:</code> e depois o termo que está procurando. Por exemplo, para encontrar documentos com \"Fess\" no título:</p><pre>title:Fess</pre><p>Os campos disponíveis incluem <code>url</code>, <code>host</code>, <code>site</code>, <code>title</code>, <code>content</code>, <code>content_length</code>, <code>last_modified</code> e <code>mimetype</code>. Esses campos são personalizáveis.</p>"
+    },
+    {
+      "id": "sort",
+      "title": "Ordenação",
+      "html": "<p>O operador <code>sort:</code> ordena os resultados por um campo especificado. O formato é <code>sort:&lt;field&gt;.&lt;order&gt;</code>, onde <code>&lt;order&gt;</code> é <code>asc</code> ou <code>desc</code>. Por exemplo, para pesquisar \"Fess\" ordenado por tamanho de conteúdo de forma decrescente:</p><pre>Fess sort:content_length.desc</pre><p>Os campos de ordenação disponíveis incluem <code>created</code>, <code>content_length</code> e <code>last_modified</code>. Esses campos são personalizáveis.</p>"
+    },
+    {
+      "id": "boost",
+      "title": "Boost",
+      "html": "<p>Para impulsionar um termo, use o símbolo <code>^</code> seguido de um fator de impulso (um número) no final do termo de pesquisa. Um fator mais alto aumenta a pontuação de relevância desse termo.</p><pre>Fess^100</pre>"
+    },
+    {
+      "id": "fuzzy",
+      "title": "Pesquisa difusa",
+      "html": "<p>Para realizar uma pesquisa difusa, use o símbolo <code>~</code> no final de uma única palavra. O número opcional após <code>~</code> (0 a 1) controla o limiar de similaridade. O valor padrão é <code>0.5</code>.</p><pre>Fess~0.5</pre>"
+    }
+  ]
+}

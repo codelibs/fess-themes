@@ -1,0 +1,69 @@
+{
+  "sections": [
+    {
+      "id": "basic",
+      "title": "Grundlegende Suche",
+      "html": "<p>Um zu suchen, geben Sie Ihre Anfrage in das Suchfeld ein und drücken Sie die Eingabetaste (oder klicken Sie auf die Schaltfläche „Suchen“).</p><p>Mehrere Wörter werden standardmäßig mit AND verknüpft. Beispielsweise findet <code>open source</code> Dokumente, die sowohl „open“ als auch „source“ enthalten.</p>"
+    },
+    {
+      "id": "folders",
+      "title": "Nach Ordnern durchsuchen",
+      "html": "<p>Die Ordnerstruktur links listet die Quellen auf, die Fess durchsucht hat (einen Dateiserver, einen freigegebenen Ordner, eine Website) und darunter jeweils deren Ordner. Klicken Sie auf den Pfeil, um einen Ordner zu öffnen, oder auf seinen Namen, um nur darin zu suchen. Die Zahl neben einem Ordner gibt an, wie viele passende Dokumente er enthält.</p><p>Eine Zahl in der Form <code>≥120</code> ist eine Untergrenze: Der Ordner ist groß und nur ein Teil wurde gezählt, die tatsächliche Zahl ist also mindestens so hoch. Öffnen Sie den Ordner, um genauer zu zählen.</p><p>Die Pfadleiste über der Liste zeigt den Ordner, in dem Sie sich befinden. Klicken Sie auf einen beliebigen Teil davon, um zu diesem Ordner zurückzukehren, nutzen Sie den Pfeil nach oben, um eine Ebene höher zu gehen, oder klicken Sie auf <strong>Alle Quellen</strong>, um überall zu suchen. Mit der Kopierschaltfläche legen Sie den Pfad des Ordners in die Zwischenablage; er wird für eine Windows-Freigabe als <code>\\\\server\\share\\folder</code> und für einen lokalen Pfad als <code>/home/user/folder</code> geschrieben.</p><p>Der Ordner ist Teil der Adresse im Browser, sodass Sie ihn als Lesezeichen speichern, weitergeben und zwischen Ordnern vor- und zurückwechseln können. Eine Suche, die Sie innerhalb eines Ordners starten, durchsucht nur diesen Ordner.</p>"
+    },
+    {
+      "id": "filters",
+      "title": "Filter",
+      "html": "<p>Klicken Sie über der Liste auf <strong>Filter</strong>, um die Ergebnisse nach Dateityp, nach dem Zeitpunkt der letzten Änderung oder nach Größe einzugrenzen. Wählen Sie eine Schaltfläche, um den Filter anzuwenden, und wählen Sie sie erneut, um ihn zu entfernen. Die angewendeten Filter werden außerdem als Chips über der Liste angezeigt.</p><p>Sie können mehrere Dateitypen gleichzeitig auswählen; die Gruppen für Änderungsdatum und Größe erlauben jeweils nur eine Auswahl.</p><p>Die Zahlen auf den Schaltflächen geben an, wie viele Ergebnisse unter den bereits angewendeten Filtern übereinstimmen. Nachdem Sie eine Schaltfläche für Änderungsdatum oder Größe gewählt haben, verschwinden die anderen Schaltflächen dieser Gruppe, bis Sie den Filter wieder entfernen.</p>"
+    },
+    {
+      "id": "views",
+      "title": "Ansichten und Sortierung",
+      "html": "<p>Mit den Ansichtsschaltflächen wechseln Sie zwischen <strong>Details</strong> (eine Tabelle mit Name, Speicherort, Änderungsdatum, Größe und Typ), <strong>Liste</strong> (eine kompakte Zeile pro Datei) und <strong>Kacheln</strong> (große Symbole oder Vorschaubilder). Ihre Auswahl wird in diesem Browser gespeichert.</p><p>In der Ansicht „Details“ klicken Sie auf eine Spaltenüberschrift, um danach zu sortieren, und erneut, um die Reihenfolge umzukehren. Das Sortierelement in der Symbolleiste bewirkt in den anderen Ansichten dasselbe. Die Ergebnisse sind nach Relevanz geordnet, wenn Sie ein Stichwort eingegeben haben, und nach Name, wenn Sie nur stöbern.</p><p>Das Sortieren nach <strong>Typ</strong> oder <strong>Speicherort</strong> erfordert eine Einstellung auf dem Server. Wenn Ihr Server sie nicht hat, weist ein Hinweis darauf hin und es wird die Standardreihenfolge verwendet.</p>"
+    },
+    {
+      "id": "preview",
+      "title": "Vorschau und Aktionen",
+      "html": "<p>Wählen Sie eine Datei aus, um ihre Details im Bereich rechts zu sehen: wo sie liegt, wann sie geändert wurde, ihre Größe und ihr Typ sowie Aktionen, um sie zu öffnen, ihren Pfad zu kopieren oder ihren Ordner anzuzeigen. <strong>Original öffnen</strong> öffnet die Datei über Fess, sodass Ihre Zugriffsrechte geprüft werden.</p><p>Unter den Details zeigt Fess nach Möglichkeit eine Vorschau an: eine PDF-Datei, eine Text- oder Quelltextdatei, ein Bild oder die vom Crawler gespeicherte Kopie. Bei anderen Typen werden nur die Details angezeigt. Eine Vorschau wird nur für die ausgewählte Datei geladen.</p><p>Eine Webseite kann keinen Ordner in Ihrem Betriebssystem öffnen. Daher wechselt <strong>Im Ordner anzeigen</strong> innerhalb dieser Seite zu diesem Ordner, und <strong>Pfad kopieren</strong> liefert Ihnen den Pfad zum Einfügen in Ihren Dateimanager.</p><p>Auf einem schmalen Bildschirm öffnen sich die Ordnerstruktur und die Vorschau über der Liste statt neben ihr.</p>"
+    },
+    {
+      "id": "shortcuts",
+      "title": "Tastaturkürzel",
+      "html": "<ul><li><code>/</code> &mdash; Zum Suchfeld springen</li><li><code>&uarr;</code> <code>&darr;</code> &mdash; Durch die Ergebnisse navigieren (<code>Home</code> und <code>End</code> springen zum ersten bzw. letzten)</li><li><code>Enter</code> &mdash; Ausgewählte Datei öffnen</li><li><code>Space</code> &mdash; Vorschau ein- oder ausblenden</li><li><code>&larr;</code> <code>&rarr;</code> &mdash; In der Ordnerstruktur Ordner schließen und öffnen; in den Ergebnissen führt <code>&larr;</code> zurück zur Ordnerstruktur</li><li><code>Esc</code> &mdash; Vorschau, Ordner-Seitenleiste oder Vorschläge schließen</li></ul>"
+    },
+    {
+      "id": "operators",
+      "title": "Suchoperatoren",
+      "html": "<table class=\"table table-sm\"><thead><tr><th scope=\"col\">Operator</th><th scope=\"col\">Beschreibung</th><th scope=\"col\">Beispiel</th></tr></thead><tbody><tr><td><code>AND</code> / <code>&amp;&amp;</code></td><td>Beide Begriffe müssen vorkommen</td><td><code>fess AND search</code></td></tr><tr><td><code>OR</code> / <code>||</code></td><td>Einer der Begriffe muss vorkommen</td><td><code>fess OR opensearch</code></td></tr><tr><td><code>NOT</code> / <code>-</code></td><td>Den Begriff ausschließen</td><td><code>fess -lucene</code></td></tr><tr><td><code>\"...\"</code></td><td>Genaue Phrase</td><td><code>\"full text search\"</code></td></tr><tr><td><code>site:</code></td><td>Auf eine Website beschränken</td><td><code>site:example.com fess</code></td></tr><tr><td><code>filetype:</code></td><td>Auf einen Dateityp beschränken</td><td><code>filetype:pdf fess</code></td></tr></tbody></table>"
+    },
+    {
+      "id": "wildcards",
+      "title": "Platzhalter",
+      "html": "<p>Sie können <code>*</code> verwenden, um eine beliebige Zeichenfolge zu entsprechen, und <code>?</code>, um ein einzelnes Zeichen zu entsprechen.</p><p>Beispiele: <code>fess*</code> entspricht „fess“, „fessbook“, „fessful“. <code>te?t</code> entspricht „test“ oder „text“.</p>"
+    },
+    {
+      "id": "ranges",
+      "title": "Bereichsabfragen",
+      "html": "<p>Verwenden Sie eckige Klammern, um nach einem Wertebereich zu suchen: <code>content_length:[1024 TO 10240]</code> findet Dokumente mit Größen zwischen 1KB und 10KB.</p> Eckige Klammern <code>[ ]</code> schließen die Grenzwerte ein; geschweifte Klammern <code>{ }</code> schließen sie aus, z. B. entspricht <code>content_length:{1024 TO 10240}</code> Größen, die strikt größer als 1KB und strikt kleiner als 10KB sind."
+    },
+    {
+      "id": "field",
+      "title": "Feldsuche",
+      "html": "<p>Sie können jedes Feld durchsuchen, indem Sie den Feldnamen gefolgt von einem Doppelpunkt <code>:</code> und dem gesuchten Begriff eingeben. Beispiel: Um Dokumente zu finden, die „Fess“ im Titel haben:</p><pre>title:Fess</pre><p>Zu den verfügbaren Feldern gehören <code>url</code>, <code>host</code>, <code>site</code>, <code>title</code>, <code>content</code>, <code>content_length</code>, <code>last_modified</code> und <code>mimetype</code>. Diese sind anpassbar.</p>"
+    },
+    {
+      "id": "sort",
+      "title": "Sortierung",
+      "html": "<p>Der Operator <code>sort:</code> sortiert Ergebnisse nach einem angegebenen Feld. Das Format ist <code>sort:&lt;field&gt;.&lt;order&gt;</code>, wobei <code>&lt;order&gt;</code> <code>asc</code> oder <code>desc</code> ist. Beispiel: Um nach „Fess“ zu suchen und nach Inhaltslänge absteigend zu sortieren:</p><pre>Fess sort:content_length.desc</pre><p>Verfügbare Sortierfelder sind <code>created</code>, <code>content_length</code> und <code>last_modified</code>. Diese sind anpassbar.</p>"
+    },
+    {
+      "id": "boost",
+      "title": "Boosting",
+      "html": "<p>Um einen Begriff zu boosten, verwenden Sie das Symbol <code>^</code> gefolgt von einem Boost-Faktor (einer Zahl) am Ende des Suchbegriffs. Ein höherer Faktor erhöht den Relevanzscore dieses Begriffs.</p><pre>Fess^100</pre>"
+    },
+    {
+      "id": "fuzzy",
+      "title": "Unscharfe Suche",
+      "html": "<p>Um eine unscharfe Suche durchzuführen, verwenden Sie das Symbol <code>~</code> am Ende eines einzelnen Worts. Die optionale Zahl nach <code>~</code> (0 bis 1) steuert den Ähnlichkeitsschwellenwert. Der Standardwert ist <code>0.5</code>.</p><pre>Fess~0.5</pre>"
+    }
+  ]
+}

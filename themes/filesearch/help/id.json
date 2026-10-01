@@ -1,0 +1,69 @@
+{
+  "sections": [
+    {
+      "id": "basic",
+      "title": "Pencarian Dasar",
+      "html": "<p>Untuk mencari, ketik kueri Anda di kotak pencarian lalu tekan Enter (atau klik tombol \"Cari\").</p><p>Beberapa kata digabungkan dengan AND secara default. Misalnya, <code>open source</code> menemukan dokumen yang mengandung \"open\" dan \"source\" sekaligus.</p>"
+    },
+    {
+      "id": "folders",
+      "title": "Menelusuri Menurut Folder",
+      "html": "<p>Pohon folder di sebelah kiri mencantumkan sumber yang telah dirayapi Fess (server berkas, folder bersama, situs web) dan, di bawah setiap sumber, folder-foldernya. Klik panah untuk membuka folder, atau klik namanya untuk mencari hanya di dalamnya. Angka di samping folder menunjukkan jumlah dokumen yang cocok di dalamnya.</p><p>Angka yang ditulis seperti <code>≥120</code> adalah batas bawah: folder tersebut besar dan hanya sebagian yang dihitung, sehingga jumlah sebenarnya setidaknya sebesar itu. Buka folder untuk menghitung dengan lebih tepat.</p><p>Bilah lokasi di atas daftar menampilkan folder tempat Anda berada. Klik bagian mana pun untuk kembali ke folder tersebut, gunakan panah naik untuk naik satu tingkat, atau klik <strong>Semua sumber</strong> untuk mencari di mana saja. Tombol salin menaruh jalur folder di clipboard, ditulis <code>\\\\server\\share\\folder</code> untuk berbagi Windows dan <code>/home/user/folder</code> untuk jalur lokal.</p><p>Folder menjadi bagian dari alamat di browser, sehingga Anda dapat menandainya dengan bookmark, membagikannya, dan berpindah maju-mundur antar folder. Pencarian yang Anda mulai saat berada di dalam folder hanya mencari di folder itu.</p>"
+    },
+    {
+      "id": "filters",
+      "title": "Filter",
+      "html": "<p>Tekan <strong>Filter</strong> di atas daftar untuk mempersempit hasil menurut jenis berkas, waktu terakhir berkas diubah, atau ukuran. Pilih sebuah tombol untuk menerapkannya dan pilih lagi untuk menghapusnya. Filter yang telah Anda terapkan juga tampil sebagai chip di atas daftar.</p><p>Anda dapat memilih beberapa jenis berkas sekaligus; kelompok waktu diubah dan ukuran masing-masing hanya menerima satu pilihan.</p><p>Angka pada tombol menghitung hasil yang cocok berdasarkan filter yang sudah Anda terapkan. Setelah Anda memilih tombol waktu diubah atau ukuran, tombol lain dalam kelompok itu akan hilang sampai pilihan itu dihapus.</p>"
+    },
+    {
+      "id": "views",
+      "title": "Tampilan dan Sortir",
+      "html": "<p>Gunakan tombol tampilan untuk beralih antara <strong>Detail</strong> (tabel berisi nama, lokasi, tanggal diubah, ukuran, dan jenis), <strong>Daftar</strong> (satu baris ringkas per berkas), dan <strong>Ubin</strong> (ikon besar atau gambar mini). Pilihan Anda diingat di browser ini.</p><p>Di tampilan Detail, klik judul kolom untuk mengurutkan berdasarkan kolom itu dan klik lagi untuk membalik urutan. Kontrol sortir di bilah alat melakukan hal yang sama di tampilan lainnya. Hasil diurutkan menurut relevansi saat Anda mengetik kata kunci, dan menurut nama saat Anda hanya menelusuri.</p><p>Menyortir menurut <strong>Jenis</strong> atau <strong>Lokasi</strong> memerlukan pengaturan di server. Jika server Anda tidak memilikinya, sebuah pemberitahuan akan menyatakannya dan urutan default digunakan.</p>"
+    },
+    {
+      "id": "preview",
+      "title": "Pratinjau dan Aksi",
+      "html": "<p>Pilih sebuah berkas untuk melihat detailnya di panel sebelah kanan: lokasinya, kapan diubah, ukuran dan jenisnya, serta aksi untuk membukanya, menyalin jalurnya, atau menampilkan foldernya. <strong>Buka berkas asli</strong> membuka berkas melalui Fess, sehingga hak akses Anda diperiksa.</p><p>Di bawah detail, Fess menampilkan pratinjau jika memungkinkan: PDF, berkas teks atau kode sumber, gambar, atau salinan yang disimpan oleh crawler. Jenis lain hanya menampilkan detail. Pratinjau hanya dimuat untuk berkas yang Anda pilih.</p><p>Halaman web tidak dapat membuka folder di sistem operasi Anda, jadi <strong>Tampilkan di folder</strong> berpindah ke folder tersebut di dalam halaman ini, dan <strong>Salin jalur</strong> memberi Anda jalur untuk ditempel ke pengelola berkas Anda.</p><p>Pada layar sempit, pohon folder dan pratinjau terbuka di atas daftar, bukan di sampingnya.</p>"
+    },
+    {
+      "id": "shortcuts",
+      "title": "Pintasan Keyboard",
+      "html": "<ul><li><code>/</code> &mdash; Fokus ke kotak pencarian</li><li><code>&uarr;</code> <code>&darr;</code> &mdash; Bergerak di antara hasil (<code>Home</code> dan <code>End</code> melompat ke yang pertama dan terakhir)</li><li><code>Enter</code> &mdash; Buka berkas yang dipilih</li><li><code>Space</code> &mdash; Tampilkan atau sembunyikan pratinjau</li><li><code>&larr;</code> <code>&rarr;</code> &mdash; Di pohon folder, menutup dan membuka folder; di hasil, <code>&larr;</code> kembali ke pohon</li><li><code>Esc</code> &mdash; Tutup pratinjau, panel folder, atau saran</li></ul>"
+    },
+    {
+      "id": "operators",
+      "title": "Operator Pencarian",
+      "html": "<table class=\"table table-sm\"><thead><tr><th scope=\"col\">Operator</th><th scope=\"col\">Deskripsi</th><th scope=\"col\">Contoh</th></tr></thead><tbody><tr><td><code>AND</code> / <code>&amp;&amp;</code></td><td>Kedua istilah harus muncul</td><td><code>fess AND search</code></td></tr><tr><td><code>OR</code> / <code>||</code></td><td>Salah satu istilah boleh muncul</td><td><code>fess OR opensearch</code></td></tr><tr><td><code>NOT</code> / <code>-</code></td><td>Kecualikan istilah</td><td><code>fess -lucene</code></td></tr><tr><td><code>\"...\"</code></td><td>Frasa persis</td><td><code>\"full text search\"</code></td></tr><tr><td><code>site:</code></td><td>Batasi ke situs</td><td><code>site:example.com fess</code></td></tr><tr><td><code>filetype:</code></td><td>Batasi ke jenis berkas</td><td><code>filetype:pdf fess</code></td></tr></tbody></table>"
+    },
+    {
+      "id": "wildcards",
+      "title": "Karakter Wildcard",
+      "html": "<p>Anda dapat menggunakan <code>*</code> untuk mencocokkan rangkaian karakter apa pun dan <code>?</code> untuk mencocokkan satu karakter.</p><p>Contoh: <code>fess*</code> cocok dengan \"fess\", \"fessbook\", \"fessful\". <code>te?t</code> cocok dengan \"test\" atau \"text\".</p>"
+    },
+    {
+      "id": "ranges",
+      "title": "Kueri Rentang",
+      "html": "<p>Gunakan tanda kurung siku untuk mencari rentang nilai: <code>content_length:[1024 TO 10240]</code> menemukan dokumen berukuran antara 1KB dan 10KB.</p> Tanda kurung siku <code>[ ]</code> menyertakan batasnya; tanda kurung kurawal <code>{ }</code> mengecualikannya, misalnya <code>content_length:{1024 TO 10240}</code> cocok dengan ukuran yang benar-benar lebih besar dari 1KB dan benar-benar lebih kecil dari 10KB."
+    },
+    {
+      "id": "field",
+      "title": "Pencarian Bidang",
+      "html": "<p>Anda dapat mencari di bidang apa pun dengan mengetik nama bidang diikuti titik dua <code>:</code> lalu istilah yang Anda cari. Misalnya, untuk menemukan dokumen dengan \"Fess\" di judulnya:</p><pre>title:Fess</pre><p>Bidang yang tersedia antara lain <code>url</code>, <code>host</code>, <code>site</code>, <code>title</code>, <code>content</code>, <code>content_length</code>, <code>last_modified</code>, dan <code>mimetype</code>. Bidang-bidang ini dapat disesuaikan.</p>"
+    },
+    {
+      "id": "sort",
+      "title": "Sortir",
+      "html": "<p>Operator <code>sort:</code> mengurutkan hasil berdasarkan bidang tertentu. Formatnya adalah <code>sort:&lt;field&gt;.&lt;order&gt;</code>, dengan <code>&lt;order&gt;</code> berupa <code>asc</code> atau <code>desc</code>. Misalnya, untuk mencari \"Fess\" yang diurutkan berdasarkan panjang konten secara menurun:</p><pre>Fess sort:content_length.desc</pre><p>Bidang pengurutan yang tersedia antara lain <code>created</code>, <code>content_length</code>, dan <code>last_modified</code>. Bidang-bidang ini dapat disesuaikan.</p>"
+    },
+    {
+      "id": "boost",
+      "title": "Boost",
+      "html": "<p>Untuk memberi boost pada suatu istilah, gunakan simbol <code>^</code> diikuti faktor boost (angka) di akhir istilah pencarian. Faktor yang lebih tinggi meningkatkan skor relevansi istilah tersebut.</p><pre>Fess^100</pre>"
+    },
+    {
+      "id": "fuzzy",
+      "title": "Pencarian Fuzzy",
+      "html": "<p>Untuk melakukan pencarian fuzzy, gunakan simbol <code>~</code> di akhir satu kata. Angka opsional setelah <code>~</code> (0 hingga 1) mengatur ambang kemiripan. Nilai default-nya adalah <code>0.5</code>.</p><pre>Fess~0.5</pre>"
+    }
+  ]
+}

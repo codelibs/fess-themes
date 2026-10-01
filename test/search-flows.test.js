@@ -31,9 +31,15 @@ import {
 
 // Themes that keep the bootstrap runSearch contract (d-none visibility, #results-status).
 const DNONE_THEMES = [
-  "docsearch", "docuforge", "helpdesk", "mosaic",
+  "docsearch", "docuforge", "filesearch", "helpdesk", "mosaic",
   "nomadkit", "rawblock", "semanticlens", "storefront", "voicebox",
 ];
+// filesearch has no facet sidebar (#facet-body): its filters are a panel of toggle buttons
+// and its file-type selection is a facet field, not a facet query view. The sidebar-bound
+// suites below skip it; filesearch.flow.test.js covers its own filter and folder behaviour.
+const SIDEBAR_THEMES = DNONE_THEMES.filter((t) => t !== "filesearch");
+// The facet fields each theme asks /search for (filesearch adds the file-type facet).
+const facetFieldsOf = (theme) => (theme === "filesearch" ? ["filetype", "label"] : ["label"]);
 // Themes that keep the bootstrap facet DOM (renderFacetQueryViews → ul.list-group)
 // and a #result <li> card the chip/current-filter renderers were written against.
 const STD_THEMES = [
@@ -91,7 +97,7 @@ describe.each(DNONE_THEMES)("runSearch pipeline [%s]", (theme) => {
     // semanticlens no longer request facet.query counts, so that param is STD-only.)
     expect(call[1]).toMatchObject({
       q: "foo", start: 0, num: 10,
-      "facet.field": ["label"],
+      "facet.field": facetFieldsOf(theme),
     });
     expect(call[2]).toHaveProperty("signal");
   });
@@ -425,7 +431,7 @@ describe.each(DNONE_THEMES)("search-options drawer Search [%s]", (theme) => {
 // keeps the filter; runFromUrl() sorts the URL's clauses back into the facet stores so
 // the restored selection renders active and a click removes it again.
 
-describe.each(DNONE_THEMES)("facet selections in the URL [%s]", (theme) => {
+describe.each(SIDEBAR_THEMES)("facet selections in the URL [%s]", (theme) => {
   const lastSearch = (get) => get.mock.calls.filter((c) => c[0] === "/search").at(-1)[1];
   const labelFacet = (text) =>
     [...document.querySelectorAll("#facet-body ul.list-group li.list-group-item")]

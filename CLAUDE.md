@@ -154,16 +154,16 @@ anything but 200 or 404 aborts the run instead of being read as "nothing is publ
 
 Every theme carries its own copy of the same core modules. Eight of them — `router.js`,
 `api.js`, `i18n.js`, `help.js`, `cache.js`, `error.js`, `auth.js`, `profile.js` — are copied
-unchanged from the fess bootstrap theme and are **byte-identical** across all 10 themes,
+unchanged from the fess bootstrap theme and are **byte-identical** across all 11 themes,
 enforced by `test/parity.test.js` (see below). `format.js` and `markdown.js` are also fully
 byte-identical, including line 2: their line-2 comment was neutralized to a theme-agnostic
-string (`// ... for the Fess static theme SPA.`), so a plain `md5` confirms all 10 copies
-(and the `bootstrap` 11th copy). The rest of the shared modules (`advance.js`, `chat.js`)
+string (`// ... for the Fess static theme SPA.`), so a plain `md5` confirms all 11 copies
+(and the `bootstrap` 12th copy). The rest of the shared modules (`advance.js`, `chat.js`)
 still carry a per-theme module comment on line 2 — they are not byte-identical, so a plain
 `md5` reports a difference for every theme and tells you nothing there; strip line 2 before
 hashing (below).
 
-Identical across all 10 themes:
+Identical across all 11 themes:
 
 ```
 format.js  markdown.js                                    (byte-identical, line 2 included)
@@ -173,7 +173,7 @@ auth.js    profile.js                                     (byte-identical copies
 
 `router.js`, `api.js`, `i18n.js`, `help.js`, `cache.js`, `error.js`, `auth.js` and `profile.js`
 are copied unchanged from `src/main/webapp/themes/bootstrap/assets/` in the fess repository, at
-the Fess release the themes target (`test/parity.test.js` checks that the ten copies stay
+the Fess release the themes target (`test/parity.test.js` checks that the eleven copies stay
 identical). Update them by copying the new fess version into every theme, not by editing one
 copy.
 
@@ -184,15 +184,15 @@ incoming `sort=price.asc`, and submit silently drops it back to relevance order.
 divergence is deliberate — a theme contributing its own sort fields has nowhere else to put
 them — so do **not** "restore" it by copying another theme's copy over it.
 
-`chat.js` splits 8 / `codesearch` / `docsearch`.
+`chat.js` splits 9 / `codesearch` / `docsearch`.
 `compat.js` carries no `/themes/` path at all — it differs by header brand plus a
-CSS-class prefix (`df-` in eight, `vb-` in `voicebox`, `bs-` in `codesearch`).
-`assets/logo.png` and `assets/logo-head.png` are byte-identical across all 10.
+CSS-class prefix (`df-` in eight, `fs-` in `filesearch`, `vb-` in `voicebox`, `bs-` in `codesearch`).
+`assets/logo.png` and `assets/logo-head.png` are byte-identical across all 11.
 
 `codesearch` is the usual outlier — it is the oldest lineage and its `theme.yml` also omits
-the `author` / `description` / `license` / `homepage` the other 9 carry.
+the `author` / `description` / `license` / `homepage` the other 10 carry.
 
-`assets/format.js` (the HTML sanitizer) has an 11th copy in the `bootstrap` reference theme
+`assets/format.js` (the HTML sanitizer) has a 12th copy in the `bootstrap` reference theme
 of the `fess` repo (`src/main/webapp/themes/bootstrap/assets/format.js`), and some theme
 READMEs assert identity with it.
 
@@ -203,7 +203,7 @@ compares the other shared files (`advance.js`, `chat.js`, `compat.js`), so verif
 by hand.
 
 `format.js` and `markdown.js` are byte-identical including line 2, so a plain `md5`
-(no `sed`) confirms all 11 copies:
+(no `sed`) confirms all 12 copies:
 
 ```bash
 for f in themes/*/assets/format.js ../fess/src/main/webapp/themes/bootstrap/assets/format.js; do
@@ -217,7 +217,7 @@ comment line stripped:
 ```bash
 for f in themes/*/assets/advance.js; do
   printf '%s  %s\n' "$(sed '2d' "$f" | md5 -q)" "$f"
-done | sort   # one hash for nine themes, plus storefront's deliberate copy
+done | sort   # one hash for ten themes, plus storefront's deliberate copy
 ```
 
 `sed '2d'` assumes line 1 is the SPDX header and line 2 the per-theme comment. That holds
@@ -239,8 +239,8 @@ before believing the hash.
   name-bound, so renaming a theme means updating `theme.yml#name`, `#displayName`, and
   those paths.
 - i18n lives in `i18n/messages.<locale>.json`. Every theme ships **16** message bundles and
-  **16** `help/<locale>.json` bundles, but 9 of the 10 themes declare only 8 locales in
-  `theme.yml#supportedLocales` (`codesearch` declares all 16) — the undeclared bundles ship
+  **16** `help/<locale>.json` bundles, but 9 of the 11 themes declare only 8 locales in
+  `theme.yml#supportedLocales` (`codesearch` and `filesearch` declare all 16) — the undeclared bundles ship
   but the server never lists them. Keep key parity across *every shipped bundle*, not just
   the declared ones. A help bundle is required for every locale `i18n.js` serves: `help.js`
   falls back to `help/en.json` only after the locale's own fetch 404s, and the browser logs
@@ -252,6 +252,19 @@ before believing the hash.
   users. This is why parity is load-bearing rather than cosmetic, and why it is the one
   thing CI enforces (`scripts/verify-bundles.mjs`). It has drifted before: `codesearch`
   shipped with keys missing from 14 of its 16 bundles, repaired by hand in #27.
+
+## filesearch
+
+`filesearch` is forked from `docuforge` but is no longer a recolour of it: its `search.js` and
+`app.js` are its own, and the file-search logic lives in modules next to them (`scope`, `paths`,
+`tree`, `treesource`, `treeview`, `listview`, `preview`, `previewload`, `filterpanel`, `filters`,
+`sorting`, `keynav`, `viewmode`, `recent`, `icons`, `dom`; see its README). The pure ones have
+unit tests under `test/filesearch.*`; `filesearch.flow.test.js` drives `search.js` against the
+theme's real `index.html`. It is in the shared `search-*`, `results-status` and `search-flows`
+suites except where its UI differs on purpose (no facet sidebar, no current-filters badge
+row); each such exception is commented where the list is defined. Its tree has no server-side
+hierarchy to read, so folder counts are facet-derived and approximate (`treesource.js` is the
+only place to change when Fess grows one).
 
 ## Gotchas
 

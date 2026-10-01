@@ -1,0 +1,69 @@
+{
+  "sections": [
+    {
+      "id": "basic",
+      "title": "Basic Search",
+      "html": "<p>To search, type your query into the search box and press Enter (or click the Search button).</p><p>Multiple words are combined with AND by default. For example, <code>open source</code> finds documents containing both \"open\" and \"source\".</p>"
+    },
+    {
+      "id": "folders",
+      "title": "Browsing by Folder",
+      "html": "<p>The folder tree on the left lists the sources Fess has crawled (a file server, a shared folder, a website) and, under each one, its folders. Click the arrow to open a folder, or click its name to look only inside it. The number beside a folder is how many matching documents it holds.</p><p>A number written like <code>≥120</code> is a lower bound: the folder is large and only part of it was counted, so the real figure is at least that. Open the folder to count more exactly.</p><p>The location bar above the list shows the folder you are in. Click any part of it to go back up to that folder, use the up arrow to go one level up, or click <strong>All sources</strong> to search everywhere. The copy button puts the folder&#39;s path on the clipboard, written <code>\\\\server\\share\\folder</code> for a Windows share and <code>/home/user/folder</code> for a local path.</p><p>The folder is part of the address in the browser, so you can bookmark it, share it, and move back and forward between folders. A search you start while inside a folder looks only in that folder.</p>"
+    },
+    {
+      "id": "filters",
+      "title": "Filters",
+      "html": "<p>Press <strong>Filters</strong> above the list to narrow the results by file type, by when a file was last modified, or by size. Choose a button to apply it and choose it again to remove it. The filters you have applied also show as chips above the list.</p><p>You can choose several file types at once; the modified and size groups take one choice each.</p><p>The numbers on the buttons count the results that match the filters you have already applied. Once you choose a modified or size button, the other buttons of that group disappear until you remove it.</p>"
+    },
+    {
+      "id": "views",
+      "title": "Views and Sorting",
+      "html": "<p>Use the view buttons to switch between <strong>Details</strong> (a table of name, location, modified date, size and type), <strong>List</strong> (one compact line per file) and <strong>Tiles</strong> (large icons or thumbnails). Your choice is remembered in this browser.</p><p>In the Details view, click a column heading to sort by it and click it again to reverse the order. The sort control in the toolbar does the same in the other views. Results are in order of relevance when you have typed a keyword, and by name when you are only browsing.</p><p>Sorting by <strong>Type</strong> or <strong>Location</strong> needs a setting on the server. If your server does not have it, a notice says so and the default order is used.</p>"
+    },
+    {
+      "id": "preview",
+      "title": "Preview and Actions",
+      "html": "<p>Select a file to see its details in the pane on the right: where it is, when it changed, its size and type, and actions to open it, copy its path or show its folder. <strong>Open original</strong> opens the file through Fess, so your access rights are checked.</p><p>Below the details Fess shows a preview where it can: a PDF, a text or source file, an image, or the copy stored by the crawler. Other types show the details only. A preview is loaded only for the file you select.</p><p>A web page cannot open a folder in your operating system, so <strong>Show in folder</strong> moves to that folder inside this page, and <strong>Copy path</strong> gives you the path to paste into your file manager.</p><p>On a narrow screen the folder tree and the preview open over the list instead of beside it.</p>"
+    },
+    {
+      "id": "shortcuts",
+      "title": "Keyboard Shortcuts",
+      "html": "<ul><li><code>/</code> &mdash; Focus the search box</li><li><code>&uarr;</code> <code>&darr;</code> &mdash; Move through the results (<code>Home</code> and <code>End</code> jump to the first and last)</li><li><code>Enter</code> &mdash; Open the selected file</li><li><code>Space</code> &mdash; Show or hide the preview</li><li><code>&larr;</code> <code>&rarr;</code> &mdash; In the folder tree, close and open folders; in the results, <code>&larr;</code> goes back to the tree</li><li><code>Esc</code> &mdash; Close the preview, the folder drawer or the suggestions</li></ul>"
+    },
+    {
+      "id": "operators",
+      "title": "Search Operators",
+      "html": "<table class=\"table table-sm\"><thead><tr><th scope=\"col\">Operator</th><th scope=\"col\">Description</th><th scope=\"col\">Example</th></tr></thead><tbody><tr><td><code>AND</code> / <code>&amp;&amp;</code></td><td>Both terms must appear</td><td><code>fess AND search</code></td></tr><tr><td><code>OR</code> / <code>||</code></td><td>Either term may appear</td><td><code>fess OR opensearch</code></td></tr><tr><td><code>NOT</code> / <code>-</code></td><td>Exclude the term</td><td><code>fess -lucene</code></td></tr><tr><td><code>\"...\"</code></td><td>Exact phrase</td><td><code>\"full text search\"</code></td></tr><tr><td><code>site:</code></td><td>Restrict to a site</td><td><code>site:example.com fess</code></td></tr><tr><td><code>filetype:</code></td><td>Restrict to a file type</td><td><code>filetype:pdf fess</code></td></tr></tbody></table>"
+    },
+    {
+      "id": "wildcards",
+      "title": "Wildcards",
+      "html": "<p>You can use <code>*</code> to match any sequence of characters and <code>?</code> to match a single character.</p><p>Examples: <code>fess*</code> matches \"fess\", \"fessbook\", \"fessful\". <code>te?t</code> matches \"test\" or \"text\".</p>"
+    },
+    {
+      "id": "ranges",
+      "title": "Range Queries",
+      "html": "<p>Use square brackets to search for a range of values: <code>content_length:[1024 TO 10240]</code> finds documents with sizes between 1KB and 10KB.</p> Square brackets <code>[ ]</code> include the bounds; curly braces <code>{ }</code> exclude them, e.g. <code>content_length:{1024 TO 10240}</code> matches sizes strictly greater than 1KB and strictly less than 10KB."
+    },
+    {
+      "id": "field",
+      "title": "Field Search",
+      "html": "<p>You can search any field by typing the field name followed by a colon <code>:</code> and then the term you are looking for. For example, to find documents with \"Fess\" in the title:</p><pre>title:Fess</pre><p>The available fields include <code>url</code>, <code>host</code>, <code>site</code>, <code>title</code>, <code>content</code>, <code>content_length</code>, <code>last_modified</code>, and <code>mimetype</code>. These are customizable.</p>"
+    },
+    {
+      "id": "sort",
+      "title": "Sort",
+      "html": "<p>The <code>sort:</code> operator sorts results by a specified field. The format is <code>sort:&lt;field&gt;.&lt;order&gt;</code>, where <code>&lt;order&gt;</code> is <code>asc</code> or <code>desc</code>. For example, to search for \"Fess\" sorted by content length descending:</p><pre>Fess sort:content_length.desc</pre><p>Available sort fields include <code>created</code>, <code>content_length</code>, and <code>last_modified</code>. These are customizable.</p>"
+    },
+    {
+      "id": "boost",
+      "title": "Boost",
+      "html": "<p>To boost a term, use the <code>^</code> symbol followed by a boost factor (a number) at the end of the search term. A higher factor increases the relevance score of that term.</p><pre>Fess^100</pre>"
+    },
+    {
+      "id": "fuzzy",
+      "title": "Fuzzy Search",
+      "html": "<p>To perform a fuzzy search, use the <code>~</code> symbol at the end of a single word. The optional number after <code>~</code> (0 to 1) controls the similarity threshold. The default is <code>0.5</code>.</p><pre>Fess~0.5</pre>"
+    }
+  ]
+}

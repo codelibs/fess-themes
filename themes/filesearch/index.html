@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-src blob:; child-src blob:; base-uri 'self'">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Fess</title>
+  <!-- File Search is self-contained: no Bootstrap, no web fonts (system font stacks only).
+       styles.css implements every utility/component class the SPA relies on; compat.js
+       re-implements the Bootstrap JS API surface (Modal/Collapse/Dropdown/Offcanvas/Tooltip). -->
+  <!-- Fess inserts <base href="{context path}/"> right after <head>. Every URL in this
+       theme is relative to it, so the theme works under any context path. -->
+  <link rel="stylesheet" href="css/font-awesome.min.css">
+  <link rel="stylesheet" href="themes/filesearch/assets/styles.css">
+  <link rel="icon" href="favicon.ico">
+</head>
+<body>
+  <a href="#page-root" class="visually-hidden-focusable position-absolute top-0 start-0 m-2" data-i18n="aria.skip_to_main">Skip to main content</a>
+  <!-- Visually-hidden h1 for screen readers and SEO; text is updated by i18n.js. -->
+  <h1 class="visually-hidden" data-i18n="page.heading">Fess Search</h1>
+  <!-- Polite live region for short confirmations ("Path copied"). -->
+  <div id="fs-live" class="visually-hidden" role="status" aria-live="polite"></div>
+
+  <!-- ===================================================================
+       SHARED HEADER — tag-parity with WEB-INF/view/header.jsp.
+       header > nav.navbar… > div#content.fs-header-row with the brand logo,
+       the search input-group (#query / #searchButton / #searchOptionsButton),
+       and the right-side ul.nav.navbar-nav.d-none.d-md-flex of li.nav-item
+       entries (warnings + auth + chat + help).  The search box is shown on
+       EVERY view (only hidden on /chat — toggled by app.js setSearchFormVisible).
+       The header spans the full width of the window, above the folder tree.
+       =================================================================== -->
+  <header>
+    <nav class="navbar navbar-expand-md fixed-top fs-header d-print-none" role="banner">
+      <div id="content" class="fs-header-row">
+        <a class="navbar-brand d-inline-flex" href="./" id="brand-link" data-spa><img src="themes/filesearch/assets/logo-head.png" alt="" data-i18n-alt="labels.header_brand_name" class="align-items-center"></a>
+        <div class="d-flex me-auto p-0 fs-search-wrap" role="search" id="search-form-wrap">
+          <form class="input-group" id="search-form" role="search" aria-label="Site search">
+            <input
+                id="query"
+                class="form-control"
+                type="search"
+                name="q"
+                maxlength="1000"
+                autocomplete="off"
+                aria-label="Search query"
+                data-i18n-placeholder="search.placeholder"
+                role="combobox"
+                aria-expanded="false"
+                aria-controls="suggest-dropdown"
+                aria-autocomplete="list"
+                aria-haspopup="listbox">
+            <button type="submit" name="search" id="searchButton" class="btn btn-primary"><i class="fa fa-search" aria-hidden="true"></i> <span class="visually-hidden" data-i18n="search.button">Search</span></button>
+            <button type="button" class="btn btn-light" id="searchOptionsButton" data-bs-toggle="collapse" data-bs-target="#searchOptions" aria-expanded="false" aria-controls="searchOptions"><i class="fa fa-cog" aria-hidden="true"></i> <span class="visually-hidden" data-i18n="search.options">Options</span></button>
+            <ul class="list-group position-absolute top-100 start-0 end-0 mt-1 d-none shadow-sm" id="suggest-dropdown" role="listbox" aria-label="Search suggestions"></ul>
+          </form>
+        </div>
+        <ul class="nav navbar-nav d-none d-md-flex ms-auto" id="header-nav">
+          <!-- Warning indicators (EOL / dev-mode) rendered by app.js as li.nav-item -->
+          <!-- Auth entry (login nav-link OR user dropdown) rendered by auth.js -->
+          <li class="nav-item" id="auth-controls" data-i18n-aria-label="aria.auth_controls"></li>
+          <!-- Chat (AI mode) — shown by app.js when rag_chat_enabled -->
+          <li class="nav-item d-none" id="chat-nav-item"><a class="nav-link" href="chat" id="chat-nav-link" data-spa role="button"><i class="fa fa-fw fa-robot" aria-hidden="true"></i> <span data-i18n="nav.chat_ai_mode">AI Search</span></a></li>
+          <li class="nav-item"><a class="nav-link help-link" href="help" id="help-link" data-spa role="help"><i class="fa fa-fw fa-question-circle" aria-hidden="true"></i> <span data-i18n="nav.help">Help</span></a></li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ===================================================================
+       SEARCH OPTIONS DRAWER — tag-parity with header.jsp #searchOptions +
+       searchOptions.jsp.  A fixed right-side slide-in panel toggled by the
+       header #searchOptionsButton (and the home #searchOptionsButton).
+       select#numSearchOption / #sortSearchOption / #langSearchOption are
+       populated by search.js renderSearchOptions().
+       =================================================================== -->
+  <div id="searchOptions" class="collapse">
+    <div class="container">
+      <h3 id="searchOptionsLabel" data-i18n="search.options_title">Search Options</h3>
+      <div>
+        <fieldset class="mb-3">
+          <legend data-i18n="search.num">Display Count</legend>
+          <label for="numSearchOption" data-i18n="search.num">Display Count</label>
+          <select name="num" id="numSearchOption" class="form-control" aria-label="Results per page"></select>
+        </fieldset>
+        <fieldset class="mb-3">
+          <legend data-i18n="search.sort">Sort</legend>
+          <label for="sortSearchOption" data-i18n="search.sort">Sort</label>
+          <select name="sort" id="sortSearchOption" class="form-control" aria-label="Sort order"></select>
+        </fieldset>
+        <fieldset class="mb-3">
+          <legend data-i18n="search.lang">Preferred Language</legend>
+          <label for="langSearchOption" data-i18n="search.lang">Preferred Language</label>
+          <select name="lang" multiple="multiple" id="langSearchOption" class="form-control" aria-label="Language filter"></select>
+        </fieldset>
+        <fieldset class="mb-3" id="labelSearchOptionFieldset">
+          <legend data-i18n="search.labels">Label</legend>
+          <label for="labelSearchOption" data-i18n="search.labels">Label</label>
+          <select name="fields.label" multiple="multiple" id="labelSearchOption" class="form-control" aria-label="Label filter"></select>
+        </fieldset>
+        <!-- Geo-location filter. Wired by search.js via #geo-lat / #geo-lon /
+             #geo-distance; applied/cleared by the drawer's main Search / Clear buttons. -->
+        <fieldset class="mb-3" id="geoSearchOptionFieldset">
+          <legend data-i18n="search.geo">Location</legend>
+          <label for="geo-lat" data-i18n="search.geo_lat">Latitude</label>
+          <input type="text" class="form-control mb-2" id="geo-lat" placeholder="e.g. 35.6895">
+          <label for="geo-lon" data-i18n="search.geo_lon">Longitude</label>
+          <input type="text" class="form-control mb-2" id="geo-lon" placeholder="e.g. 139.6917">
+          <label for="geo-distance" data-i18n="search.geo_distance">Distance (e.g. 1km)</label>
+          <input type="text" class="form-control mb-2" id="geo-distance" placeholder="e.g. 1km">
+        </fieldset>
+      </div>
+      <div>
+        <button type="button" class="btn btn-light" id="searchOptionsClearButton" data-i18n="facet.clear">Clear</button>
+        <button type="submit" class="btn btn-primary" form="search-form">
+          <i class="fa fa-search" aria-hidden="true"></i> <span data-i18n="nav.search">Search</span>
+        </button>
+        <a href="search/advance" data-spa id="searchOptionsAdvanceLink" class="btn btn-secondary">
+          <i class="fa fa-cog" aria-hidden="true"></i> <span data-i18n="advance.link">Advanced Search</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================
+       HOME / TOP VIEW — the search box, plus a way in by folder: the tree
+       of sources (the same tree component the results screen uses) and the
+       recent searches.
+       =================================================================== -->
+  <main id="page-root" role="main">
+    <section id="home-view" hidden>
+      <form id="home-search-form" class="container" role="search" aria-label="Home search">
+        <div class="row">
+          <div class="col text-center searchFormBox">
+            <h1 class="mainLogo">
+              <img src="themes/filesearch/assets/logo.png" alt="" data-i18n-alt="page.heading" class="home-logo">
+            </h1>
+            <!-- Notification banner — rendered by app.js renderNotifications()
+                 from config.notifications.search_top. -->
+            <div class="notification" id="home-notification" role="status" aria-live="polite"></div>
+            <!-- Flash / message region (parity index.jsp la:info / la:errors). -->
+            <div id="home-flash" class="d-none" role="alert" aria-live="assertive" aria-atomic="true"></div>
+            <fieldset>
+              <!-- Legend hidden via CSS (legend{display:none}); kept for semantics. -->
+              <legend data-i18n="nav.search">Search</legend>
+              <div class="clearfix">
+                <div class="mx-auto fs-home-search position-relative">
+                  <input id="contentQuery" type="search" class="query form-control"
+                         name="q" maxlength="1000" autocomplete="off"
+                         data-i18n-placeholder="search.placeholder"
+                         role="combobox" aria-expanded="false" aria-controls="home-suggest-dropdown"
+                         aria-autocomplete="list" aria-haspopup="listbox" aria-label="Search query">
+                  <ul class="list-group suggest-dropdown position-absolute top-100 start-0 end-0 mt-1 d-none shadow-sm"
+                      id="home-suggest-dropdown" role="listbox" aria-label="Search suggestions"></ul>
+                </div>
+              </div>
+              <!-- Popular words (parity index.jsp:140-156). -->
+              <div class="clearfix">
+                <p class="text-truncate" id="home-popular-words"></p>
+              </div>
+              <div class="clearfix searchButtonBox btn-group">
+                <button type="submit" name="search" id="home-search-submit" class="btn btn-primary"><i class="fa fa-search" aria-hidden="true"></i> <span data-i18n="search.button">Search</span></button>
+                <button type="button" class="btn btn-outline-secondary" id="home-options-toggle"
+                        data-bs-toggle="collapse" data-bs-target="#searchOptions"
+                        aria-expanded="false" aria-controls="searchOptions">
+                  <i class="fa fa-cog" aria-hidden="true"></i> <span data-i18n="search.options">Options</span>
+                </button>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+      </form>
+
+      <div class="fs-home-extra">
+        <section id="home-browse" class="fs-home-card" aria-labelledby="home-browse-title">
+          <h2 id="home-browse-title" data-i18n="fs.browse_title">Browse by folder</h2>
+          <p class="fs-muted" data-i18n="fs.browse_hint">Pick a source to look through its folders.</p>
+          <div id="home-tree-warning" class="fs-tree-note d-none" role="status"></div>
+          <div id="home-tree" class="fs-tree" role="tree" aria-labelledby="home-browse-title"></div>
+          <div id="home-tree-status" class="fs-tree-note" role="status" aria-live="polite"></div>
+        </section>
+        <section id="home-recent" class="fs-home-card fs-recent d-none" aria-labelledby="home-recent-title">
+          <h2 id="home-recent-title" data-i18n="fs.recent_title">Recent searches</h2>
+          <ul class="fs-recent-list"></ul>
+          <button type="button" class="btn btn-link btn-sm" data-fs-clear-recent data-i18n="fs.recent_clear">Clear</button>
+        </section>
+      </div>
+    </section>
+
+    <!-- ===================================================================
+         SEARCH RESULTS VIEW — three regions under the full-width header:
+           aside#fs-tree-pane   the folder tree (a drawer below 900px)
+           section#fs-main      location bar, toolbar, filters, the result list
+           aside#fs-preview     the preview pane (a sheet below 900px)
+         #results keeps the searchResults.jsp id; its rows live in a role="grid".
+         =================================================================== -->
+    <section id="results-view">
+      <div id="content-results" class="fs-shell">
+        <!-- Notification + error banners (theme runtime extras). -->
+        <div id="results-notification" class="d-none mb-2" role="status" aria-live="polite"></div>
+        <div id="search-error" class="alert alert-danger d-none mb-2" role="alert" aria-live="assertive"></div>
+        <div id="results-warning" class="alert alert-warning d-none mb-2" role="status" aria-live="polite"></div>
+        <div id="fs-notice" class="alert alert-info d-none mb-2" role="status" aria-live="polite"></div>
+
+        <div id="fs-workspace" class="fs-workspace" data-preview="open" data-sheet="closed" data-tree="closed">
+          <!-- ── folder tree ── -->
+          <aside id="fs-tree-pane" class="fs-tree-pane" aria-labelledby="fs-tree-title">
+            <div class="fs-pane-head">
+              <h2 id="fs-tree-title" class="fs-pane-title" data-i18n="fs.tree_title">Folders</h2>
+              <button type="button" id="fs-tree-close" class="fs-icon-btn fs-narrow-only" data-i18n-aria-label="fs.close" aria-label="Close"><svg class="fs-ui" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+            </div>
+            <div id="fs-tree-warning" class="fs-tree-note d-none" role="status"></div>
+            <div id="fs-tree" class="fs-tree" role="tree" aria-labelledby="fs-tree-title"></div>
+            <div id="fs-tree-status" class="fs-tree-note" role="status" aria-live="polite"></div>
+            <section id="fs-recent" class="fs-recent d-none" aria-labelledby="fs-recent-title">
+              <h3 id="fs-recent-title" data-i18n="fs.recent_title">Recent searches</h3>
+              <ul class="fs-recent-list"></ul>
+              <button type="button" class="btn btn-link btn-sm" data-fs-clear-recent data-i18n="fs.recent_clear">Clear</button>
+            </section>
+          </aside>
+          <div id="fs-scrim" class="fs-scrim" aria-hidden="true"></div>
+
+          <!-- ── location, toolbar, filters, list ── -->
+          <section id="fs-main" class="fs-main" aria-label="Results" data-i18n-aria-label="fs.results_label" data-focus-target>
+            <div class="fs-sticky">
+              <div class="fs-locbar">
+                <button type="button" id="fs-tree-toggle" class="fs-icon-btn fs-narrow-only" aria-controls="fs-tree-pane" aria-expanded="false" data-i18n-aria-label="fs.show_folders" aria-label="Show folders"><svg class="fs-ui" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="1.6"/><path d="M9.5 5v14"/></svg></button>
+                <button type="button" id="fs-up" class="fs-icon-btn" data-i18n-aria-label="fs.up" aria-label="Up one level" disabled><svg class="fs-ui" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V6M6.5 11.5L12 6l5.5 5.5"/></svg></button>
+                <nav class="fs-breadcrumb" aria-label="Location" data-i18n-aria-label="fs.location">
+                  <ol id="fs-crumbs" class="fs-crumbs"></ol>
+                </nav>
+                <button type="button" id="fs-copy-path" class="fs-icon-btn" data-i18n-aria-label="fs.copy_path" aria-label="Copy path" disabled><svg class="fs-ui" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="8.5" y="8.5" width="11" height="11" rx="1.6"/><path d="M15.5 8.5V6.6a1.6 1.6 0 0 0-1.6-1.6H6.6A1.6 1.6 0 0 0 5 6.6v7.3a1.6 1.6 0 0 0 1.6 1.6h1.9"/></svg></button>
+              </div>
+              <p id="fs-pathtext" class="fs-pathtext d-none"></p>
+
+              <div class="fs-toolbar">
+                <p id="results-status" class="fs-status" aria-live="polite" aria-atomic="true"></p>
+                <div class="fs-toolbar-actions">
+                  <button type="button" id="fs-filter-toggle" class="fs-tool-btn" aria-expanded="false" aria-controls="fs-filters"><svg class="fs-ui" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 5.5h15l-5.8 7v5.3l-3.4 1.7v-7z"/></svg><span data-i18n="fs.filters">Filters</span><span id="fs-filter-count" class="fs-badge d-none"></span></button>
+                  <div class="fs-sort">
+                    <label for="fs-sort-select" class="visually-hidden" data-i18n="fs.sort_by">Sort by</label>
+                    <select id="fs-sort-select" class="fs-select"></select>
+                    <button type="button" id="fs-sort-dir" class="fs-icon-btn"></button>
+                  </div>
+                  <div id="fs-view-toggle" class="fs-segment" role="group" data-i18n-aria-label="fs.view" aria-label="View">
+                    <button type="button" data-view="details" aria-pressed="true" data-i18n-aria-label="fs.view_details" aria-label="Details"><svg class="fs-ui" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5h16M4 12h16M4 17.5h16M9.5 4.5v15"/></svg></button>
+                    <button type="button" data-view="compact" aria-pressed="false" data-i18n-aria-label="fs.view_compact" aria-label="List"><svg class="fs-ui" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg></button>
+                    <button type="button" data-view="tiles" aria-pressed="false" data-i18n-aria-label="fs.view_tiles" aria-label="Tiles"><svg class="fs-ui" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/></svg></button>
+                  </div>
+                  <button type="button" id="fs-preview-toggle" class="fs-icon-btn fs-wide-only" aria-pressed="true" aria-controls="fs-preview" data-i18n-aria-label="fs.preview_toggle" aria-label="Preview pane"><svg class="fs-ui" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="16" height="14" rx="1.6"/><path d="M14.5 5v14"/></svg></button>
+                </div>
+              </div>
+            </div>
+
+            <div id="fs-filters" class="fs-filters d-none" role="group" aria-label="Filters" data-i18n-aria-label="fs.filters"></div>
+            <div class="d-none mb-2" id="active-chips" aria-live="polite" aria-atomic="true" aria-label="Active filters"></div>
+
+            <!-- Loading indicator shown while a /search request is in flight. -->
+            <div id="search-loading" class="d-none fs-loading" role="status" aria-live="polite">
+              <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+              <span data-i18n="labels.search_loading">Searching…</span>
+            </div>
+            <div id="similar-doc-banner" class="alert alert-info d-none align-items-center mb-2" role="status" aria-live="polite"></div>
+            <div class="d-none mb-2" id="related-queries" aria-live="polite" aria-label="Related searches"></div>
+            <div class="d-none mb-2" id="related-content" aria-live="polite"></div>
+
+            <input type="hidden" id="queryId" value="">
+            <input type="hidden" id="rt" value="">
+            <div id="fs-list" class="fs-list">
+              <div id="fs-grid" role="grid" aria-label="Search results" data-i18n-aria-label="fs.list_label">
+                <div id="fs-head" class="fs-head" role="row"></div>
+                <ol id="results" class="fs-rows" role="rowgroup" data-view="details"></ol>
+              </div>
+            </div>
+
+            <!-- Empty / no-result state (parity searchNoResult.jsp). -->
+            <div class="fs-empty d-none" id="empty-state">
+              <p class="mb-2" id="empty-did-not-match"></p>
+              <p class="mb-3" data-i18n="search.did_not_match_suggestion">Try different keywords or fewer keywords.</p>
+              <div id="popular-words"></div>
+            </div>
+
+            <!-- Pagination (parity searchResults.jsp div.row > nav#subfooter). -->
+            <nav id="subfooter" class="d-none" aria-label="Pagination">
+              <ul class="pagination justify-content-center" id="pagination"></ul>
+            </nav>
+            <!-- results-meta retained as a hidden status sink for error paths. -->
+            <div id="results-meta" class="visually-hidden" aria-live="polite"></div>
+          </section>
+
+          <!-- ── preview pane ── -->
+          <aside id="fs-preview" class="fs-preview" aria-labelledby="fs-preview-title" data-has-doc="0">
+            <div class="fs-pane-head">
+              <h2 id="fs-preview-title" class="fs-pane-title" data-i18n="fs.preview_title">Preview</h2>
+              <button type="button" id="fs-preview-close" class="fs-icon-btn" data-i18n-aria-label="fs.preview_close" aria-label="Close preview"><svg class="fs-ui" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+            </div>
+            <p id="fs-preview-empty" class="fs-preview-empty" data-i18n="fs.preview_empty">Select a file to see its details here.</p>
+            <div id="fs-preview-body" class="fs-preview-body" hidden>
+              <div class="fs-pv-file">
+                <span id="fs-pv-icon" class="fs-pv-icon"></span>
+                <div class="fs-pv-names">
+                  <div id="fs-pv-name" class="fs-pv-name"></div>
+                  <div id="fs-pv-path" class="fs-pv-path"></div>
+                </div>
+              </div>
+              <div id="fs-pv-actions" class="fs-pv-actions"></div>
+              <div id="fs-pv-stage" class="fs-pv-stage"></div>
+              <dl id="fs-pv-meta" class="fs-pv-meta"></dl>
+            </div>
+          </aside>
+        </div>
+
+        <aside class="d-none" id="chat-column" role="complementary" aria-label="Chat"></aside>
+      </div>
+    </section>
+
+    <section id="advance-view" hidden class="container my-4">
+      <div id="advance-notification" class="d-none" role="status" aria-live="polite"></div>
+    </section>
+    <section id="error-view" hidden class="container my-4"></section>
+    <section id="profile-view" hidden class="container my-4"></section>
+    <section id="help-view" hidden class="container my-4"></section>
+    <section id="chat-view" hidden class="container-fluid my-3"></section>
+    <section id="cache-view" hidden class="container my-3"></section>
+  </main>
+
+  <!-- JSP parity (footer.jsp): <footer><div class="container text-center"><p class="text-muted">…</p></div></footer>. -->
+  <footer class="d-print-none" role="contentinfo" data-i18n-aria-label="aria.footer">
+    <div class="container text-center">
+      <p class="text-muted mb-0" id="footer-copyright"></p>
+    </div>
+  </footer>
+
+  <!-- Back to top button -->
+  <button id="back-to-top"
+          class="btn btn-secondary position-fixed back-to-top is-hidden d-print-none"
+          aria-label="Back to top"
+          data-i18n-aria-label="footer.back_to_top">
+    <i class="fa fa-arrow-up" aria-hidden="true"></i>
+  </button>
+
+  <!-- Login modal -->
+  <div class="modal fade" id="login-modal" tabindex="-1" aria-labelledby="login-modal-title" aria-hidden="true">
+    <div class="modal-dialog">
+      <form class="modal-content" id="login-form">
+        <div class="modal-header">
+          <h5 class="modal-title" id="login-modal-title" data-i18n="auth.login">Login</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Login notification banner (parity login/index.jsp:25 <div class="notification">${notification}</div>).
+               Filled from config.notifications.login by auth.js when the modal opens. -->
+          <div class="notification d-none" id="login-notification" role="status" aria-live="polite"></div>
+          <div class="alert alert-danger d-none" id="login-error" role="alert"></div>
+          <div class="mb-3">
+            <label for="login-username" class="form-label" data-i18n="auth.username">Username</label>
+            <input class="form-control" id="login-username" name="username" autocomplete="username" required>
+          </div>
+          <div class="mb-3">
+            <label for="login-password" class="form-label" data-i18n="auth.password">Password</label>
+            <input class="form-control" id="login-password" name="password" type="password" autocomplete="current-password" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="auth.cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-i18n="auth.login">Login</button>
+        </div>
+      </form>
+      <!-- New-password form, shown instead of the login form when the password just used
+           must be changed (parity login/newpassword.jsp). auth.js switches between them. -->
+      <form class="modal-content d-none" id="password-change-form">
+        <div class="modal-header">
+          <h5 class="modal-title" data-i18n="profile.title">Change Password</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p data-i18n="auth.password_change_required">You need to update your password</p>
+          <div class="alert alert-danger d-none" id="password-change-error" role="alert"></div>
+          <div class="mb-3">
+            <label for="password-change-new" class="form-label" data-i18n="profile.new_password">New password</label>
+            <input class="form-control" id="password-change-new" name="new_password" type="password" autocomplete="new-password" required>
+          </div>
+          <div class="mb-3">
+            <label for="password-change-confirm" class="form-label" data-i18n="profile.confirm_password">Confirm new password</label>
+            <input class="form-control" id="password-change-confirm" name="confirm_password" type="password" autocomplete="new-password" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-i18n="auth.cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary" data-i18n="profile.update">Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!--
+    Load order matters: compat.js (the Bootstrap-JS-API shim) is a classic
+    defer script and MUST run before app.js (type="module") so window.bootstrap
+    exists when the modules initialise. This mirrors the popper+bootstrap →
+    app.js order of the reference theme, minus the external libraries.
+  -->
+  <script src="themes/filesearch/assets/compat.js" defer></script>
+  <script type="module" src="themes/filesearch/assets/app.js"></script>
+</body>
+</html>

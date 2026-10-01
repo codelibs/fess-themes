@@ -20,7 +20,7 @@ import {
 
 // The nine themes that render #results-status (codesearch has its own summary line).
 const STATUS_THEMES = [
-  "docsearch", "docuforge", "helpdesk", "mosaic",
+  "docsearch", "docuforge", "filesearch", "helpdesk", "mosaic",
   "nomadkit", "rawblock", "semanticlens", "storefront", "voicebox",
 ];
 

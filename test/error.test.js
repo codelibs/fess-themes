@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // error.js (JSP retirement, spec §8.5): ErrorPageServlet now renders the active theme
 // at the URL that failed, with the real HTTP status, instead of redirecting to a
-// bootstrap page with ?url=. error.js is byte-identical across all 10 themes
+// bootstrap page with ?url=. error.js is byte-identical across all 11 themes
 // (parity.test.js), copied unchanged from the fess bootstrap theme, but is exercised
 // here per theme (describe.each) rather than once against a single copy, matching
 // this suite's convention for behaviour that ships in every theme's bundle.

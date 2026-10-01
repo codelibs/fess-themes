@@ -1,0 +1,69 @@
+{
+  "sections": [
+    {
+      "id": "basic",
+      "title": "基本搜索",
+      "html": "<p>要进行搜索，请在搜索框中输入查询内容，然后按 Enter 键（或点击“搜索”按钮）。</p><p>多个词默认以 AND 组合。例如，<code>open source</code> 会查找同时包含 “open” 和 “source” 的文档。</p>"
+    },
+    {
+      "id": "folders",
+      "title": "按文件夹浏览",
+      "html": "<p>左侧的文件夹树列出了 Fess 已抓取的来源（文件服务器、共享文件夹、网站），以及每个来源下的文件夹。点击箭头可展开文件夹，点击名称则只在该文件夹内查找。文件夹旁边的数字是其中匹配的文档数量。</p><p>形如 <code>≥120</code> 的数字表示下限：该文件夹较大，只统计了其中一部分，因此实际数量至少为该值。展开文件夹可获得更精确的数量。</p><p>列表上方的位置栏显示您当前所在的文件夹。点击其中任意一部分可返回到对应的文件夹，使用向上箭头可返回上一级，点击<strong>所有来源</strong>则在全部范围内搜索。复制按钮会将文件夹路径放入剪贴板，Windows 共享的格式为 <code>\\\\server\\share\\folder</code>，本地路径的格式为 <code>/home/user/folder</code>。</p><p>文件夹是浏览器地址的一部分，因此您可以将其加入书签、分享，并在文件夹之间前进和后退。在某个文件夹内发起的搜索只会在该文件夹内查找。</p>"
+    },
+    {
+      "id": "filters",
+      "title": "筛选",
+      "html": "<p>点击列表上方的<strong>筛选</strong>，可按文件类型、最后修改时间或大小缩小结果范围。选择某个按钮即可应用，再次选择则移除。已应用的筛选条件也会以标签片段的形式显示在列表上方。</p><p>文件类型可以同时选择多个；修改时间和大小两组各只能选择一项。</p><p>按钮上的数字表示在您已应用的筛选条件下匹配的结果数量。选择某个修改时间或大小按钮后，同一组的其他按钮会消失，直到您移除该筛选。</p>"
+    },
+    {
+      "id": "views",
+      "title": "视图与排序",
+      "html": "<p>使用视图按钮可在<strong>详细信息</strong>（以表格显示名称、位置、修改时间、大小和类型）、<strong>列表</strong>（每个文件一行的紧凑显示）和<strong>平铺</strong>（大图标或缩略图）之间切换。您的选择会保存在此浏览器中。</p><p>在详细信息视图中，点击列标题即可按该列排序，再次点击则反转顺序。在其他视图中，可使用工具栏中的排序控件。输入了关键词时，结果按相关性排序；仅浏览时按名称排序。</p><p>按<strong>类型</strong>或<strong>位置</strong>排序需要在服务器上进行设置。如果您的服务器没有该设置，页面会给出提示，并使用默认顺序。</p>"
+    },
+    {
+      "id": "preview",
+      "title": "预览与操作",
+      "html": "<p>选择某个文件后，可在右侧窗格中查看其详细信息：所在位置、修改时间、大小和类型，以及打开文件、复制路径或显示所在文件夹等操作。<strong>打开原文件</strong>会通过 Fess 打开文件，因此会检查您的访问权限。</p><p>在详细信息下方，Fess 会尽可能显示预览：PDF、文本或源代码文件、图像，或爬虫保存的副本。其他类型只显示详细信息。预览仅为您选择的文件加载。</p><p>网页无法在操作系统中打开文件夹，因此<strong>在文件夹中显示</strong>会在本页面内跳转到该文件夹，而<strong>复制路径</strong>会提供可粘贴到文件管理器中的路径。</p><p>在窄屏幕上，文件夹树和预览会叠放在列表之上打开，而不是显示在列表旁边。</p>"
+    },
+    {
+      "id": "shortcuts",
+      "title": "键盘快捷键",
+      "html": "<ul><li><code>/</code> &mdash; 聚焦搜索框</li><li><code>&uarr;</code> <code>&darr;</code> &mdash; 在结果中移动（<code>Home</code> 和 <code>End</code> 跳到第一项和最后一项）</li><li><code>Enter</code> &mdash; 打开所选文件</li><li><code>Space</code> &mdash; 显示或隐藏预览</li><li><code>&larr;</code> <code>&rarr;</code> &mdash; 在文件夹树中收起和展开文件夹；在结果中，<code>&larr;</code> 返回文件夹树</li><li><code>Esc</code> &mdash; 关闭预览、文件夹面板或建议</li></ul>"
+    },
+    {
+      "id": "operators",
+      "title": "搜索运算符",
+      "html": "<table class=\"table table-sm\"><thead><tr><th scope=\"col\">运算符</th><th scope=\"col\">说明</th><th scope=\"col\">示例</th></tr></thead><tbody><tr><td><code>AND</code> / <code>&amp;&amp;</code></td><td>两个词都必须出现</td><td><code>fess AND search</code></td></tr><tr><td><code>OR</code> / <code>||</code></td><td>任意一个词出现即可</td><td><code>fess OR opensearch</code></td></tr><tr><td><code>NOT</code> / <code>-</code></td><td>排除该词</td><td><code>fess -lucene</code></td></tr><tr><td><code>\"...\"</code></td><td>精确短语匹配</td><td><code>\"full text search\"</code></td></tr><tr><td><code>site:</code></td><td>限定到某个站点</td><td><code>site:example.com fess</code></td></tr><tr><td><code>filetype:</code></td><td>限定到某种文件类型</td><td><code>filetype:pdf fess</code></td></tr></tbody></table>"
+    },
+    {
+      "id": "wildcards",
+      "title": "通配符",
+      "html": "<p>可以使用 <code>*</code> 匹配任意字符序列，使用 <code>?</code> 匹配单个字符。</p><p>示例：<code>fess*</code> 可匹配 “fess”、“fessbook”、“fessful”。<code>te?t</code> 可匹配 “test” 或 “text”。</p>"
+    },
+    {
+      "id": "ranges",
+      "title": "范围查询",
+      "html": "<p>使用方括号搜索某个值的范围：<code>content_length:[1024 TO 10240]</code> 可查找大小在 1KB 到 10KB 之间的文档。</p> 方括号 <code>[ ]</code> 包含边界值；花括号 <code>{ }</code> 不包含边界值，例如 <code>content_length:{1024 TO 10240}</code> 匹配严格大于 1KB 且严格小于 10KB 的大小。"
+    },
+    {
+      "id": "field",
+      "title": "字段搜索",
+      "html": "<p>可以通过输入字段名称后跟冒号 <code>:</code> 再加上要查找的词来搜索任意字段。例如，要查找标题中包含 “Fess” 的文档：</p><pre>title:Fess</pre><p>可用字段包括 <code>url</code>、<code>host</code>、<code>site</code>、<code>title</code>、<code>content</code>、<code>content_length</code>、<code>last_modified</code> 和 <code>mimetype</code>。这些字段可自定义配置。</p>"
+    },
+    {
+      "id": "sort",
+      "title": "排序",
+      "html": "<p><code>sort:</code> 运算符按指定字段对结果排序。格式为 <code>sort:&lt;field&gt;.&lt;order&gt;</code>，其中 <code>&lt;order&gt;</code> 为 <code>asc</code>（升序）或 <code>desc</code>（降序）。例如，搜索 “Fess” 并按内容长度降序排列：</p><pre>Fess sort:content_length.desc</pre><p>可用的排序字段包括 <code>created</code>、<code>content_length</code> 和 <code>last_modified</code>。这些字段可自定义配置。</p>"
+    },
+    {
+      "id": "boost",
+      "title": "权重提升（Boost）",
+      "html": "<p>要提升某个词的权重，可在搜索词末尾使用 <code>^</code> 符号后跟一个提升因子（数字）。因子越大，该词的相关性得分越高。</p><pre>Fess^100</pre>"
+    },
+    {
+      "id": "fuzzy",
+      "title": "模糊搜索",
+      "html": "<p>要执行模糊搜索，可在单个词末尾使用 <code>~</code> 符号。<code>~</code> 后面的可选数字（0 到 1）用于控制相似度阈值。默认值为 <code>0.5</code>。</p><pre>Fess~0.5</pre>"
+    }
+  ]
+}

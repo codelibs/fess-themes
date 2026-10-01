@@ -14,8 +14,8 @@ import { describe, it, expect } from "vitest";
 import { themes, readModuleSource } from "./helpers/themes.js";
 
 describe.each(["format.js", "markdown.js"])("cross-theme parity: %s", (moduleName) => {
-  it("is byte-identical across all 10 themes (line 2 included)", () => {
-    expect(themes.length).toBe(10);
+  it("is byte-identical across all 11 themes (line 2 included)", () => {
+    expect(themes.length).toBe(11);
     const reference = readModuleSource(themes[0], moduleName);
     for (const theme of themes) {
       const source = readModuleSource(theme, moduleName);
@@ -36,8 +36,8 @@ describe.each(["format.js", "markdown.js"])("cross-theme parity: %s", (moduleNam
 describe.each(["router.js", "api.js", "i18n.js", "help.js", "cache.js", "error.js", "auth.js", "profile.js"])(
   "cross-theme parity: %s",
   (moduleName) => {
-    it("is byte-identical across all 10 themes", () => {
-      expect(themes.length).toBe(10);
+    it("is byte-identical across all 11 themes", () => {
+      expect(themes.length).toBe(11);
       const reference = readModuleSource(themes[0], moduleName);
       for (const theme of themes) {
         const source = readModuleSource(theme, moduleName);

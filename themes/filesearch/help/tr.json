@@ -1,0 +1,69 @@
+{
+  "sections": [
+    {
+      "id": "basic",
+      "title": "Temel Arama",
+      "html": "<p>Arama yapmak için sorgunuzu arama kutusuna yazın ve Enter tuşuna basın (veya \"Ara\" düğmesine tıklayın).</p><p>Birden fazla kelime varsayılan olarak AND ile birleştirilir. Örneğin <code>open source</code>, hem \"open\" hem de \"source\" içeren belgeleri bulur.</p>"
+    },
+    {
+      "id": "folders",
+      "title": "Klasöre Göre Gözatma",
+      "html": "<p>Soldaki klasör ağacı, Fess&#39;in taradığı kaynakları (bir dosya sunucusu, bir paylaşım klasörü, bir web sitesi) ve her birinin altındaki klasörleri listeler. Bir klasörü açmak için oka tıklayın veya yalnızca onun içinde arama yapmak için adına tıklayın. Klasörün yanındaki sayı, içerdiği eşleşen belge sayısıdır.</p><p><code>≥120</code> gibi yazılan bir sayı alt sınırdır: klasör büyüktür ve yalnızca bir kısmı sayılmıştır, bu nedenle gerçek sayı en az o kadardır. Daha kesin saymak için klasörü açın.</p><p>Listenin üstündeki konum çubuğu bulunduğunuz klasörü gösterir. O klasöre geri dönmek için herhangi bir bölümüne tıklayın, bir üst düzeye çıkmak için yukarı okunu kullanın veya her yerde arama yapmak için <strong>Tüm kaynaklar</strong> seçeneğine tıklayın. Kopyala düğmesi klasörün yolunu panoya koyar; Windows paylaşımı için <code>\\\\server\\share\\folder</code>, yerel yol için <code>/home/user/folder</code> biçiminde yazılır.</p><p>Klasör, tarayıcıdaki adresin bir parçasıdır; bu nedenle yer imi ekleyebilir, paylaşabilir ve klasörler arasında ileri geri gidebilirsiniz. Bir klasörün içindeyken başlattığınız arama yalnızca o klasörde yapılır.</p>"
+    },
+    {
+      "id": "filters",
+      "title": "Filtreler",
+      "html": "<p>Sonuçları dosya türüne, dosyanın son değiştirilme zamanına veya boyutuna göre daraltmak için listenin üstündeki <strong>Filtreler</strong> düğmesine basın. Uygulamak için bir düğme seçin, kaldırmak için yeniden seçin. Uyguladığınız filtreler listenin üstünde çip olarak da görünür.</p><p>Aynı anda birden fazla dosya türü seçebilirsiniz; son değişiklik ve boyut gruplarında birer seçim yapılabilir.</p><p>Düğmelerdeki sayılar, zaten uyguladığınız filtrelere göre eşleşen sonuçları sayar. Son değişiklik veya boyut düğmesini seçtiğinizde, kaldırana kadar o gruptaki diğer düğmeler kaybolur.</p>"
+    },
+    {
+      "id": "views",
+      "title": "Görünümler ve Sıralama",
+      "html": "<p>Görünüm düğmeleriyle <strong>Ayrıntılar</strong> (ad, konum, değiştirilme tarihi, boyut ve tür tablosu), <strong>Liste</strong> (dosya başına tek satır) ve <strong>Kutucuklar</strong> (büyük simgeler veya küçük resimler) arasında geçiş yapın. Seçiminiz bu tarayıcıda hatırlanır.</p><p>Ayrıntılar görünümünde bir sütun başlığına tıklayarak ona göre sıralayın, sırayı ters çevirmek için yeniden tıklayın. Araç çubuğundaki sıralama denetimi diğer görünümlerde aynı işi yapar. Bir anahtar sözcük yazdığınızda sonuçlar alaka sırasına göre, yalnızca göz atarken ada göre sıralanır.</p><p><strong>Tür</strong> veya <strong>Konum</strong> ölçütüne göre sıralamak, sunucuda bir ayar gerektirir. Sunucunuzda bu ayar yoksa bir bildirim bunu belirtir ve varsayılan sıra kullanılır.</p>"
+    },
+    {
+      "id": "preview",
+      "title": "Önizleme ve İşlemler",
+      "html": "<p>Ayrıntılarını sağdaki bölmede görmek için bir dosya seçin: nerede olduğu, ne zaman değiştiği, boyutu ve türü ile dosyayı açma, yolunu kopyalama veya klasörünü gösterme işlemleri. <strong>Aslını aç</strong> dosyayı Fess üzerinden açar; böylece erişim haklarınız denetlenir.</p><p>Ayrıntıların altında Fess, mümkün olduğunda bir önizleme gösterir: PDF, metin veya kaynak dosyası, görsel ya da tarama sırasında saklanan kopya. Diğer türlerde yalnızca ayrıntılar gösterilir. Önizleme yalnızca seçtiğiniz dosya için yüklenir.</p><p>Bir web sayfası işletim sisteminizde klasör açamaz; bu nedenle <strong>Klasörde göster</strong> bu sayfanın içinde o klasöre gider, <strong>Yolu kopyala</strong> ise dosya yöneticinize yapıştırmanız için yolu verir.</p><p>Dar ekranlarda klasör ağacı ve önizleme, listenin yanında değil üzerinde açılır.</p>"
+    },
+    {
+      "id": "shortcuts",
+      "title": "Klavye Kısayolları",
+      "html": "<ul><li><code>/</code> &mdash; Arama kutusuna odaklan</li><li><code>&uarr;</code> <code>&darr;</code> &mdash; Sonuçlar arasında gez (<code>Home</code> ve <code>End</code> ilk ve son sonuca atlar)</li><li><code>Enter</code> &mdash; Seçili dosyayı aç</li><li><code>Space</code> &mdash; Önizlemeyi göster veya gizle</li><li><code>&larr;</code> <code>&rarr;</code> &mdash; Klasör ağacında klasörleri kapat ve aç; sonuçlarda <code>&larr;</code> ağaca geri döner</li><li><code>Esc</code> &mdash; Önizlemeyi, klasör panelini veya önerileri kapat</li></ul>"
+    },
+    {
+      "id": "operators",
+      "title": "Arama Operatörleri",
+      "html": "<table class=\"table table-sm\"><thead><tr><th scope=\"col\">Operatör</th><th scope=\"col\">Açıklama</th><th scope=\"col\">Örnek</th></tr></thead><tbody><tr><td><code>AND</code> / <code>&amp;&amp;</code></td><td>Her iki terim de bulunmalıdır</td><td><code>fess AND search</code></td></tr><tr><td><code>OR</code> / <code>||</code></td><td>Terimlerden biri bulunabilir</td><td><code>fess OR opensearch</code></td></tr><tr><td><code>NOT</code> / <code>-</code></td><td>Terimi hariç tut</td><td><code>fess -lucene</code></td></tr><tr><td><code>\"...\"</code></td><td>Tam ifade</td><td><code>\"full text search\"</code></td></tr><tr><td><code>site:</code></td><td>Bir siteyle sınırla</td><td><code>site:example.com fess</code></td></tr><tr><td><code>filetype:</code></td><td>Bir dosya türüyle sınırla</td><td><code>filetype:pdf fess</code></td></tr></tbody></table>"
+    },
+    {
+      "id": "wildcards",
+      "title": "Joker Karakterler",
+      "html": "<p>Herhangi bir karakter dizisiyle eşleşmek için <code>*</code>, tek bir karakterle eşleşmek için <code>?</code> kullanabilirsiniz.</p><p>Örnekler: <code>fess*</code> \"fess\", \"fessbook\", \"fessful\" ile eşleşir. <code>te?t</code> \"test\" veya \"text\" ile eşleşir.</p>"
+    },
+    {
+      "id": "ranges",
+      "title": "Aralık Sorguları",
+      "html": "<p>Bir değer aralığında arama yapmak için köşeli parantez kullanın: <code>content_length:[1024 TO 10240]</code>, boyutu 1KB ile 10KB arasında olan belgeleri bulur.</p> Köşeli parantezler <code>[ ]</code> sınır değerleri dahil eder; süslü parantezler <code>{ }</code> hariç tutar, örneğin <code>content_length:{1024 TO 10240}</code>, 1KB'den kesinlikle büyük ve 10KB'den kesinlikle küçük boyutlarla eşleşir."
+    },
+    {
+      "id": "field",
+      "title": "Alan Araması",
+      "html": "<p>Alan adını, ardından iki nokta üst üste <code>:</code> ve aradığınız terimi yazarak herhangi bir alanda arama yapabilirsiniz. Örneğin, başlığında \"Fess\" geçen belgeleri bulmak için:</p><pre>title:Fess</pre><p>Kullanılabilir alanlar arasında <code>url</code>, <code>host</code>, <code>site</code>, <code>title</code>, <code>content</code>, <code>content_length</code>, <code>last_modified</code> ve <code>mimetype</code> bulunur. Bunlar özelleştirilebilir.</p>"
+    },
+    {
+      "id": "sort",
+      "title": "Sıralama",
+      "html": "<p><code>sort:</code> operatörü sonuçları belirtilen bir alana göre sıralar. Biçim <code>sort:&lt;field&gt;.&lt;order&gt;</code> şeklindedir; burada <code>&lt;order&gt;</code>, <code>asc</code> veya <code>desc</code> olur. Örneğin, \"Fess\" araması yapıp sonuçları içerik uzunluğuna göre azalan sırada sıralamak için:</p><pre>Fess sort:content_length.desc</pre><p>Kullanılabilir sıralama alanları arasında <code>created</code>, <code>content_length</code> ve <code>last_modified</code> bulunur. Bunlar özelleştirilebilir.</p>"
+    },
+    {
+      "id": "boost",
+      "title": "Güçlendirme",
+      "html": "<p>Bir terimi güçlendirmek için arama teriminin sonuna <code>^</code> sembolünü ve ardından bir güçlendirme katsayısı (sayı) ekleyin. Daha yüksek bir katsayı, o terimin alaka puanını artırır.</p><pre>Fess^100</pre>"
+    },
+    {
+      "id": "fuzzy",
+      "title": "Bulanık Arama",
+      "html": "<p>Bulanık arama yapmak için tek bir kelimenin sonuna <code>~</code> sembolünü ekleyin. <code>~</code> sonrasındaki isteğe bağlı sayı (0 ile 1 arası) benzerlik eşiğini belirler. Varsayılan değer <code>0.5</code>'tir.</p><pre>Fess~0.5</pre>"
+    }
+  ]
+}

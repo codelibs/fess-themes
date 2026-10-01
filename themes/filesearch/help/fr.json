@@ -1,0 +1,69 @@
+{
+  "sections": [
+    {
+      "id": "basic",
+      "title": "Recherche de base",
+      "html": "<p>Pour effectuer une recherche, saisissez votre requête dans le champ de recherche et appuyez sur Entrée (ou cliquez sur le bouton Rechercher).</p><p>Plusieurs mots sont combinés avec AND par défaut. Par exemple, <code>open source</code> trouve les documents contenant à la fois « open » et « source ».</p>"
+    },
+    {
+      "id": "folders",
+      "title": "Parcourir par dossier",
+      "html": "<p>L&#39;arborescence à gauche liste les sources explorées par Fess (un serveur de fichiers, un dossier partagé, un site web) et, sous chacune, ses dossiers. Cliquez sur la flèche pour ouvrir un dossier, ou sur son nom pour chercher uniquement à l&#39;intérieur. Le nombre à côté d&#39;un dossier indique combien de documents correspondants il contient.</p><p>Un nombre écrit sous la forme <code>≥120</code> est une borne inférieure : le dossier est volumineux et seule une partie a été comptée, le chiffre réel est donc au moins égal à cette valeur. Ouvrez le dossier pour obtenir un décompte plus précis.</p><p>La barre d&#39;emplacement au-dessus de la liste indique le dossier dans lequel vous vous trouvez. Cliquez sur n&#39;importe quelle partie pour remonter jusqu&#39;à ce dossier, utilisez la flèche vers le haut pour remonter d&#39;un niveau, ou cliquez sur <strong>Toutes les sources</strong> pour chercher partout. Le bouton de copie place le chemin du dossier dans le presse-papiers, écrit <code>\\\\server\\share\\folder</code> pour un partage Windows et <code>/home/user/folder</code> pour un chemin local.</p><p>Le dossier fait partie de l&#39;adresse dans le navigateur : vous pouvez donc l&#39;ajouter aux favoris, le partager et naviguer en avant et en arrière entre les dossiers. Une recherche lancée depuis l&#39;intérieur d&#39;un dossier ne porte que sur ce dossier.</p>"
+    },
+    {
+      "id": "filters",
+      "title": "Filtres",
+      "html": "<p>Appuyez sur <strong>Filtres</strong> au-dessus de la liste pour affiner les résultats par type de fichier, par date de dernière modification ou par taille. Choisissez un bouton pour appliquer le filtre et choisissez-le à nouveau pour le retirer. Les filtres appliqués s&#39;affichent aussi sous forme de pastilles au-dessus de la liste.</p><p>Vous pouvez choisir plusieurs types de fichier à la fois ; les groupes de date de modification et de taille n&#39;acceptent qu&#39;un seul choix chacun.</p><p>Les nombres affichés sur les boutons comptent les résultats qui correspondent compte tenu des filtres déjà appliqués. Une fois un bouton de date de modification ou de taille choisi, les autres boutons de ce groupe disparaissent jusqu&#39;à ce que vous le retiriez.</p>"
+    },
+    {
+      "id": "views",
+      "title": "Affichages et tri",
+      "html": "<p>Utilisez les boutons d&#39;affichage pour basculer entre <strong>Détails</strong> (un tableau avec le nom, l&#39;emplacement, la date de modification, la taille et le type), <strong>Liste</strong> (une ligne compacte par fichier) et <strong>Mosaïque</strong> (grandes icônes ou miniatures). Votre choix est mémorisé dans ce navigateur.</p><p>Dans l&#39;affichage Détails, cliquez sur un en-tête de colonne pour trier selon celle-ci et cliquez à nouveau pour inverser l&#39;ordre. Le sélecteur de tri de la barre d&#39;outils fait de même dans les autres affichages. Les résultats sont classés par pertinence lorsque vous avez saisi un mot-clé, et par nom lorsque vous parcourez simplement.</p><p>Le tri par <strong>Type</strong> ou <strong>Emplacement</strong> nécessite un réglage sur le serveur. Si votre serveur ne l&#39;a pas, un avis l&#39;indique et l&#39;ordre par défaut est utilisé.</p>"
+    },
+    {
+      "id": "preview",
+      "title": "Aperçu et actions",
+      "html": "<p>Sélectionnez un fichier pour afficher ses détails dans le volet de droite : son emplacement, sa date de modification, sa taille et son type, ainsi que des actions pour l&#39;ouvrir, copier son chemin ou afficher son dossier. <strong>Ouvrir l&#39;original</strong> ouvre le fichier via Fess, de sorte que vos droits d&#39;accès sont vérifiés.</p><p>Sous les détails, Fess affiche un aperçu lorsque c&#39;est possible : un PDF, un fichier texte ou source, une image, ou la copie conservée par le robot d&#39;exploration. Les autres types n&#39;affichent que les détails. Un aperçu n&#39;est chargé que pour le fichier sélectionné.</p><p>Une page web ne peut pas ouvrir un dossier dans votre système d&#39;exploitation : <strong>Afficher dans le dossier</strong> vous place donc dans ce dossier à l&#39;intérieur de cette page, et <strong>Copier le chemin</strong> vous donne le chemin à coller dans votre gestionnaire de fichiers.</p><p>Sur un écran étroit, l&#39;arborescence des dossiers et l&#39;aperçu s&#39;ouvrent par-dessus la liste au lieu de se placer à côté.</p>"
+    },
+    {
+      "id": "shortcuts",
+      "title": "Raccourcis clavier",
+      "html": "<ul><li><code>/</code> &mdash; Placer le curseur dans le champ de recherche</li><li><code>&uarr;</code> <code>&darr;</code> &mdash; Parcourir les résultats (<code>Home</code> et <code>End</code> permettent d&#39;aller au premier et au dernier)</li><li><code>Enter</code> &mdash; Ouvrir le fichier sélectionné</li><li><code>Space</code> &mdash; Afficher ou masquer l&#39;aperçu</li><li><code>&larr;</code> <code>&rarr;</code> &mdash; Dans l&#39;arborescence, fermer et ouvrir les dossiers ; dans les résultats, <code>&larr;</code> revient à l&#39;arborescence</li><li><code>Esc</code> &mdash; Fermer l&#39;aperçu, le panneau des dossiers ou les suggestions</li></ul>"
+    },
+    {
+      "id": "operators",
+      "title": "Opérateurs de recherche",
+      "html": "<table class=\"table table-sm\"><thead><tr><th scope=\"col\">Opérateur</th><th scope=\"col\">Description</th><th scope=\"col\">Exemple</th></tr></thead><tbody><tr><td><code>AND</code> / <code>&amp;&amp;</code></td><td>Les deux termes doivent apparaître</td><td><code>fess AND search</code></td></tr><tr><td><code>OR</code> / <code>||</code></td><td>L'un ou l'autre des termes peut apparaître</td><td><code>fess OR opensearch</code></td></tr><tr><td><code>NOT</code> / <code>-</code></td><td>Exclure le terme</td><td><code>fess -lucene</code></td></tr><tr><td><code>\"...\"</code></td><td>Expression exacte</td><td><code>\"full text search\"</code></td></tr><tr><td><code>site:</code></td><td>Restreindre à un site</td><td><code>site:example.com fess</code></td></tr><tr><td><code>filetype:</code></td><td>Restreindre à un type de fichier</td><td><code>filetype:pdf fess</code></td></tr></tbody></table>"
+    },
+    {
+      "id": "wildcards",
+      "title": "Caractères génériques",
+      "html": "<p>Vous pouvez utiliser <code>*</code> pour correspondre à n'importe quelle séquence de caractères et <code>?</code> pour correspondre à un seul caractère.</p><p>Exemples : <code>fess*</code> correspond à « fess », « fessbook », « fessful ». <code>te?t</code> correspond à « test » ou « text ».</p>"
+    },
+    {
+      "id": "ranges",
+      "title": "Requêtes par plage",
+      "html": "<p>Utilisez des crochets pour rechercher une plage de valeurs : <code>content_length:[1024 TO 10240]</code> trouve les documents dont la taille est comprise entre 1Ko et 10Ko.</p> Les crochets <code>[ ]</code> incluent les bornes ; les accolades <code>{ }</code> les excluent, par exemple <code>content_length:{1024 TO 10240}</code> correspond aux tailles strictement supérieures à 1Ko et strictement inférieures à 10Ko."
+    },
+    {
+      "id": "field",
+      "title": "Recherche par champ",
+      "html": "<p>Vous pouvez rechercher dans n'importe quel champ en saisissant le nom du champ suivi d'un deux-points <code>:</code> puis du terme recherché. Par exemple, pour trouver des documents contenant « Fess » dans le titre :</p><pre>title:Fess</pre><p>Les champs disponibles incluent <code>url</code>, <code>host</code>, <code>site</code>, <code>title</code>, <code>content</code>, <code>content_length</code>, <code>last_modified</code> et <code>mimetype</code>. Ces champs sont personnalisables.</p>"
+    },
+    {
+      "id": "sort",
+      "title": "Tri",
+      "html": "<p>L'opérateur <code>sort:</code> trie les résultats selon un champ spécifié. Le format est <code>sort:&lt;field&gt;.&lt;order&gt;</code>, où <code>&lt;order&gt;</code> est <code>asc</code> ou <code>desc</code>. Par exemple, pour rechercher « Fess » trié par longueur de contenu de façon décroissante :</p><pre>Fess sort:content_length.desc</pre><p>Les champs de tri disponibles incluent <code>created</code>, <code>content_length</code> et <code>last_modified</code>. Ces champs sont personnalisables.</p>"
+    },
+    {
+      "id": "boost",
+      "title": "Pondération (Boost)",
+      "html": "<p>Pour pondérer un terme, utilisez le symbole <code>^</code> suivi d'un facteur de pondération (un nombre) à la fin du terme de recherche. Un facteur plus élevé augmente le score de pertinence de ce terme.</p><pre>Fess^100</pre>"
+    },
+    {
+      "id": "fuzzy",
+      "title": "Recherche approximative",
+      "html": "<p>Pour effectuer une recherche approximative, utilisez le symbole <code>~</code> à la fin d'un seul mot. Le nombre optionnel après <code>~</code> (0 à 1) contrôle le seuil de similarité. La valeur par défaut est <code>0.5</code>.</p><pre>Fess~0.5</pre>"
+    }
+  ]
+}
