@@ -317,6 +317,49 @@ describe("a path too deep for an ex_q clause", () => {
   });
 });
 
+describe("paging", () => {
+  // /search?num=500 is capped by the server (page_size_max, 100 by default) and the answer says
+  // so in page_size: the pager must step by the size that was served.
+  const CAPPED = { page_size: 100, page_number: 1, page_numbers: ["1", "2", "3"], next_page: true, prev_page: false };
+  const pageLink = n => [...document.querySelectorAll("#pagination .page-link")].find(a => a.textContent === String(n));
+
+  it("pages by the size the server served when num is above its cap", async () => {
+    const { get } = await boot({ url: "/search?q=foo&num=500", mainExtra: CAPPED });
+    expect(lastMain(get)).toMatchObject({ num: 500, start: 0 });
+    pageLink(2).click();
+    await settle();
+    expect(lastMain(get)).toMatchObject({ num: 100, start: 100 });
+    expect(new URLSearchParams(location.search).get("start")).toBe("100");
+    pageLink(3).click();
+    await settle();
+    expect(lastMain(get)).toMatchObject({ num: 100, start: 200 });
+  });
+
+  it("steps the Next link by that size too", async () => {
+    const { get } = await boot({ url: "/search?q=foo&num=500", mainExtra: CAPPED });
+    document.querySelector("#pagination li:last-child a").click();
+    await settle();
+    expect(lastMain(get)).toMatchObject({ num: 100, start: 100 });
+  });
+
+  it("steps the Previous link by that size too", async () => {
+    const { get } = await boot({
+      url: "/search?q=foo&num=500&start=200",
+      mainExtra: { ...CAPPED, page_number: 3, prev_page: true },
+    });
+    document.querySelector("#pagination li:first-child a").click();
+    await settle();
+    expect(lastMain(get)).toMatchObject({ num: 100, start: 100 });
+  });
+
+  it("leaves a page size the server served as asked alone", async () => {
+    const { get } = await boot({ url: "/search?q=foo&num=20", mainExtra: { ...CAPPED, page_size: 20 } });
+    pageLink(2).click();
+    await settle();
+    expect(lastMain(get)).toMatchObject({ num: 20, start: 20 });
+  });
+});
+
 describe("sorting", () => {
   it("a column heading sorts by it, pushes the sort into the address bar, and flips on a second click", async () => {
     const { get } = await boot({ url: "/search?q=foo" });

@@ -465,6 +465,10 @@ async function runSearch(opts = {}) {
       : Promise.resolve(null);
     const [env, typeFacet] = await Promise.all([mainRequest, typesToo]);
     ui.typeFacet = typeFacet;
+    // The server caps num at page_size_max and says what it served. The page links step by that
+    // size, not by the one asked for: with num=500 capped to 100, page 2 starts at 100, not 500.
+    const served = Number(env.page_size);
+    if (served > 0 && served < state.num) state.num = served;
     // Prefer the server-supplied requested_time when available (more accurate).
     if (env.requested_time) state.requestedTime = env.requested_time;
     // A.5: store server-supplied highlight params for cache link construction.
