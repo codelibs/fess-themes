@@ -19,7 +19,7 @@
   "pagination.next": "Siguiente",
   "pagination.prev": "Anterior",
   "result.favorite_add": "Agregar a favoritos",
-  "result.favorite_remove": "Quitar de favoritos",
+  "result.favorite_added": "Agregado a favoritos",
   "result.cache": "Caché",
   "result.click_count": "{n} vistas",
   "auth.login": "Iniciar sesión",

@@ -19,7 +19,7 @@
   "pagination.next": "下一頁",
   "pagination.prev": "上一頁",
   "result.favorite_add": "加入收藏",
-  "result.favorite_remove": "取消收藏",
+  "result.favorite_added": "已加入收藏",
   "result.cache": "快取",
   "result.click_count": "{n}次瀏覽",
   "auth.login": "登入",

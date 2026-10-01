@@ -19,7 +19,7 @@
   "pagination.next": "अगला",
   "pagination.prev": "पिछला",
   "result.favorite_add": "पसंदीदा में जोड़ें",
-  "result.favorite_remove": "पसंदीदा से हटाएं",
+  "result.favorite_added": "पसंदीदा में जोड़ा गया",
   "result.cache": "कैश",
   "result.click_count": "{n} दृश्य",
   "auth.login": "लॉग इन करें",

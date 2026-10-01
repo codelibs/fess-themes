@@ -499,6 +499,66 @@ describe("rows and their actions", () => {
     expect(document.querySelectorAll(".favorite-btn").length).toBe(3);
   });
 
+  describe("the favourite star (the API can add a favourite, never remove one)", () => {
+    const FAV_CFG = { ...CFG, features: { ...CFG.features, user_favorite: true } };
+
+    /** Signed in; the server already lists `favorites` (doc ids) as favourites. */
+    async function bootFavorites(favorites = []) {
+      const flow = await loadSearchFlow(THEME, FAV_CFG);
+      flow.isAuthenticated.mockReturnValue(true);
+      install(flow.get);
+      const base = flow.get.getMockImplementation();
+      flow.get.mockImplementation(async (path, params) => (path === "/favorites" ? { data: favorites.map(doc_id => ({ doc_id })) } : base(path, params)));
+      setLocation("/search?q=foo");
+      mountIndexBody(THEME);
+      flow.mod.attach();
+      flow.mod.runFromUrl();
+      await settle();
+      return flow;
+    }
+    const star = i => rows()[i].querySelector(".favorite-btn");
+
+    it("an unfavourited star offers to add, and is pressed and named a favourite once the add succeeded", async () => {
+      const flow = await bootFavorites();
+      flow.post.mockResolvedValue({ favorite: true, count: 3 });
+      expect(star(0).getAttribute("aria-pressed")).toBe("false");
+      expect(star(0).getAttribute("aria-label")).toBe("result.favorite_add");
+      expect(star(0).hasAttribute("aria-disabled")).toBe(false);
+      star(0).click();
+      await settle();
+      expect(flow.post).toHaveBeenCalledTimes(1);
+      expect(flow.post.mock.calls[0][0]).toBe("/documents/a1/favorite");
+      expect(star(0).getAttribute("aria-pressed")).toBe("true");
+      expect(star(0).getAttribute("aria-label")).toBe("result.favorite_added");
+      expect(star(0).title).toBe("result.favorite_added");
+      expect(star(0).querySelector(".favorite-count").textContent).toBe("3");
+    });
+
+    it("a favourited star never offers removal, and a click on it sends nothing", async () => {
+      const flow = await bootFavorites(["a1"]);
+      expect(star(0).getAttribute("aria-pressed")).toBe("true");
+      expect(star(0).getAttribute("aria-label")).toBe("result.favorite_added");
+      expect(star(0).getAttribute("aria-label")).not.toBe("result.favorite_remove");
+      expect(star(0).getAttribute("aria-disabled")).toBe("true");
+      star(0).click();
+      star(0).click();
+      await settle();
+      expect(flow.post).not.toHaveBeenCalled();
+      expect(star(0).getAttribute("aria-pressed")).toBe("true");
+      // the other rows are unaffected
+      expect(star(1).getAttribute("aria-pressed")).toBe("false");
+    });
+
+    it("stays unpressed when the add did not happen", async () => {
+      const flow = await bootFavorites();
+      flow.post.mockResolvedValue({ favorite: false, count: 0 });
+      star(0).click();
+      await settle();
+      expect(star(0).getAttribute("aria-pressed")).toBe("false");
+      expect(star(0).getAttribute("aria-label")).toBe("result.favorite_add");
+    });
+  });
+
   it("switches between details, list and tiles, remembers the choice, and works with storage blocked", async () => {
     await boot({ url: "/search?q=foo" });
     const list = document.getElementById("results");

@@ -783,6 +783,8 @@ body.modal-open { overflow: hidden; }
 .fs-act.is-copied { color: var(--fs-success); }
 .favorite-btn[aria-pressed="true"] { color: var(--fs-warning); }
 .favorite-btn[aria-pressed="true"] svg { fill: currentColor; }
+/* a favorite cannot be removed (the API only adds): nothing to click */
+.favorite-btn[aria-disabled="true"] { cursor: default; }
 .favorite-count { font-size: .7rem; margin-inline-start: .1rem; color: var(--fs-text-3); }
 
 /* file-type colours */

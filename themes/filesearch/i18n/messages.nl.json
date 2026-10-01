@@ -19,7 +19,7 @@
   "pagination.next": "Volgende",
   "pagination.prev": "Vorige",
   "result.favorite_add": "Toevoegen aan favorieten",
-  "result.favorite_remove": "Verwijderen uit favorieten",
+  "result.favorite_added": "Toegevoegd aan favorieten",
   "result.cache": "Cache",
   "result.click_count": "{n} weergaven",
   "auth.login": "Inloggen",

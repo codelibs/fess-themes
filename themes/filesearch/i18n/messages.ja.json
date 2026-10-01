@@ -19,7 +19,7 @@
   "pagination.next": "次へ",
   "pagination.prev": "前へ",
   "result.favorite_add": "お気に入りに追加",
-  "result.favorite_remove": "お気に入りを解除",
+  "result.favorite_added": "お気に入りに追加済み",
   "result.cache": "キャッシュ",
   "result.click_count": "{n}回閲覧",
   "auth.login": "ログイン",
