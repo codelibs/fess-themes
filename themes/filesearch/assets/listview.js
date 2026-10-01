@@ -297,6 +297,6 @@ export function createListView({ list, head, onSelect, onTogglePreview, onFocusT
     },
     rows,
     columns,
-    scopeOfRow: i => (docs[i] ? scopeOfDocParent(docs[i].url_link || docs[i].url) : null),
+    scopeOfRow: i => (docs[i] ? scopeOfDocParent(docs[i].url) : null),
   };
 }
