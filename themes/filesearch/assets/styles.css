@@ -518,9 +518,12 @@ body.modal-open { overflow: hidden; }
 #searchOptions .container {
   width: 440px; max-width: 100%; height: 100%; overflow: auto; position: fixed; top: 0; bottom: 0; right: -460px;
   padding-top: calc(var(--fs-header-h) + 1.25rem); padding-bottom: 1.5rem;
-  color: #dfe6ed; background-color: #1b2631; box-shadow: var(--fs-shadow-3); transition: right .3s ease;
+  color: #dfe6ed; background-color: #1b2631; box-shadow: var(--fs-shadow-3);
+  /* Off screen is not enough: a closed drawer is also out of the tab order and the
+     accessibility tree. The delay lets the slide-out finish before it is hidden. */
+  visibility: hidden; transition: right .3s ease, visibility 0s linear .3s;
 }
-#searchOptions.show .container { right: 0; }
+#searchOptions.show .container { right: 0; visibility: visible; transition: right .3s ease, visibility 0s; }
 #searchOptions h3 { color: #fff; }
 #searchOptions label, #searchOptions legend { color: #b8c4d0; font-size: .85rem; }
 #searchOptions .form-control { background: #243342; border-color: #3b4d5e; color: #fff; }
