@@ -1,0 +1,29 @@
+apiVersion: fess.codelibs.org/v1
+kind: StaticTheme
+name: filesearch
+displayName: "File Search"
+version: "15.9.0"
+author: "CodeLibs Project"
+description: "General-purpose file search UI for Fess: a folder tree with per-folder counts, a location bar with breadcrumb, details / list / tile views with sortable columns, type / date / size filters and a preview pane. Self-contained (no Bootstrap) over /api/v2/*."
+license: "Apache-2.0"
+homepage: "https://fess.codelibs.org/"
+minFessVersion: "15.9"
+supportedLocales:
+  - de
+  - en
+  - es
+  - fr
+  - hi
+  - id
+  - it
+  - ja
+  - ko
+  - nl
+  - pl
+  - pt-BR
+  - ru
+  - tr
+  - zh-CN
+  - zh-TW
+entry: index.html
+thumbnail: thumbnail.png

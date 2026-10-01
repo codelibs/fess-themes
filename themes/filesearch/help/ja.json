@@ -1,0 +1,69 @@
+{
+  "sections": [
+    {
+      "id": "basic",
+      "title": "基本的な検索",
+      "html": "<p>検索するには、検索ボックスにクエリを入力して Enter キーを押す（または「検索」ボタンをクリックする）だけです。</p><p>複数の単語はデフォルトで AND で結合されます。例えば <code>オープン ソース</code> と入力すると、「オープン」と「ソース」の両方を含むドキュメントが見つかります。</p>"
+    },
+    {
+      "id": "folders",
+      "title": "フォルダーから探す",
+      "html": "<p>左側のフォルダーツリーには、Fess がクロールしたソース（ファイルサーバー、共有フォルダー、Web サイト）と、各ソースの下にあるフォルダーが一覧表示されます。矢印をクリックするとフォルダーが開き、名前をクリックするとそのフォルダーの中だけを検索できます。フォルダーの横の数字は、一致するドキュメントの件数です。</p><p><code>≥120</code> のように表示された数字は下限値です。フォルダーが大きく、一部だけを数えたため、実際の件数はこの数以上になります。フォルダーを開くと、より正確な件数を確認できます。</p><p>リストの上にある場所バーには、現在のフォルダーが表示されます。その一部をクリックすると、そのフォルダーまで戻れます。上向き矢印で 1 つ上の階層に移動でき、<strong>すべてのソース</strong>をクリックするとすべてを対象に検索できます。コピーボタンを押すと、フォルダーのパスがクリップボードにコピーされます。Windows の共有フォルダーは <code>\\\\server\\share\\folder</code>、ローカルのパスは <code>/home/user/folder</code> の形式です。</p><p>フォルダーはブラウザーのアドレスに含まれるため、ブックマークや共有ができ、「戻る」「進む」でフォルダー間を移動できます。フォルダー内で開始した検索は、そのフォルダーの中だけが対象になります。</p>"
+    },
+    {
+      "id": "filters",
+      "title": "フィルター",
+      "html": "<p>リストの上にある<strong>フィルター</strong>を押すと、ファイルの種別、最終更新日時、サイズで結果を絞り込めます。ボタンを選ぶと適用され、もう一度選ぶと解除されます。適用中のフィルターは、リストの上にチップとしても表示されます。</p><p>ファイルの種別は複数同時に選択できます。更新日時とサイズのグループは、それぞれ 1 つだけ選択できます。</p><p>ボタンの数字は、すでに適用しているフィルターの条件下で一致する結果の件数です。更新日時またはサイズのボタンを選ぶと、解除するまで、同じグループの他のボタンは消えます。</p>"
+    },
+    {
+      "id": "views",
+      "title": "表示とソート",
+      "html": "<p>表示ボタンで、<strong>詳細</strong>（名前、場所、更新日時、サイズ、種別を表にした表示）、<strong>リスト</strong>（1 ファイルにつき 1 行のコンパクトな表示）、<strong>タイル</strong>（大きなアイコンまたはサムネイル）を切り替えられます。選択内容はこのブラウザーに記憶されます。</p><p>詳細表示では、列見出しをクリックするとその列でソートされ、もう一度クリックすると順序が逆になります。他の表示では、ツールバーのソート操作で同じことができます。キーワードを入力したときは関連度順、フォルダーを閲覧しているだけのときは名前順で表示されます。</p><p><strong>種別</strong>または<strong>場所</strong>でのソートには、サーバー側の設定が必要です。サーバーにその設定がない場合は、その旨が通知され、既定の順序で表示されます。</p>"
+    },
+    {
+      "id": "preview",
+      "title": "プレビューと操作",
+      "html": "<p>ファイルを選択すると、右側のパネルに詳細が表示されます。保存場所、更新日時、サイズ、種別のほか、ファイルを開く、パスをコピーする、フォルダーを表示するといった操作を行えます。<strong>元のファイルを開く</strong>は Fess 経由でファイルを開くため、アクセス権限が確認されます。</p><p>詳細の下には、可能な場合にプレビューが表示されます。PDF、テキストまたはソースファイル、画像、クローラーが保存したコピーが対象です。それ以外の種別では詳細のみが表示されます。プレビューは選択したファイルについてのみ読み込まれます。</p><p>Web ページから OS のフォルダーを開くことはできないため、<strong>フォルダーで表示</strong>はこのページ内でそのフォルダーに移動します。<strong>パスをコピー</strong>で取得したパスは、お使いのファイル管理アプリに貼り付けて利用できます。</p><p>画面が狭い場合、フォルダーツリーとプレビューはリストの横ではなく、リストの上に重ねて開きます。</p>"
+    },
+    {
+      "id": "shortcuts",
+      "title": "キーボードショートカット",
+      "html": "<ul><li><code>/</code> &mdash; 検索ボックスにフォーカス</li><li><code>&uarr;</code> <code>&darr;</code> &mdash; 結果内を移動（<code>Home</code> と <code>End</code> で最初と最後に移動）</li><li><code>Enter</code> &mdash; 選択したファイルを開く</li><li><code>Space</code> &mdash; プレビューの表示／非表示</li><li><code>&larr;</code> <code>&rarr;</code> &mdash; フォルダーツリーではフォルダーを閉じる／開く。結果内では <code>&larr;</code> でツリーに戻る</li><li><code>Esc</code> &mdash; プレビュー、フォルダーパネル、サジェストを閉じる</li></ul>"
+    },
+    {
+      "id": "operators",
+      "title": "検索演算子",
+      "html": "<table class=\"table table-sm\"><thead><tr><th scope=\"col\">演算子</th><th scope=\"col\">説明</th><th scope=\"col\">例</th></tr></thead><tbody><tr><td><code>AND</code> / <code>&amp;&amp;</code></td><td>両方の語を含む</td><td><code>fess AND search</code></td></tr><tr><td><code>OR</code> / <code>||</code></td><td>いずれかの語を含む</td><td><code>fess OR opensearch</code></td></tr><tr><td><code>NOT</code> / <code>-</code></td><td>その語を除外する</td><td><code>fess -lucene</code></td></tr><tr><td><code>\"...\"</code></td><td>完全フレーズ一致</td><td><code>\"全文検索\"</code></td></tr><tr><td><code>site:</code></td><td>サイトを限定する</td><td><code>site:example.com fess</code></td></tr><tr><td><code>filetype:</code></td><td>ファイル種別を限定する</td><td><code>filetype:pdf fess</code></td></tr></tbody></table>"
+    },
+    {
+      "id": "wildcards",
+      "title": "ワイルドカード",
+      "html": "<p><code>*</code> は任意の文字列、<code>?</code> は任意の 1 文字にマッチします。</p><p>例: <code>fess*</code> は \"fess\"、\"fessbook\"、\"fessful\" などにマッチします。<code>te?t</code> は \"test\" や \"text\" にマッチします。</p>"
+    },
+    {
+      "id": "ranges",
+      "title": "範囲検索",
+      "html": "<p>角括弧を使って値の範囲を指定できます: <code>content_length:[1024 TO 10240]</code> は 1KB〜10KB のファイルを検索します。</p> 角括弧 <code>[ ]</code> は境界値を含み、波括弧 <code>{ }</code> は境界値を含みません。例えば <code>content_length:{1024 TO 10240}</code> は 1KB より大きく 10KB より小さいファイルを検索します。"
+    },
+    {
+      "id": "field",
+      "title": "フィールド指定検索",
+      "html": "<p>フィールド名の後にコロン <code>:</code> を付け、検索語を指定することで任意のフィールドを検索できます。たとえば、タイトルに「Fess」を含むドキュメントを検索する場合:</p><pre>title:Fess</pre><p>標準で利用可能なフィールドは <code>url</code>、<code>host</code>、<code>site</code>、<code>title</code>、<code>content</code>、<code>content_length</code>、<code>last_modified</code>、<code>mimetype</code> です。設定で変更できます。</p>"
+    },
+    {
+      "id": "sort",
+      "title": "ソート",
+      "html": "<p><code>sort:</code> 演算子は指定したフィールド名でドキュメントをソートします。利用方法は <code>sort:&lt;field&gt;.&lt;order&gt;</code> で、<code>&lt;order&gt;</code> は <code>asc</code>（昇順）または <code>desc</code>（降順）です。たとえば、「Fess」を含むドキュメントをコンテンツサイズの降順にソートする場合:</p><pre>Fess sort:content_length.desc</pre><p>標準で利用可能なソートフィールドは <code>created</code>、<code>content_length</code>、<code>last_modified</code> です。設定で変更できます。</p>"
+    },
+    {
+      "id": "boost",
+      "title": "ブースト検索",
+      "html": "<p>ブースト検索は検索語の後に <code>^</code> を付け、ブースト係数（数値）を指定することで利用できます。係数が大きいほど、その検索語の関連スコアが高くなります。</p><pre>Fess^100</pre>"
+    },
+    {
+      "id": "fuzzy",
+      "title": "あいまい検索",
+      "html": "<p>あいまい検索は検索語の後に <code>~</code> を付けることで利用できます。<code>~</code> の後に 0〜1 の値で類似度を指定できます。デフォルトは <code>0.5</code> です。</p><pre>Fess~0.5</pre>"
+    }
+  ]
+}

@@ -1,0 +1,69 @@
+{
+  "sections": [
+    {
+      "id": "basic",
+      "title": "基本搜尋",
+      "html": "<p>要進行搜尋，請在搜尋框中輸入查詢內容，然後按 Enter 鍵（或點擊「搜尋」按鈕）。</p><p>多個詞預設以 AND 組合。例如，<code>open source</code> 會找出同時包含「open」和「source」的文件。</p>"
+    },
+    {
+      "id": "folders",
+      "title": "依資料夾瀏覽",
+      "html": "<p>左側的資料夾樹列出了 Fess 已爬取的來源（檔案伺服器、共用資料夾、網站），以及每個來源底下的資料夾。點擊箭頭可展開資料夾，點擊名稱則只在該資料夾內尋找。資料夾旁邊的數字是其中符合條件的文件數量。</p><p>形如 <code>≥120</code> 的數字表示下限：該資料夾較大，只統計了其中一部分，因此實際數量至少為該值。展開資料夾可取得較精確的數量。</p><p>清單上方的位置列會顯示您目前所在的資料夾。點擊其中任一部分可回到對應的資料夾，使用向上箭頭可回到上一層，點擊<strong>所有來源</strong>則在全部範圍內搜尋。複製按鈕會將資料夾路徑放入剪貼簿，Windows 共用的格式為 <code>\\\\server\\share\\folder</code>，本機路徑的格式為 <code>/home/user/folder</code>。</p><p>資料夾是瀏覽器網址的一部分，因此您可以將它加入書籤、分享，並在資料夾之間前進與後退。在某個資料夾內發起的搜尋只會在該資料夾內尋找。</p>"
+    },
+    {
+      "id": "filters",
+      "title": "篩選",
+      "html": "<p>點擊清單上方的<strong>篩選</strong>，可依檔案類型、最後修改時間或大小縮小結果範圍。選擇某個按鈕即可套用，再次選擇則移除。已套用的篩選條件也會以篩選標記的形式顯示在清單上方。</p><p>檔案類型可以同時選擇多個；修改時間與大小兩組各只能選擇一項。</p><p>按鈕上的數字表示在您已套用的篩選條件下符合的結果數量。選擇某個修改時間或大小按鈕後，同一組的其他按鈕會消失，直到您移除該篩選。</p>"
+    },
+    {
+      "id": "views",
+      "title": "檢視與排序",
+      "html": "<p>使用檢視按鈕可在<strong>詳細資料</strong>（以表格顯示名稱、位置、修改時間、大小與類型）、<strong>清單</strong>（每個檔案一行的精簡顯示）與<strong>並排</strong>（大圖示或縮圖）之間切換。您的選擇會儲存在此瀏覽器中。</p><p>在詳細資料檢視中，點擊欄位標題即可依該欄排序，再次點擊則反轉順序。在其他檢視中，可使用工具列中的排序控制項。輸入關鍵字時，結果依相關性排序；僅瀏覽時則依名稱排序。</p><p>依<strong>類型</strong>或<strong>位置</strong>排序需要在伺服器上進行設定。如果您的伺服器沒有該設定，頁面會顯示提示，並使用預設順序。</p>"
+    },
+    {
+      "id": "preview",
+      "title": "預覽與操作",
+      "html": "<p>選取某個檔案後，可在右側窗格中檢視其詳細資料：所在位置、修改時間、大小與類型，以及開啟檔案、複製路徑或顯示所在資料夾等操作。<strong>開啟原始檔案</strong>會透過 Fess 開啟檔案，因此會檢查您的存取權限。</p><p>在詳細資料下方，Fess 會盡可能顯示預覽：PDF、文字或原始碼檔案、圖像，或爬蟲儲存的副本。其他類型只會顯示詳細資料。預覽只會為您選取的檔案載入。</p><p>網頁無法在作業系統中開啟資料夾，因此<strong>在資料夾中顯示</strong>會在本頁面內跳轉到該資料夾，而<strong>複製路徑</strong>會提供可貼到檔案管理程式中的路徑。</p><p>在窄螢幕上，資料夾樹與預覽會疊放在清單之上開啟，而不是顯示在清單旁邊。</p>"
+    },
+    {
+      "id": "shortcuts",
+      "title": "鍵盤快速鍵",
+      "html": "<ul><li><code>/</code> &mdash; 將焦點移至搜尋框</li><li><code>&uarr;</code> <code>&darr;</code> &mdash; 在結果中移動（<code>Home</code> 與 <code>End</code> 會跳到第一項與最後一項）</li><li><code>Enter</code> &mdash; 開啟所選檔案</li><li><code>Space</code> &mdash; 顯示或隱藏預覽</li><li><code>&larr;</code> <code>&rarr;</code> &mdash; 在資料夾樹中收合與展開資料夾；在結果中，<code>&larr;</code> 會回到資料夾樹</li><li><code>Esc</code> &mdash; 關閉預覽、資料夾面板或建議</li></ul>"
+    },
+    {
+      "id": "operators",
+      "title": "搜尋運算子",
+      "html": "<table class=\"table table-sm\"><thead><tr><th scope=\"col\">運算子</th><th scope=\"col\">說明</th><th scope=\"col\">範例</th></tr></thead><tbody><tr><td><code>AND</code> / <code>&amp;&amp;</code></td><td>兩個詞都必須出現</td><td><code>fess AND search</code></td></tr><tr><td><code>OR</code> / <code>||</code></td><td>任一詞出現即可</td><td><code>fess OR opensearch</code></td></tr><tr><td><code>NOT</code> / <code>-</code></td><td>排除該詞</td><td><code>fess -lucene</code></td></tr><tr><td><code>\"...\"</code></td><td>完全符合的片語</td><td><code>\"full text search\"</code></td></tr><tr><td><code>site:</code></td><td>限定網站</td><td><code>site:example.com fess</code></td></tr><tr><td><code>filetype:</code></td><td>限定檔案類型</td><td><code>filetype:pdf fess</code></td></tr></tbody></table>"
+    },
+    {
+      "id": "wildcards",
+      "title": "萬用字元",
+      "html": "<p>可以使用 <code>*</code> 比對任意長度的字元序列，使用 <code>?</code> 比對單一字元。</p><p>範例：<code>fess*</code> 可比對「fess」、「fessbook」、「fessful」。<code>te?t</code> 可比對「test」或「text」。</p>"
+    },
+    {
+      "id": "ranges",
+      "title": "範圍查詢",
+      "html": "<p>使用方括號搜尋某個範圍內的值：<code>content_length:[1024 TO 10240]</code> 會找出大小介於 1KB 到 10KB 之間的文件。</p> 方括號 <code>[ ]</code> 包含邊界值；大括號 <code>{ }</code> 則不包含，例如 <code>content_length:{1024 TO 10240}</code> 會比對大於 1KB 且小於 10KB 的大小。"
+    },
+    {
+      "id": "field",
+      "title": "欄位搜尋",
+      "html": "<p>輸入欄位名稱，接著輸入冒號 <code>:</code>，再輸入要搜尋的詞，即可搜尋任何欄位。例如，要找出標題中含有「Fess」的文件：</p><pre>title:Fess</pre><p>可用的欄位包括 <code>url</code>、<code>host</code>、<code>site</code>、<code>title</code>、<code>content</code>、<code>content_length</code>、<code>last_modified</code> 和 <code>mimetype</code>。這些欄位可以自訂。</p>"
+    },
+    {
+      "id": "sort",
+      "title": "排序",
+      "html": "<p><code>sort:</code> 運算子會依指定欄位排序結果。格式為 <code>sort:&lt;field&gt;.&lt;order&gt;</code>，其中 <code>&lt;order&gt;</code> 為 <code>asc</code> 或 <code>desc</code>。例如，要搜尋「Fess」並依內容長度遞減排序：</p><pre>Fess sort:content_length.desc</pre><p>可用的排序欄位包括 <code>created</code>、<code>content_length</code> 和 <code>last_modified</code>。這些欄位可以自訂。</p>"
+    },
+    {
+      "id": "boost",
+      "title": "加權搜尋",
+      "html": "<p>要提高某個詞的權重，請在搜尋詞末尾加上 <code>^</code> 符號，後面接加權係數（數字）。係數越大，該詞的相關性分數越高。</p><pre>Fess^100</pre>"
+    },
+    {
+      "id": "fuzzy",
+      "title": "模糊搜尋",
+      "html": "<p>要進行模糊搜尋，請在單一詞語末尾加上 <code>~</code> 符號。<code>~</code> 後面可選的數字（0 到 1）用於控制相似度門檻。預設值為 <code>0.5</code>。</p><pre>Fess~0.5</pre>"
+    }
+  ]
+}

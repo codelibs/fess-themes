@@ -22,6 +22,9 @@ const LABEL_OPTIONS = [
 
 // Themes whose search.js keeps the bootstrap drawer, current-filters and options bar.
 const SEARCH_THEMES = themes.filter((t) => t !== "codesearch");
+// filesearch keeps the drawer but shows the selected labels as chips in #active-chips
+// (it has no current-filters badge row and no options bar); it has its own case below.
+const BADGE_THEMES = SEARCH_THEMES.filter((t) => t !== "filesearch");
 
 /** Import a theme's module with api.getConfig() returning `config`. */
 async function loadWithConfig(theme, moduleName, config) {
@@ -59,6 +62,10 @@ describe.each(SEARCH_THEMES)("label names in search.js [%s]", (theme) => {
       ["fc", "fc"],
     ]);
   });
+});
+
+describe.each(BADGE_THEMES)("label names in the current filters [%s]", (theme) => {
+  const cfg = { ...FULL_CFG, label_options: LABEL_OPTIONS };
 
   it("shows the selected label by name in the current-filters badge and the options bar", async () => {
     setLocation("/search?q=foo&fields.label=fb");
@@ -73,6 +80,22 @@ describe.each(SEARCH_THEMES)("label names in search.js [%s]", (theme) => {
     const bar = document.getElementById("options-bar").textContent;
     expect(bar).toContain("Fixture B pages");
     expect(bar).not.toContain("fb");
+  });
+});
+
+describe("label names in the active-filter chips [filesearch]", () => {
+  const cfg = { ...FULL_CFG, label_options: LABEL_OPTIONS };
+
+  it("shows the selected label by name, not by value", async () => {
+    setLocation("/search?q=foo&fields.label=fb");
+    const flow = await loadSearchFlow("filesearch", cfg);
+    installDispatch(flow.get);
+    mountBody(SEARCH_FIXTURE);
+    flow.mod.runFromUrl();
+    await settle();
+    const chips = document.getElementById("active-chips").textContent;
+    expect(chips).toContain("Fixture B pages");
+    expect(chips).not.toContain("fb");
   });
 });
 

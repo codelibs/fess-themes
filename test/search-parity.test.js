@@ -8,7 +8,10 @@ import { mountBody, resetDom, setLocation } from "./helpers/dom.js";
 import { loadSearch, loadSearchFlow } from "./helpers/loadSearch.js";
 import { SEARCH_FIXTURE, FULL_CFG, SAMPLE_DOCS, makeSearchEnv, installDispatch, settle } from "./helpers/searchFlow.js";
 
-/** Themes whose result card shows the view count (storefront and codesearch do not). */
+/**
+ * Themes whose result card shows the view count (storefront and codesearch do not; filesearch
+ * shows it in its preview pane, not on the row).
+ */
 const VIEW_COUNT_THEMES = ["docsearch", "docuforge", "helpdesk", "mosaic", "nomadkit", "rawblock", "semanticlens", "voicebox"];
 /** Themes with the bootstrap runSearch contract (d-none banners). */
 const DNONE_THEMES = themes.filter((t) => t !== "codesearch");

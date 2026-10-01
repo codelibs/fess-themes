@@ -9,7 +9,7 @@ import { mountIndexBody } from "./helpers/themes.js";
 import { SEARCH_FIXTURE, FULL_CFG, installDispatch, settle } from "./helpers/searchFlow.js";
 
 const DNONE_THEMES = [
-  "docsearch", "docuforge", "helpdesk", "mosaic",
+  "docsearch", "docuforge", "filesearch", "helpdesk", "mosaic",
   "nomadkit", "rawblock", "semanticlens", "storefront", "voicebox",
 ];
 

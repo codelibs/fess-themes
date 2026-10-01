@@ -11,7 +11,7 @@ import { SEARCH_FIXTURE, FULL_CFG, installDispatch, settle } from "./helpers/sea
 
 /** Themes with the bootstrap runSearch contract (every theme but codesearch). */
 const DNONE_THEMES = [
-  "docsearch", "docuforge", "helpdesk", "mosaic",
+  "docsearch", "docuforge", "filesearch", "helpdesk", "mosaic",
   "nomadkit", "rawblock", "semanticlens", "storefront", "voicebox",
 ];
 /** Themes whose page-size fallback is their own defaultNum(): page_size_default, num_options[0], 10. */

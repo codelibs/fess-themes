@@ -43,6 +43,8 @@ function sampleDoc() {
 // ---------------------------------------------------------------------------
 // (a) a11y copy button — the 8 themes whose buildResultCard renders a copy icon.
 // ---------------------------------------------------------------------------
+// (filesearch is not listed: its copy-path control is a real <button> too, but it draws its own
+// SVG icon instead of the Font Awesome glyph this case looks for; filesearch.flow.test.js covers it.)
 const A11Y_THEMES = [
   "docsearch", "docuforge", "helpdesk", "mosaic",
   "nomadkit", "rawblock", "semanticlens", "voicebox",
@@ -82,7 +84,7 @@ describe.each(A11Y_THEMES)("copy-URL control is a real accessible button [%s]", 
 // (helpdesk has a copy button but no plainTitle; storefront/codesearch have neither.)
 // ---------------------------------------------------------------------------
 const PLAINTITLE_THEMES = [
-  "docsearch", "docuforge", "mosaic", "nomadkit",
+  "docsearch", "docuforge", "filesearch", "mosaic", "nomadkit",
   "rawblock", "semanticlens", "voicebox",
 ];
 
@@ -121,6 +123,7 @@ describe.each(PLAINTITLE_THEMES)("plainTitle [%s]", (theme) => {
 //                        contentLength facet_views groups are drawn. There is no count to
 //                        suppress, so these two are the recoverability guard only.
 // ---------------------------------------------------------------------------
+// (filesearch has no facet sidebar: its filter panel is covered by filesearch.flow.test.js.)
 const FACET = {
   docsearch:    { fn: "renderFacetQueryViews", kind: "queryViews" },
   docuforge:    { fn: "renderFacetQueryViews", kind: "queryViews" },
@@ -204,7 +207,7 @@ describe.each(SUPPRESS_THEMES)("facet zero-count suppression [%s]", (theme) => {
 // OsddHelper#hasOpenSearchFile() was true, which /api/v2/ui/config exposes as
 // features.osdd_link. codesearch never adds the link, so it is not listed.
 const OSDD_THEMES = [
-  "docsearch", "docuforge", "helpdesk", "mosaic", "nomadkit",
+  "docsearch", "docuforge", "filesearch", "helpdesk", "mosaic", "nomadkit",
   "rawblock", "semanticlens", "storefront", "voicebox",
 ];
 

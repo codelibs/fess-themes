@@ -14,7 +14,7 @@
 // no fallback at all is search.js's `error.auth_required` message, where a failed
 // authentication currently degrades to a generic "error.server".
 //
-// Each suite parametrizes over all 10 themes so no copy of a shared module can drift
+// Each suite parametrizes over all 11 themes so no copy of a shared module can drift
 // back, and new themes are picked up automatically.
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";

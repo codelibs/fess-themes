@@ -7,7 +7,7 @@
 // ProtocolHelper.isFileSystemPath() recognises.
 //
 // Source-level (not behavioural): safeHref is module-private in the themes and
-// codesearch exports neither helper, so a text assertion covers all 10 copies
+// codesearch exports neither helper, so a text assertion covers all 11 copies
 // uniformly. Behavioural coverage lives in fess core's search.test.js. This
 // reads only theme source (no import), so it does not touch the coverage gate.
 
@@ -19,8 +19,8 @@ import { themes, readModuleSource } from "./helpers/themes.js";
 const FS_SCHEMES = ["file:", "smb:", "smb1:", "storage:", "s3:", "gcs:"];
 
 describe("static-theme file: link fix", () => {
-  it("covers all 10 themes", () => {
-    expect(themes.length).toBe(10);
+  it("covers all 11 themes", () => {
+    expect(themes.length).toBe(11);
   });
 
   describe.each(themes)("scheme gate: %s/assets/search.js", (theme) => {

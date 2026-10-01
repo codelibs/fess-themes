@@ -46,6 +46,9 @@ export default defineConfig({
         "themes/*/assets/format.js",
         "themes/*/assets/markdown.js",
         "themes/*/assets/search.js",
+        // filesearch's own modules: pure logic and the DOM views the flow suite drives.
+        "themes/filesearch/assets/{scope,paths,tree,treesource,sorting,viewmode,keynav,filters,icons,recent,previewload}.js",
+        "themes/filesearch/assets/{listview,treeview,preview,filterpanel}.js",
       ],
       // codesearch's search.js is now driven by the runSearch()-pipeline tests in
       // search-flows.test.js (its own renderSummary / `hidden` / two-arg card
@@ -77,6 +80,14 @@ export default defineConfig({
       thresholds: {
         "themes/*/assets/{format,markdown}.js": { statements: 95, lines: 96, functions: 97, branches: 90 },
         "themes/*/assets/search.js": { statements: 56, lines: 60, functions: 54, branches: 42 },
+        // filesearch: the pure logic is held to a high bar, the DOM views to the level
+        // filesearch.flow.test.js reaches (floors set just under the measured figures).
+        "themes/filesearch/assets/{scope,paths,tree,treesource,sorting,viewmode,keynav,filters,icons,recent,previewload}.js": {
+          statements: 92, lines: 94, functions: 97, branches: 83,
+        },
+        "themes/filesearch/assets/{listview,treeview,preview,filterpanel}.js": {
+          statements: 78, lines: 85, functions: 70, branches: 62,
+        },
       },
     },
   },

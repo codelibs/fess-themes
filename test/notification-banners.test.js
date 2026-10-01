@@ -24,7 +24,7 @@
 //      state (no `hidden` attribute AND no `d-none` class). jsdom does not apply
 //      the theme's external stylesheet, so a computed `display` would prove
 //      nothing; the attribute/class pair is the observable contract.
-//   2. as a markup contract — the same five ids across all 10 themes must never
+//   2. as a markup contract — the same five ids across all 11 themes must never
 //      ship the `hidden` attribute, so the mismatch cannot come back.
 //
 // The final suite pins the OPPOSITE case: codesearch deliberately drives a few
