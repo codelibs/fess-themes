@@ -462,6 +462,18 @@ textarea.form-control { min-height: 2.5rem; }
 .fs-header .btn-light:hover { background: #34495c; }
 .fs-header .btn-primary { background: #237a92; border-color: #237a92; color: #fff; }
 .fs-header .btn-primary:hover { background: #1b6a82; border-color: #1b6a82; }
+/* Below 768px the nav is a menu: #headerNavToggle opens it as a panel under the header. The row is
+   tightened so that the search box keeps its width next to the extra button. */
+#headerNavToggle { align-self: stretch; }
+@media (max-width: 767.98px) {
+  .fs-header-row { gap: .5rem; padding: 0 .6rem; }
+  #header-nav.show {
+    position: absolute; top: 100%; right: .6rem; z-index: 1056; flex-direction: column; align-items: stretch; gap: 0;
+    min-width: 12rem; padding: .35rem; background: var(--fs-header-bg); border: 1px solid var(--fs-header-border);
+    border-radius: var(--fs-radius); box-shadow: var(--fs-shadow-3);
+  }
+  #header-nav.show .nav-link { padding: .6rem .75rem; }
+}
 
 /* ---- Dropdown (user menu) ---- */
 .dropdown { position: relative; }

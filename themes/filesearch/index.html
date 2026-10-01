@@ -27,9 +27,10 @@
        SHARED HEADER — tag-parity with WEB-INF/view/header.jsp.
        header > nav.navbar… > div#content.fs-header-row with the brand logo,
        the search input-group (#query / #searchButton / #searchOptionsButton),
-       and the right-side ul.nav.navbar-nav.d-none.d-md-flex of li.nav-item
-       entries (warnings + auth + chat + help).  The search box is shown on
-       EVERY view (only hidden on /chat — toggled by app.js setSearchFormVisible).
+       and the right-side ul.nav.navbar-nav of li.nav-item entries (warnings + auth +
+       chat + help): in line from 768px up, a menu behind #headerNavToggle below it.
+       The search box is shown on EVERY view (only hidden on /chat — toggled by
+       app.js setSearchFormVisible).
        The header spans the full width of the window, above the folder tree.
        =================================================================== -->
   <header>
@@ -57,7 +58,9 @@
             <ul class="list-group position-absolute top-100 start-0 end-0 mt-1 d-none shadow-sm" id="suggest-dropdown" role="listbox" aria-label="Search suggestions"></ul>
           </form>
         </div>
-        <ul class="nav navbar-nav d-none d-md-flex ms-auto" id="header-nav">
+        <!-- Below 768px the nav (sign-in, AI search, help) is a menu behind this button. -->
+        <button type="button" class="btn btn-light d-md-none" id="headerNavToggle" data-bs-toggle="collapse" data-bs-target="#header-nav" aria-expanded="false" aria-controls="header-nav"><i class="fa fa-bars" aria-hidden="true"></i> <span class="visually-hidden" data-i18n="nav.menu">Menu</span></button>
+        <ul class="nav navbar-nav collapse d-md-flex ms-auto" id="header-nav">
           <!-- Warning indicators (EOL / dev-mode) rendered by app.js as li.nav-item -->
           <!-- Auth entry (login nav-link OR user dropdown) rendered by auth.js -->
           <li class="nav-item" id="auth-controls" data-i18n-aria-label="aria.auth_controls"></li>
