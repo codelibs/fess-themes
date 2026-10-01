@@ -235,6 +235,34 @@ describe("tree model", () => {
     expect(tree.roots).toHaveLength(1);
   });
 
+  // Fess writes url_link for the browser that asked (ViewHelper#updateFileProtocol), so one
+  // stored file:/data/... document comes back in a different shape per browser. None of them
+  // is a path: only the stored url names the folders the document sits in.
+  describe.each([
+    ["Chromium", "file://data/files/reports/q1.txt"],
+    ["Firefox", "file://///data/files/reports/q1.txt"],
+    ["Safari", "file:////data/files/reports/q1.txt"],
+  ])("mergeSeen with the url_link %s gets for a file: document", (_browser, urlLink) => {
+    const FILE_DOC = { url: "file:/data/files/reports/q1.txt", url_link: urlLink };
+
+    it("adds the folders the stored url names, and nothing else", () => {
+      const tree = createTree();
+      setRoots(tree, [b("localhost", 1)]);
+      mergeSeen(tree, [FILE_DOC]);
+      expect([...tree.index.keys()].sort()).toEqual([
+        "host:localhost", "url:file:/data/", "url:file:/data/files/", "url:file:/data/files/reports/",
+      ]);
+      expect(tree.roots.map(r => r.id)).toEqual(["host:localhost"]);
+    });
+
+    it("ignores a document that carries only url_link", () => {
+      const tree = createTree();
+      setRoots(tree, [b("localhost", 1)]);
+      mergeSeen(tree, [{ url_link: urlLink }]);
+      expect([...tree.index.keys()]).toEqual(["host:localhost"]);
+    });
+  });
+
   it("visibleNodes lists the open part of the tree with level, position and set size", () => {
     const tree = createTree();
     setRoots(tree, [b("srv", 6), b("ex.com", 1)]);

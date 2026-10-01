@@ -194,10 +194,16 @@ export function ensurePath(tree, scope, { expand = true, seen = false } = {}) {
   return node;
 }
 
-/** Add the folders the given result documents sit in (uncounted, unexpanded, marked seen). */
+/**
+ * Add the folders the given result documents sit in (uncounted, unexpanded, marked seen).
+ * They come from the stored `url`, the same value the url facet folds. `url_link` is the
+ * link for the browser that asked and, for a file: document, changes with its User-Agent
+ * ("file://data/...", "file://///data/...", "file:////data/..."): it is not a path, and
+ * reading folders from it adds nodes for folders that do not exist.
+ */
 export function mergeSeen(tree, docs) {
   for (const doc of docs || []) {
-    const scope = doc && scopeOfDocParent(doc.url_link || doc.url);
+    const scope = doc && scopeOfDocParent(doc.url);
     if (!scope || scope.type !== "url") continue;
     ensurePath(tree, scope, { expand: false, seen: true });
   }

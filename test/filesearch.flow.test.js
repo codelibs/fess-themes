@@ -295,6 +295,64 @@ describe("what Fess actually returns", () => {
   });
 });
 
+describe("the folder tree and the url_link Fess builds for each browser", () => {
+  // A file: document's url_link depends on the User-Agent (Chromium file://data/...,
+  // Firefox file://///data/..., Safari file:////data/...) and is not a path; the tree
+  // must show only the folders of the stored url.
+  const FOLDERS = ["host:localhost", "url:file:/data/", "url:file:/data/files/", "url:file:/data/files/notes/", "url:file:/data/files/reports/"];
+  const files = urlLink => [
+    doc("r1", "file:/data/files/reports/q1.txt", { url_link: urlLink + "/reports/q1.txt" }),
+    doc("n1", "file:/data/files/notes/n1.txt", { url_link: urlLink + "/notes/n1.txt" }),
+  ];
+  const treeIds = () => [...document.querySelectorAll("#fs-tree [role=treeitem]")].map(n => n.dataset.id);
+
+  async function bootFiles(urlLink, q = "report") {
+    const docs = files(urlLink);
+    const flow = await boot({
+      url: "/search?q=" + q, main: docs,
+      roots: { facet_field: [{ name: "host", result: [{ value: "localhost", count: 2 }] }], record_count: 2, record_count_relation: "EQUAL_TO" },
+      children: { facet_field: [{ name: "url", result: docs.map(d => ({ value: d.url, count: 1 })) }], record_count: 2, record_count_relation: "EQUAL_TO" },
+    });
+    document.querySelector('#fs-tree [data-id="host:localhost"] .fs-twisty').click();
+    await settle();
+    await settle();
+    return flow;
+  }
+
+  describe.each([
+    ["Chromium", "file://data/files"],
+    ["Firefox", "file://///data/files"],
+    ["Safari", "file:////data/files"],
+  ])("%s", (_browser, urlLink) => {
+    it("opens the real folders under the source", async () => {
+      await bootFiles(urlLink);
+      expect(treeIds()).toEqual(FOLDERS);
+    });
+
+    it("grows no folder when the page changes", async () => {
+      await bootFiles(urlLink);
+      document.querySelector("#pagination li:last-child a").click();
+      await settle();
+      expect(treeIds()).toEqual(FOLDERS);
+    });
+
+    it("grows no folder when the sort changes", async () => {
+      await bootFiles(urlLink);
+      document.querySelector('.fs-sort-btn[data-col="size"]').click();
+      await settle();
+      expect(treeIds()).toEqual(FOLDERS);
+    });
+
+    it("grows no folder when a folder is chosen", async () => {
+      const { mod } = await bootFiles(urlLink);
+      document.querySelector('#fs-tree [data-id="url:file:/data/files/reports/"]').click();
+      await settle();
+      expect(mod._state.scope).toEqual({ type: "url", prefix: "file:/data/files/reports/" });
+      expect(treeIds()).toEqual(FOLDERS);
+    });
+  });
+});
+
 describe("a path too deep for an ex_q clause", () => {
   const deepUrl = "file:/data/" + "%E7%B7%8F%E5%8B%99%E9%83%A8/".repeat(60) + "x.txt";
 
