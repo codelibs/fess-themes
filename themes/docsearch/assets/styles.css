@@ -781,6 +781,8 @@ body.modal-open { overflow: hidden; }
 #suggest-dropdown .list-group-item, .suggest-dropdown .list-group-item { cursor: pointer; text-align: left; border-left: 0; border-right: 0; }
 #suggest-dropdown .list-group-item.active, #suggest-dropdown .list-group-item:hover,
 .suggest-dropdown .list-group-item.active, .suggest-dropdown .list-group-item:hover { background: var(--df-zinc-100); }
+/* the keyboard highlight must stand out from the hover tint, which is nearly the panel colour in dark mode */
+#suggest-dropdown .list-group-item.active, .suggest-dropdown .list-group-item.active { background: var(--ds-accent-subtle); }
 
 /* ---- Search options drawer ---- */
 #searchOptions { position: fixed; z-index: 1045; display: block; }
@@ -792,9 +794,13 @@ body.modal-open { overflow: hidden; }
   background-color: var(--ds-surface);
   border-left: 1px solid var(--ds-border);
   box-shadow: var(--ds-shadow-lg);
-  transition: right .35s ease;
+  /* Off screen is not enough: a closed drawer is also out of the tab order and the
+     accessibility tree. The delay lets the slide-out finish before it is hidden. */
+  visibility: hidden;
+  transition: right .35s ease, visibility 0s linear .35s;
 }
-#searchOptions.show .container { right: 0; }
+#searchOptions .container:focus { outline: none; }
+#searchOptions.show .container { right: 0; visibility: visible; transition-delay: 0s; }
 #searchOptions h3 { color: var(--ds-text); }
 #searchOptions label, #searchOptions legend { color: var(--ds-text-muted); font-size: .85rem; }
 #searchOptions .form-control { background: var(--ds-surface-2); border-color: var(--ds-border); color: var(--ds-text); }
@@ -987,7 +993,8 @@ footer[role="contentinfo"] {
  * ---------------------------------------------------------------- */
 
 /* The legacy search form stays in the DOM for ID/JS contracts but is
-   completely hidden; the .ds-palette-trigger is the visible control. */
+   completely hidden; the .ds-palette-trigger is the visible control.
+   visibility keeps its input and buttons out of the tab order too. */
 #search-form {
   position: absolute;
   width: 1px; height: 1px;
@@ -995,6 +1002,7 @@ footer[role="contentinfo"] {
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
+  visibility: hidden;
 }
 
 /* Palette trigger — mimics a search input field in the header */

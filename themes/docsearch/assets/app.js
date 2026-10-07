@@ -360,6 +360,37 @@ function syncHeaderOffset() {
   document.body.style.paddingTop = (header.offsetHeight + gap) + "px";
 }
 
+/**
+ * The search-options drawer is a panel over the page, so it closes on Escape and on a click
+ * outside it, and the focus goes back to the control that opened it. Opening moves the focus
+ * into it: the drawer sits ahead of <main>, so Tab from the options bar would never reach it.
+ */
+function attachOptionsDrawer() {
+  const drawer = document.getElementById("searchOptions");
+  const Collapse = window.bootstrap && window.bootstrap.Collapse;
+  if (!drawer || !Collapse) return;
+  const close = () => Collapse.getOrCreateInstance(drawer, { toggle: false }).hide();
+  let opener = null;
+  document.addEventListener("click", ev => {
+    const toggle = ev.target.closest('[data-bs-target="#searchOptions"], a[href="#searchOptions"]');
+    if (toggle) {
+      // compat.js has already toggled the drawer by the time this runs.
+      opener = toggle;
+      if (drawer.classList.contains("show")) drawer.querySelector(".container").focus({ preventScroll: true });
+    } else if (drawer.classList.contains("show") && !ev.composedPath().includes(drawer)) {
+      close();
+    }
+  });
+  document.addEventListener("keydown", ev => {
+    if (ev.key !== "Escape" || ev.defaultPrevented || !drawer.classList.contains("show")) return;
+    // Escape belongs to the command palette while it is open.
+    const palette = document.getElementById("palette");
+    if (palette && !palette.hidden) return;
+    close();
+    if (opener && opener.isConnected) opener.focus();
+  });
+}
+
 /** Attach back-to-top button behaviour. */
 function attachBackToTop() {
   const btn = document.getElementById("back-to-top");
@@ -690,6 +721,8 @@ async function main() {
       window.bootstrap.Collapse.getOrCreateInstance(so, { toggle: false }).hide();
     }
   });
+
+  attachOptionsDrawer();
 
   // Wire back-to-top button.
   attachBackToTop();

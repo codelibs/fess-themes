@@ -106,6 +106,17 @@ The suites:
   category tile's `/search?q=&fields.label=x`): it names the active labels in
   place of `{bq}`, or uses the `_noquery` wording when there is no label either,
   rendered with each theme's real English bundle (the nine themes above).
+- `docsearch.drawer.test.js` — docsearch's search-options drawer and clipped legacy
+  header form: both are `visibility: hidden` while closed (out of the tab order and
+  the accessibility tree), and the drawer closes on Escape and on a click outside it,
+  with the focus going back to the control that opened it (the theme's real
+  `index.html`, `styles.css`, `compat.js`, `app.js` and `palette.js`).
+- `docsearch.palette.test.js` — docsearch's command palette: the keys of an IME
+  conversion (synthetic composition events) are not commands, and Escape closes it
+  wherever the focus is inside it.
+- `docsearch.suggest.test.js` — docsearch's two suggest lists: the home search box's
+  ArrowDown/ArrowUp/Enter/Escape model (`aria-selected`, `aria-activedescendant`), and
+  no list acting on the keys of an IME conversion.
 - `app-boot.test.js` — the UI language `app.js` requests at boot
   (`?browser_lang=`, session, `Accept-Language`), in every theme.
 - `app-auth.test.js` — the `login.required` gate at boot, and what a login, a
