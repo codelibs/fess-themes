@@ -23,7 +23,7 @@ import * as api from "./api.js";
 import { t } from "./i18n.js";
 import { escapeHtml, formatFileSize, formatDate, renderHighlightedSnippet } from "./format.js";
 import { navigate } from "./router.js";
-import { parseQuery, toFessQuery, addQualifier, removeQualifier, QUALIFIER_MAP } from "./query.js";
+import { parseQuery, toFessQuery, qualifierToFess, qualifierText, addQualifier, removeQualifier, QUALIFIER_MAP } from "./query.js";
 
 /** Guard: prevent duplicate event-listener registration on hot-reload / re-attach. */
 let attached = false;
@@ -610,6 +610,9 @@ function renderPagination(env) {
   const goToPage = (start) => {
     const params = new URLSearchParams(location.search);
     params.set("start", String(Math.max(0, start)));
+    // A num above the server's cap is replaced by the size actually served, so the URL
+    // and the offsets in it agree.
+    if (params.has("num")) params.set("num", String(state.num));
     navigate("search?" + params.toString());
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -753,7 +756,8 @@ function renderFacets(env) {
           : removeQualifier(raw, group.field, value);
         if (qi) qi.value = newQuery;
         const params = new URLSearchParams(location.search);
-        params.set("q", newQuery);
+        // The box may still hold shorthand ("repo:", "path:src/main"): send what a submit sends.
+        params.set("q", toFessQuery(parseQuery(newQuery)));
         params.delete("start");
         navigate("search?" + params.toString());
       });
@@ -856,7 +860,7 @@ function renderActiveChips() {
       const newQuery = removeQualifier(raw, q.key, q.value);
       if (qi) qi.value = newQuery;
       const params = new URLSearchParams(location.search);
-      params.set("q", newQuery);
+      params.set("q", toFessQuery(parseQuery(newQuery)));
       params.delete("start");
       navigate("search?" + params.toString());
     });
@@ -899,6 +903,10 @@ async function runSearch() {
     params["facet.field"] = ["repository", "filetype", "organization", "filename"];
 
     const env = await api.get("/search", params, { signal });
+    // The server caps num at page_size_max and says what it served in page_size. The page links
+    // step by that size, not by the one asked for: with num=500 capped to 100, page 2 starts at 100.
+    const served = Number(env.page_size);
+    if (served > 0 && served < state.num) state.num = served;
     if (env.requested_time) state.requestedTime = env.requested_time;
 
     // JSP parity (FessSearchAction.hookBefore): say so when the user's group and role
@@ -1111,7 +1119,8 @@ export function renderPopularWords(words, targetEl) {
  * treats that syntax as part of the term, so it must not be sent.
  */
 function suggestTerms(raw) {
-  return parseQuery(raw || "").terms.join(" ").trim();
+  // The quotes of a phrase are query syntax, not part of the words being completed.
+  return parseQuery(raw || "").terms.join(" ").replace(/"/g, "").trim();
 }
 
 /**
@@ -1122,10 +1131,7 @@ function suggestTerms(raw) {
  * Qualifiers are re-emitted in the form addQualifier() writes them.
  */
 function withTerms(raw, text) {
-  const qualifiers = parseQuery(raw || "").qualifiers.map(q => {
-    const value = q.value.includes(" ") ? `"${q.value}"` : q.value;
-    return (q.negate ? "-" : "") + q.key + ":" + value;
-  });
+  const qualifiers = parseQuery(raw || "").qualifiers.map(qualifierText);
   return [text, ...qualifiers].filter(Boolean).join(" ");
 }
 
@@ -1284,10 +1290,7 @@ export function getSearchContext() {
   const rawQ = queryInput ? queryInput.value : "";
   const parsed = parseQuery(rawQ);
   const activeQualifiers = (parsed.qualifiers || []).filter(q => !q.negate);
-  const extra_queries = activeQualifiers.map(q => {
-    const fessField = QUALIFIER_MAP[q.key] || q.key;
-    return fessField + ":" + q.value;
-  });
+  const extra_queries = activeQualifiers.map(qualifierToFess);
 
   // Derive fields (label values) from the #labelSearchOption select.
   const labelSel = document.getElementById("labelSearchOption");
