@@ -123,6 +123,10 @@ The suites:
 - `docsearch.layout.test.js` — docsearch's small-screen and long-query polish: the
   stylesheet declarations that carry it (read back from the parsed `styles.css`; jsdom
   has no layout), and a failed search hiding the previous search's "did not match" panel.
+- `docsearch.filters.test.js` — docsearch's active-filter chip names a label by its
+  `label_options` name (value kept in the URL and the request), and the "Similar Results"
+  view is written to the URL as `sdh` (a new history entry; shown again from a URL that
+  carries it).
 - `app-boot.test.js` — the UI language `app.js` requests at boot
   (`?browser_lang=`, session, `Accept-Language`), in every theme.
 - `app-auth.test.js` — the `login.required` gate at boot, and what a login, a

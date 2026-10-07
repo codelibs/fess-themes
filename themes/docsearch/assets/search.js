@@ -362,6 +362,7 @@ function buildResultCard(d, queryId, order) {
       ev.preventDefault();
       state.sdh = d.similar_docs_hash || d.doc_id || "";
       state.start = 0;
+      syncUrlParams(true);
       runSearch();
     });
     info.appendChild(simLink);
@@ -471,6 +472,7 @@ function renderSimilarDocBanner() {
   closeBtn.addEventListener("click", () => {
     state.sdh = "";
     state.start = 0;
+    syncUrlParams(true);
     runSearch();
   });
   banner.appendChild(closeBtn);
@@ -695,24 +697,29 @@ function exQClauses() {
 }
 
 /**
- * Keep the address bar's start= and ex_q= in step with state.start and the facet
- * selections, as the JSP paging and facet links did, so reload, back/forward and a
- * shared link land on the same page with the same filters (runFromUrl reads them
- * back).
+ * Keep the address bar's start=, ex_q= and sdh= in step with state.start, the facet
+ * selections and the similar-results view, as the JSP paging and facet links did, so
+ * reload, back/forward and a shared link land on the same page with the same filters
+ * (runFromUrl reads them back).
  *
- * @param {boolean} push - add a history entry (paging) instead of correcting the
- *                         current one (a filter change resetting to the first page)
+ * @param {boolean} push - add a history entry (paging, opening or closing the similar
+ *                         results) instead of correcting the current one (a filter
+ *                         change resetting to the first page)
  */
 function syncUrlParams(push) {
   const params = new URLSearchParams(location.search);
   const clauses = exQClauses();
   const current = params.getAll("ex_q");
   const sameExQ = current.length === clauses.length && current.every((v, i) => v === clauses[i]);
-  if ((Number(params.get("start")) || 0) === state.start && sameExQ) return;
+  const sameSdh = (params.get("sdh") || "") === state.sdh;
+  if ((Number(params.get("start")) || 0) === state.start && sameExQ && sameSdh) return;
   if (state.start > 0) params.set("start", String(state.start)); else params.delete("start");
   if (!sameExQ) {
     params.delete("ex_q");
     clauses.forEach(v => params.append("ex_q", v));
+  }
+  if (!sameSdh) {
+    if (state.sdh) params.set("sdh", state.sdh); else params.delete("sdh");
   }
   const qs = params.toString();
   const url = location.pathname + (qs ? "?" + qs : "");
@@ -1860,9 +1867,17 @@ function renderActiveChips() {
     (Array.isArray(values) ? values : []).forEach(v => { (chipFieldSets[field] = chipFieldSets[field] || new Set()).add(v); });
   }
 
+  // A label chip shows the label's display name (label_options), as the facet, options bar and
+  // drawer do, falling back to its value; the value is what the URL and the request carry.
+  const labelOptions = (api.getConfig() || {}).label_options || [];
+  const chipText = (field, v) => {
+    if (field !== "label") return field + ": " + v;
+    const opt = labelOptions.find(o => o.value === v);
+    return t("labels.facet_label_title") + ": " + (opt ? (opt.name || opt.value) : v);
+  };
   for (const [field, valueSet] of Object.entries(chipFieldSets)) {
     valueSet.forEach(v => chips.push({
-      label: field + ": " + v,
+      label: chipText(field, v),
       remove: () => {
         // Remove from whichever store(s) hold this value.
         if (state.facets[field]) {
