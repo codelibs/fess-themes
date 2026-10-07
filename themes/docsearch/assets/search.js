@@ -362,6 +362,7 @@ function buildResultCard(d, queryId, order) {
       ev.preventDefault();
       state.sdh = d.similar_docs_hash || d.doc_id || "";
       state.start = 0;
+      syncUrlParams(true);
       runSearch();
     });
     info.appendChild(simLink);
@@ -471,6 +472,7 @@ function renderSimilarDocBanner() {
   closeBtn.addEventListener("click", () => {
     state.sdh = "";
     state.start = 0;
+    syncUrlParams(true);
     runSearch();
   });
   banner.appendChild(closeBtn);
@@ -695,24 +697,29 @@ function exQClauses() {
 }
 
 /**
- * Keep the address bar's start= and ex_q= in step with state.start and the facet
- * selections, as the JSP paging and facet links did, so reload, back/forward and a
- * shared link land on the same page with the same filters (runFromUrl reads them
- * back).
+ * Keep the address bar's start=, ex_q= and sdh= in step with state.start, the facet
+ * selections and the similar-results view, as the JSP paging and facet links did, so
+ * reload, back/forward and a shared link land on the same page with the same filters
+ * (runFromUrl reads them back).
  *
- * @param {boolean} push - add a history entry (paging) instead of correcting the
- *                         current one (a filter change resetting to the first page)
+ * @param {boolean} push - add a history entry (paging, opening or closing the similar
+ *                         results) instead of correcting the current one (a filter
+ *                         change resetting to the first page)
  */
 function syncUrlParams(push) {
   const params = new URLSearchParams(location.search);
   const clauses = exQClauses();
   const current = params.getAll("ex_q");
   const sameExQ = current.length === clauses.length && current.every((v, i) => v === clauses[i]);
-  if ((Number(params.get("start")) || 0) === state.start && sameExQ) return;
+  const sameSdh = (params.get("sdh") || "") === state.sdh;
+  if ((Number(params.get("start")) || 0) === state.start && sameExQ && sameSdh) return;
   if (state.start > 0) params.set("start", String(state.start)); else params.delete("start");
   if (!sameExQ) {
     params.delete("ex_q");
     clauses.forEach(v => params.append("ex_q", v));
+  }
+  if (!sameSdh) {
+    if (state.sdh) params.set("sdh", state.sdh); else params.delete("sdh");
   }
   const qs = params.toString();
   const url = location.pathname + (qs ? "?" + qs : "");
@@ -820,6 +827,9 @@ async function runSearch() {
     document.dispatchEvent(new CustomEvent("fess:search:after", { detail: env }));
   } catch (e) {
     if (e && e.name === "AbortError") return; // request superseded — newer request owns the UI
+    // The previous search's "did not match" panel no longer describes anything on screen.
+    const emptyPanel = document.getElementById("empty-state");
+    if (emptyPanel) emptyPanel.classList.add("d-none");
     const errBox = document.getElementById("search-error");
     if (e && (e.code === "invalid_request" || e.code === "INVALID_REQUEST" || e.httpStatus === 400)) {
       if (errBox) { errBox.textContent = e.message || t("error.invalid_request"); errBox.classList.remove("d-none"); }
@@ -928,10 +938,13 @@ export function disableSubmitBriefly(btn) {
 export function attachSuggest(input, dropdown, opts = {}) {
   if (!input || !dropdown) return;
   let timer = null;
+  let active = -1;
   const clear = () => {
     while (dropdown.firstChild) dropdown.removeChild(dropdown.firstChild);
     dropdown.classList.add("d-none");
     input.setAttribute("aria-expanded", "false");
+    input.removeAttribute("aria-activedescendant");
+    active = -1;
   };
   const choose = (text) => {
     input.value = text;
@@ -967,12 +980,31 @@ export function attachSuggest(input, dropdown, opts = {}) {
       });
       dropdown.classList.remove("d-none");
       input.setAttribute("aria-expanded", "true");
+      input.removeAttribute("aria-activedescendant");
+      active = -1;
     } catch { /* best-effort */ }
   };
   input.addEventListener("input", () => {
     if (timer) clearTimeout(timer);
     const v = input.value.trim();
     timer = setTimeout(() => render(v), 150);
+  });
+  // ArrowDown/ArrowUp walk the list (aria-selected + aria-activedescendant), Enter takes the
+  // highlighted entry and Escape closes the list; without a highlighted entry Enter submits as usual.
+  input.addEventListener("keydown", ev => {
+    if (ev.isComposing || ev.keyCode === 229) return;
+    const items = dropdown.querySelectorAll(".list-group-item");
+    if (!items.length || dropdown.classList.contains("d-none")) return;
+    if (ev.key === "Escape") { ev.preventDefault(); clear(); return; }
+    if (ev.key === "Enter" && active >= 0) { ev.preventDefault(); choose(items[active].textContent); return; }
+    if (ev.key !== "ArrowDown" && ev.key !== "ArrowUp") return;
+    ev.preventDefault();
+    active = ev.key === "ArrowDown" ? (active + 1) % items.length : (active <= 0 ? items.length - 1 : active - 1);
+    items.forEach((it, i) => {
+      it.classList.toggle("active", i === active);
+      it.setAttribute("aria-selected", i === active ? "true" : "false");
+    });
+    input.setAttribute("aria-activedescendant", items[active].id);
   });
   input.addEventListener("blur", () => setTimeout(clear, 120));
 }
@@ -1512,6 +1544,8 @@ export function attach() {
       suggestTimer = setTimeout(() => showSuggest(v), 150);
     });
     input.addEventListener("keydown", ev => {
+      // An IME conversion owns Enter, Tab and the arrows until it is confirmed.
+      if (ev.isComposing || ev.keyCode === 229) return;
       const items = dropdown.querySelectorAll(".list-group-item");
       if (!items.length || dropdown.classList.contains("d-none")) return;
       if (ev.key === "ArrowDown") {
@@ -1833,9 +1867,17 @@ function renderActiveChips() {
     (Array.isArray(values) ? values : []).forEach(v => { (chipFieldSets[field] = chipFieldSets[field] || new Set()).add(v); });
   }
 
+  // A label chip shows the label's display name (label_options), as the facet, options bar and
+  // drawer do, falling back to its value; the value is what the URL and the request carry.
+  const labelOptions = (api.getConfig() || {}).label_options || [];
+  const chipText = (field, v) => {
+    if (field !== "label") return field + ": " + v;
+    const opt = labelOptions.find(o => o.value === v);
+    return t("labels.facet_label_title") + ": " + (opt ? (opt.name || opt.value) : v);
+  };
   for (const [field, valueSet] of Object.entries(chipFieldSets)) {
     valueSet.forEach(v => chips.push({
-      label: field + ": " + v,
+      label: chipText(field, v),
       remove: () => {
         // Remove from whichever store(s) hold this value.
         if (state.facets[field]) {

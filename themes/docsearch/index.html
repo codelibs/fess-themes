@@ -26,9 +26,10 @@
        SHARED HEADER — tag-parity with WEB-INF/view/header.jsp.
        header > nav.navbar… > div#content.container with the brand logo,
        the search input-group (#query / #searchButton / #searchOptionsButton),
-       and the right-side ul.nav.navbar-nav.d-none.d-md-flex of li.nav-item
-       entries (warnings + auth + chat + help).  The search box is shown on
-       EVERY view (only hidden on /chat — toggled by app.js setSearchFormVisible).
+       and the right-side ul.nav.navbar-nav of li.nav-item entries (warnings +
+       auth + chat + theme toggle + help): in line from 768px up, a menu behind
+       #headerNavToggle below it.  The search box is shown on EVERY view (only
+       hidden on /chat — toggled by app.js setSearchFormVisible).
        DocSearch restyles this as a slim, dark docs top-bar (.df-header).
        =================================================================== -->
   <header>
@@ -62,7 +63,11 @@
             <kbd class="ds-pt-kbd" aria-hidden="true">⌘K</kbd>
           </button>
         </div>
-        <ul class="nav navbar-nav d-none d-md-flex ms-auto" id="header-nav">
+        <!-- Below 768px the nav (sign-in, AI search, theme toggle, help) is a menu behind this button. -->
+        <button type="button" class="ds-icon-btn d-md-none ms-auto" id="headerNavToggle"
+                data-bs-toggle="collapse" data-bs-target="#header-nav" aria-expanded="false" aria-controls="header-nav"
+                aria-label="Menu" data-i18n-aria-label="nav.menu"><i class="fa fa-bars" aria-hidden="true"></i></button>
+        <ul class="nav navbar-nav collapse d-md-flex ms-auto" id="header-nav">
           <!-- Warning indicators (EOL / dev-mode) rendered by app.js as li.nav-item -->
           <!-- Auth entry (login nav-link OR user dropdown) rendered by auth.js -->
           <li class="nav-item" id="auth-controls" data-i18n-aria-label="aria.auth_controls"></li>
@@ -89,7 +94,7 @@
        populated by search.js renderSearchOptions().
        =================================================================== -->
   <div id="searchOptions" class="collapse">
-    <div class="container">
+    <div class="container" tabindex="-1">
       <h3 id="searchOptionsLabel" data-i18n="search.options_title">Search Options</h3>
       <div>
         <fieldset class="mb-3">

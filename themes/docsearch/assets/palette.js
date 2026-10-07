@@ -68,7 +68,7 @@ function renderEmpty(){
     b.addEventListener("click",()=>{ el.input.value=q; onInput(); });
     const star=document.createElement("button"); star.type="button"; star.className="ds-palette-star"+(isFav?" is-fav":"");
     star.setAttribute("aria-label", t(isFav?"palette.remove_search":"palette.save_search")); star.textContent=isFav?"★":"☆";
-    star.addEventListener("click",(e)=>{ e.stopPropagation(); toggleFavorite(q); renderEmpty(); });
+    star.addEventListener("click",(e)=>{ e.stopPropagation(); toggleFavorite(q); renderEmpty(); el.input.focus(); });
     li.append(b,star); return li; };
   const sec=(titleKey,items,render)=>{ if(!items.length) return;
     const h=document.createElement("div"); h.className="ds-palette-group"; h.textContent=t(titleKey); el.empty.appendChild(h);
@@ -101,7 +101,7 @@ async function runQuery(q){
   if(seq!==reqSeq) return;                              // drop stale
   clearTimeout(stallTimer); clearList(); el.input.setAttribute("aria-expanded","true"); let n=0;
   if(words.length){ groupHeader(t("palette.suggestions"));
-    words.forEach(w=>makeRow(`pal-s-${n++}`,{ title:w, onSelect:()=>{ pushRecent(w); goSearch(w); } })); }
+    words.forEach(w=>makeRow(`pal-s-${n++}`,{ iconHtml:'<span aria-hidden="true">🔍</span>', title:w, onSelect:()=>{ pushRecent(w); goSearch(w); } })); }
   if(hits.length){ groupHeader(t("palette.documents"));
     hits.forEach((d,i)=>makeRow(`pal-h-${n++}`,{ iconHtml:contentTypeIcon(d),
       title: (d.title||"").replace(/<[^>]+>/g,""),         // content_title may carry highlight markup → strip for textContent row
@@ -115,15 +115,21 @@ async function runQuery(q){
   else { el.status.textContent=t("palette.result_count",{0:rows.length}); setActive(0); }
 }
 
+// While an IME is composing, Enter confirms the conversion, the arrows pick a candidate and Escape
+// cancels it: none of them is for the palette. (Safari reports the confirming Enter after
+// compositionend, with isComposing already false, but still with keyCode 229.)
+const composing=e=>e.isComposing||e.keyCode===229;
 function onInputKeydown(e){
+  if(composing(e)) return;
   if(e.key==="ArrowDown"){ e.preventDefault(); move(1); }
   else if(e.key==="ArrowUp"){ e.preventDefault(); move(-1); }
   else if(e.key==="Enter"){ e.preventDefault();
     if(activeIndex>=0 && rows[activeIndex]?._onSelect) rows[activeIndex]._onSelect();
     else { const q=el.input.value.trim(); if(q){ pushRecent(q); goSearch(q); } } }
-  else if(e.key==="Escape"){ e.preventDefault(); close(); }
 }
 function globalKeydown(e){
+  if(composing(e)) return;
+  if(e.key==="Escape" && !el.root.hidden){ e.preventDefault(); close(); return; }   // wherever the focus is
   const k=(e.key||"").toLowerCase();
   if((e.metaKey||e.ctrlKey)&&k==="k"){ e.preventDefault(); el.root.hidden?open(qFromUrl()):close(); return; }
   if(e.key==="/"&&!e.metaKey&&!e.ctrlKey&&!e.altKey){

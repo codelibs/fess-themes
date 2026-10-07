@@ -781,6 +781,8 @@ body.modal-open { overflow: hidden; }
 #suggest-dropdown .list-group-item, .suggest-dropdown .list-group-item { cursor: pointer; text-align: left; border-left: 0; border-right: 0; }
 #suggest-dropdown .list-group-item.active, #suggest-dropdown .list-group-item:hover,
 .suggest-dropdown .list-group-item.active, .suggest-dropdown .list-group-item:hover { background: var(--df-zinc-100); }
+/* the keyboard highlight must stand out from the hover tint, which is nearly the panel colour in dark mode */
+#suggest-dropdown .list-group-item.active, .suggest-dropdown .list-group-item.active { background: var(--ds-accent-subtle); }
 
 /* ---- Search options drawer ---- */
 #searchOptions { position: fixed; z-index: 1045; display: block; }
@@ -792,9 +794,13 @@ body.modal-open { overflow: hidden; }
   background-color: var(--ds-surface);
   border-left: 1px solid var(--ds-border);
   box-shadow: var(--ds-shadow-lg);
-  transition: right .35s ease;
+  /* Off screen is not enough: a closed drawer is also out of the tab order and the
+     accessibility tree. The delay lets the slide-out finish before it is hidden. */
+  visibility: hidden;
+  transition: right .35s ease, visibility 0s linear .35s;
 }
-#searchOptions.show .container { right: 0; }
+#searchOptions .container:focus { outline: none; }
+#searchOptions.show .container { right: 0; visibility: visible; transition-delay: 0s; }
 #searchOptions h3 { color: var(--ds-text); }
 #searchOptions label, #searchOptions legend { color: var(--ds-text-muted); font-size: .85rem; }
 #searchOptions .form-control { background: var(--ds-surface-2); border-color: var(--ds-border); color: var(--ds-text); }
@@ -925,6 +931,9 @@ cite.result-site-path { color: var(--bs-success); font-size: .85rem; font-style:
 .cache-meta { font-size: .9rem; color: var(--bs-secondary-color); }
 .cache-meta dt { font-weight: 600; }
 
+/* The query is echoed back ("did not match", the status line); an unbroken one must wrap, not widen the page. */
+#empty-did-not-match, #results-status { overflow-wrap: anywhere; }
+
 /* ---- Home / top page ---- */
 legend { display: none; }
 #home-view .searchFormBox { margin-top: 6em; margin-bottom: 4em; }
@@ -987,7 +996,8 @@ footer[role="contentinfo"] {
  * ---------------------------------------------------------------- */
 
 /* The legacy search form stays in the DOM for ID/JS contracts but is
-   completely hidden; the .ds-palette-trigger is the visible control. */
+   completely hidden; the .ds-palette-trigger is the visible control.
+   visibility keeps its input and buttons out of the tab order too. */
 #search-form {
   position: absolute;
   width: 1px; height: 1px;
@@ -995,6 +1005,7 @@ footer[role="contentinfo"] {
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
+  visibility: hidden;
 }
 
 /* Palette trigger — mimics a search input field in the header */
@@ -1078,6 +1089,23 @@ footer[role="contentinfo"] {
 [data-theme="dark"] #theme-toggle .ds-theme-dark { display: inline-flex; }
 [data-theme="dark"] #theme-toggle .ds-theme-light { display: none; }
 
+/* Below 768px the nav (sign-in, AI search, theme toggle, help) is a menu: #headerNavToggle opens it
+   as a panel under the header. The row is tightened so that the palette trigger gives way to the
+   extra button instead of running off the right edge. */
+@media (max-width: 767.98px) {
+  .df-header > .container { gap: .5rem; }
+  #search-form-wrap { flex: 1 1 0; width: auto; min-width: 0; }
+  .ds-palette-trigger { flex: 1 1 auto; min-width: 0; }
+  .ds-pt-kbd { display: none; }
+  #header-nav.show {
+    position: absolute; top: 100%; right: .75rem; z-index: 1056; flex-direction: column; align-items: stretch; gap: 0;
+    min-width: 12rem; padding: .35rem; background: var(--ds-header-bg); border: 1px solid var(--ds-header-border);
+    border-radius: var(--ds-radius); box-shadow: var(--ds-shadow-lg);
+  }
+  #header-nav.show .nav-item { display: block; }
+  #header-nav.show .nav-link { padding: .6rem .75rem; }
+}
+
 /* ----------------------------------------------------------------
  * Step 2 — Home hero (existing rules enhanced; #contentQuery stays real)
  * ---------------------------------------------------------------- */
@@ -1090,6 +1118,8 @@ footer[role="contentinfo"] {
 #home-view .searchFormBox { max-width: 640px; width: 100%; margin: 0 auto; }
 #home-view .mainLogo { margin: 0 0 .5rem; }
 #home-view .home-logo { max-width: 240px; width: 60%; }
+/* logo.png is dark blue on a transparent background: on the dark page it is drawn white, as the header's logo is */
+[data-theme="dark"] #home-view .home-logo { filter: brightness(0) invert(1); }
 #home-view .home-tagline { margin: 0 0 1.75rem; color: var(--ds-text-muted); font-size: 1.05rem; }
 #home-view #contentQuery {
   font-size: 1.15rem; padding: 14px 18px; border-radius: var(--ds-radius-lg);
@@ -1393,6 +1423,7 @@ footer[role="contentinfo"] {
 }
 .ds-palette-row-body { flex: 1 1 auto; min-width: 0; }
 .ds-palette-row-title {
+  display: block;
   font-size: .9375rem;
   font-weight: 500;
   color: var(--ds-text);
@@ -1403,6 +1434,7 @@ footer[role="contentinfo"] {
 .ds-palette-row[aria-selected="true"] .ds-palette-row-title,
 .ds-palette-row.is-active .ds-palette-row-title { color: var(--ds-accent); }
 .ds-palette-row-sub {
+  display: block;
   font-size: .8rem;
   color: var(--ds-text-faint);
   white-space: nowrap;
