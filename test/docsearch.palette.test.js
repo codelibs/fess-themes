@@ -9,6 +9,7 @@
 //   still keyCode 229), compositionend.
 // - Escape closes the palette wherever the focus is inside it, and the focus goes back to the
 //   control that opened it.
+// - A suggestion row has an icon, like a document row.
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mountIndexBody } from "./helpers/themes.js";
@@ -166,5 +167,20 @@ describe("docsearch palette: Escape and focus", () => {
   it("does not take Escape while it is closed", () => {
     const ev = keydown(document.body, "Escape");
     expect(ev.defaultPrevented).toBe(false);
+  });
+});
+
+describe("docsearch palette: rows", () => {
+  it("gives a suggestion row an icon, as a document row has one", async () => {
+    palette.open("");
+    await type("install");
+    const rows = [...document.querySelectorAll("#palette-listbox .ds-palette-row")];
+    const suggestions = rows.filter((r) => r.id.startsWith("pal-s-"));
+    const documents = rows.filter((r) => r.id.startsWith("pal-h-"));
+    expect(suggestions.length).toBe(2);
+    expect(documents.length).toBe(1);
+    for (const row of [...suggestions, ...documents]) {
+      expect(row.querySelector(".ds-palette-row-icon").innerHTML.trim()).not.toBe("");
+    }
   });
 });

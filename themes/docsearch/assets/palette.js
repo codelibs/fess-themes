@@ -101,7 +101,7 @@ async function runQuery(q){
   if(seq!==reqSeq) return;                              // drop stale
   clearTimeout(stallTimer); clearList(); el.input.setAttribute("aria-expanded","true"); let n=0;
   if(words.length){ groupHeader(t("palette.suggestions"));
-    words.forEach(w=>makeRow(`pal-s-${n++}`,{ title:w, onSelect:()=>{ pushRecent(w); goSearch(w); } })); }
+    words.forEach(w=>makeRow(`pal-s-${n++}`,{ iconHtml:'<span aria-hidden="true">🔍</span>', title:w, onSelect:()=>{ pushRecent(w); goSearch(w); } })); }
   if(hits.length){ groupHeader(t("palette.documents"));
     hits.forEach((d,i)=>makeRow(`pal-h-${n++}`,{ iconHtml:contentTypeIcon(d),
       title: (d.title||"").replace(/<[^>]+>/g,""),         // content_title may carry highlight markup → strip for textContent row

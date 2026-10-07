@@ -117,6 +117,12 @@ The suites:
 - `docsearch.suggest.test.js` — docsearch's two suggest lists: the home search box's
   ArrowDown/ArrowUp/Enter/Escape model (`aria-selected`, `aria-activedescendant`), and
   no list acting on the keys of an IME conversion.
+- `docsearch.headermenu.test.js` — docsearch's header nav below 768px: the toggle
+  opens it as a menu and `app.js` closes it after a choice, on a route change and on
+  Escape (focus back on the toggle).
+- `docsearch.layout.test.js` — docsearch's small-screen and long-query polish: the
+  stylesheet declarations that carry it (read back from the parsed `styles.css`; jsdom
+  has no layout), and a failed search hiding the previous search's "did not match" panel.
 - `app-boot.test.js` — the UI language `app.js` requests at boot
   (`?browser_lang=`, session, `Accept-Language`), in every theme.
 - `app-auth.test.js` — the `login.required` gate at boot, and what a login, a

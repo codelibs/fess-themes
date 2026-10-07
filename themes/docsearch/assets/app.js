@@ -391,6 +391,27 @@ function attachOptionsDrawer() {
   });
 }
 
+/**
+ * Below 768px the header nav (sign-in, AI search, theme toggle, help) is a menu behind
+ * #headerNavToggle. It closes when a choice is made, on a route change and on Escape (focus
+ * goes back to the button).
+ */
+function attachHeaderMenu() {
+  const nav = document.getElementById("header-nav");
+  const toggle = document.getElementById("headerNavToggle");
+  if (!nav || !toggle || !window.bootstrap || !window.bootstrap.Collapse) return;
+  const close = () => window.bootstrap.Collapse.getOrCreateInstance(nav, { toggle: false }).hide();
+  nav.addEventListener("click", ev => {
+    if (ev.target.closest("a.nav-link:not(.dropdown-toggle), .dropdown-item")) close();
+  });
+  document.addEventListener("fess:route:change", close);
+  document.addEventListener("keydown", ev => {
+    if (ev.key !== "Escape" || ev.defaultPrevented || !nav.classList.contains("show")) return;
+    close();
+    toggle.focus();
+  });
+}
+
 /** Attach back-to-top button behaviour. */
 function attachBackToTop() {
   const btn = document.getElementById("back-to-top");
@@ -723,6 +744,7 @@ async function main() {
   });
 
   attachOptionsDrawer();
+  attachHeaderMenu();
 
   // Wire back-to-top button.
   attachBackToTop();

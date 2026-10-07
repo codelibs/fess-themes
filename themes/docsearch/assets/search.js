@@ -820,6 +820,9 @@ async function runSearch() {
     document.dispatchEvent(new CustomEvent("fess:search:after", { detail: env }));
   } catch (e) {
     if (e && e.name === "AbortError") return; // request superseded — newer request owns the UI
+    // The previous search's "did not match" panel no longer describes anything on screen.
+    const emptyPanel = document.getElementById("empty-state");
+    if (emptyPanel) emptyPanel.classList.add("d-none");
     const errBox = document.getElementById("search-error");
     if (e && (e.code === "invalid_request" || e.code === "INVALID_REQUEST" || e.httpStatus === 400)) {
       if (errBox) { errBox.textContent = e.message || t("error.invalid_request"); errBox.classList.remove("d-none"); }
