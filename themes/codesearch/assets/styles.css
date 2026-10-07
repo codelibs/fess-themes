@@ -235,6 +235,7 @@ h1, h2, h3, h4 { font-weight: 600; line-height: 1.25; margin: 0 0 .5em; }
 }
 .hbtn:hover { background: var(--raised); color: var(--text); }
 .hbtn[aria-pressed="true"],
+.hbtn[aria-expanded="true"],
 .hbtn.is-active { color: var(--accent); border-color: var(--border); }
 .hbtn .icon { font-size: 15px; line-height: 1; }
 
@@ -319,6 +320,11 @@ h1, h2, h3, h4 { font-weight: 600; line-height: 1.25; margin: 0 0 .5em; }
   color: var(--faint);
   font-size: 12.5px;
   padding: 4px;
+}
+/* Opens the rail as a drawer below 960px; hidden above by .drawer-toggle. */
+.facet-toggle {
+  margin: 0 0 8px;
+  border-color: var(--border);
 }
 
 /* ---- Center: results ---- */

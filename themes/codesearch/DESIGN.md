@@ -30,7 +30,11 @@ Facet selections and filter chips **write back into the query string** via
 
 Inline qualifiers (`repo:`, `org:`, `path:`, `file:`, `lang:`) are parsed
 client-side by `query.js` and mapped to Fess field queries before dispatch. The
-grammar is intentionally minimal: implicit-AND, `-` exclude, `or` operator.
+grammar is intentionally minimal: implicit-AND, `-` exclude, `or` operator, `"phrase"`.
+Qualifier values are escaped for the Lucene classic parser, because one unescaped `/`
+makes Fess re-run the whole query as plain text and silently drops the filter;
+an unquoted, wildcard-free `path:` value is a prefix (`path:src/main` finds the files
+under `src/main`), a quoted one an exact path.
 
 Deferred: qualifier autocomplete, regex toggle, structural/AST search (YAGNI v1).
 
@@ -63,6 +67,9 @@ populated from the `facet_field` array in the Fess search response. Checking a
 facet appends a qualifier to the query string and re-runs the search; unchecking
 removes it. This keeps the query box honest — the user can always see (and edit)
 exactly what filters are active.
+
+Below 960px the rail is an off-canvas drawer, opened by the Filters button above the
+results (it and the Ask drawer never stay open together).
 
 Active qualifiers are displayed as removable chips above the result list, giving
 a secondary affordance for editing filters without touching the query box.

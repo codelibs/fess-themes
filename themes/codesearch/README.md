@@ -34,7 +34,7 @@ vanilla JS and CSS (no Bootstrap, no CDN).
 1. Package the theme:
    ```bash
    ./scripts/package.sh codesearch
-   # → dist/codesearch-15.9.7.zip
+   # → dist/codesearch-15.9.8.zip
    ```
 2. Open **Admin → Theme** (`/admin/theme/`) and upload the ZIP.
 3. Activate it or set `theme.default=codesearch`.
@@ -91,6 +91,31 @@ model. The Ask AI panel and standalone `/chat` page are hidden when this is
 | free text | content / title | `parse tree` |
 
 Prefix a qualifier with `-` to exclude: `-lang:xml parse`.
+
+A qualifier's value is data, not query syntax: the characters Lucene reads as syntax
+(`/ : ( ) [ ] { } ^ ~ ! "`, a leading `+` or `-`, `&&` and `||`) are escaped before the
+query is sent, so `path:src/main` and `file:index[1].html` find what they name. `*` and `?`
+stay wildcards, a backslash escapes the next character (as in Lucene), and a range is sent
+as typed (`content_length:[1024 TO 10240]`). Quote a value that holds spaces:
+`repo:"my repo"`.
+
+`path` holds the file's path inside the repository (`src/main/java/Foo.java`), so its value
+is read like this:
+
+| You type | Matches | Sent as |
+|---|---|---|
+| `path:src/main` | every path that starts with `src/main` | `path:src\/main*` |
+| `path:*Suggester.java` | a wildcard you type is used as typed | `path:*Suggester.java` |
+| `path:"src/main/java/X.java"` | exactly that path | `path:"src/main/java/X.java"` |
+
+The prefix is a Lucene prefix query on the keyword field `path`, so `path` has to be listed
+in `query.additional.search.fields` and `query.additional.not.analyzed.fields` (the
+`docker-codesearch` deployment sets both).
+
+In the free text, a `"quoted phrase"` is searched as a phrase (`"foo bar"~3` is a proximity
+search: the larger the number, the further apart the words may be), `-word` excludes a
+word, and a word that starts with two hyphens (`--verbose`) is searched as written.
+Press `/` to move to the search box.
 
 ## Locales
 

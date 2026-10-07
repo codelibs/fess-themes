@@ -127,6 +127,16 @@ The suites:
   `label_options` name (value kept in the URL and the request), and the "Similar Results"
   view is written to the URL as `sdh` (a new history entry; shown again from a URL that
   carries it).
+- `codesearch.query.test.js` — codesearch's query box -> Fess query translation (`query.js`):
+  qualifier values escaped for the Lucene parser, `path:` as a prefix or an exact path, ranges,
+  phrases (`"foo bar"~3`) kept as one term, a leading `--` read as text, the facet and chip
+  clicks sending what a submit sends, and the suggest / Ask panel helpers built on the same parse.
+- `codesearch.paging.test.js` — codesearch's pager steps by the `page_size` the server served
+  when `num` is above its cap (page 2 of `num=500` starts at 100, not 500).
+- `codesearch.shell.test.js` — codesearch's Filters button (the facet rail as a drawer below
+  960px: open, close on Escape / scrim / route change, never open together with the Ask drawer),
+  the stylesheet rules that carry it (read back from the parsed `styles.css`), and the `/`
+  shortcut that focuses the search box.
 - `app-boot.test.js` — the UI language `app.js` requests at boot
   (`?browser_lang=`, session, `Accept-Language`), in every theme.
 - `app-auth.test.js` — the `login.required` gate at boot, and what a login, a

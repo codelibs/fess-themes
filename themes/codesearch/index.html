@@ -125,6 +125,10 @@
 
         <!-- Center: results column. Cards rendered by Task 4 into #results. -->
         <div class="results-col">
+          <!-- Opens the facet rail as a drawer at 960px and below; .drawer-toggle hides it above. Wired in app.js. -->
+          <button type="button" class="hbtn drawer-toggle facet-toggle" id="facet-toggle" aria-expanded="false" aria-controls="facet-rail">
+            <span class="icon" aria-hidden="true">≡</span> <span data-i18n="facet.filter_button">Filters</span>
+          </button>
           <div id="results-notification" class="notification d-none" role="status" aria-live="polite"></div>
           <div id="search-error" class="alert alert-danger" role="alert" aria-live="assertive" hidden></div>
           <div id="results-warning" class="alert alert-warning" role="status" aria-live="polite" hidden></div>

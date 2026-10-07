@@ -461,19 +461,44 @@ function attachShell() {
   const askPanel = document.getElementById("ask-panel");
   const askClose = document.getElementById("ask-close");
   const scrim = document.getElementById("drawer-scrim");
+  const facetRail = document.getElementById("facet-rail");
+  const facetToggle = document.getElementById("facet-toggle");
   const isMobile = () => window.matchMedia("(max-width: 960px)").matches;
+
+  function closeFacetRail() {
+    facetRail?.classList.remove("is-open");
+    facetToggle?.setAttribute("aria-expanded", "false");
+  }
 
   function closeDrawers() {
     askPanel?.classList.remove("is-open");
-    document.getElementById("facet-rail")?.classList.remove("is-open");
+    closeFacetRail();
     if (scrim) scrim.hidden = true;
   }
+
+  // Filters button (shown at <=960px only): opens the facet rail as a drawer. Opening it
+  // closes the Ask drawer, and the Ask toggle below closes the rail, so only one is open.
+  facetToggle?.addEventListener("click", () => {
+    const open = !facetRail?.classList.contains("is-open");
+    askPanel?.classList.remove("is-open");
+    facetRail?.classList.toggle("is-open", open);
+    facetToggle.setAttribute("aria-expanded", String(open));
+    if (scrim) scrim.hidden = !open;
+  });
+  document.addEventListener("keydown", ev => {
+    if (ev.key !== "Escape" || !facetRail?.classList.contains("is-open")) return;
+    const hadFocus = facetRail.contains(document.activeElement);
+    closeDrawers();
+    // The rail slides out of sight: do not leave the focus on a control inside it.
+    if (hadFocus) facetToggle?.focus();
+  });
 
   if (askToggle) {
     askToggle.addEventListener("click", () => {
       // Mount the ask panel on first open (lazy, idempotent after that).
       chat.attachAskPanel(() => search.getSearchContext());
       if (isMobile()) {
+        closeFacetRail();
         const open = askPanel?.classList.toggle("is-open");
         if (scrim) scrim.hidden = !open;
       } else if (shell) {
@@ -489,6 +514,28 @@ function attachShell() {
   // NOTE: the Task 2 temporary URL→#query-input sync was removed; search.js now
   // syncs both inputs from the URL via runFromUrl()/syncSearchInputs() on every
   // route dispatch (it owns #query-input and #contentQuery).
+}
+
+/**
+ * "/" focuses the search box and selects its text (the Help page lists the shortcut).
+ * Typed into a field or with a modifier it is left alone, as it is while a dialog is open
+ * or during an IME conversion. The header box is used when it is shown, else the home box.
+ */
+function attachSearchShortcut() {
+  document.addEventListener("keydown", ev => {
+    if (ev.key !== "/" || ev.ctrlKey || ev.metaKey || ev.altKey || ev.isComposing) return;
+    const target = ev.target;
+    if (target instanceof Element
+      && target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
+    if (document.querySelector(".modal.show")) return;
+    const input = ["query-input", "contentQuery"]
+      .map(id => document.getElementById(id))
+      .find(el => el && !el.closest("[hidden]"));
+    if (!input) return;
+    ev.preventDefault();
+    input.focus();
+    input.select();
+  });
 }
 
 /**
@@ -756,6 +803,7 @@ async function main() {
 
   // Task-2 shell wiring: header search submit, ask-panel toggle, mobile drawers.
   attachShell();
+  attachSearchShortcut();
 
   // Client-side routing: register routes, attach listeners, then run the current route
   // (or ask for login first when login.required gates it).
