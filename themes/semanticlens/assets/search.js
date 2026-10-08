@@ -507,7 +507,7 @@ function buildResultCard(d, queryId, order) {
   // — matching the legacy searchResults.jsp, which renders the star purely on ${favoriteSupport}
   // — so the count acts as a popularity / social-proof signal. Adding a favorite, however,
   // requires login: a guest click hits FavoritePostHandler's AUTH_REQUIRED gate and
-  // toggleFavorite() opens the login modal. So gate display only on features.user_favorite; do
+  // addFavorite() opens the login modal. So gate display only on features.user_favorite; do
   // NOT add an api.isAuthenticated() check here (that would hide the count from guests).
   if (features.user_favorite) {
     // Spacer before the star (searchResults.jsp puts an &nbsp; before the favorite).
@@ -797,7 +797,7 @@ function renderResults(env) {
     const btn = li.querySelector(".favorite-btn");
     const docId = li.dataset.docId;
     if (!btn || !docId) return;
-    btn.addEventListener("click", () => toggleFavorite(docId, btn, li.dataset.queryId || ""));
+    btn.addEventListener("click", () => addFavorite(docId, btn, li.dataset.queryId || ""));
   });
   // Bulk-sync the *per-user* favorited state (solid vs outline star) for all result cards in
   // one request (Feature 5). Only logged-in users can own favorites (adding requires login),
@@ -2456,9 +2456,18 @@ async function refreshFavorite(docId, btn) {
   }
 }
 
+/**
+ * The star's state. /api/v2 can only add a favorite (POST .../favorite; there is no way to remove
+ * one), so a favorited star says it is a favorite and offers nothing: it is not a toggle that a
+ * second click could undo.
+ */
 function setFavoriteUi(btn, on, count) {
+  const label = on ? t("result.favorite_added") : t("result.favorite_add");
   btn.setAttribute("aria-pressed", on ? "true" : "false");
-  btn.setAttribute("aria-label", on ? t("result.favorite_remove") : t("result.favorite_add"));
+  btn.setAttribute("aria-label", label);
+  btn.title = label;
+  // aria-disabled, not disabled: a button that disables itself under the keyboard drops the focus.
+  if (on) btn.setAttribute("aria-disabled", "true"); else btn.removeAttribute("aria-disabled");
   const icon = btn.querySelector("i");
   // Font Awesome 5+: solid star when favorited, regular (outline) when not.
   // (fa-star-o is FA4 syntax and renders nothing with this theme's FA build.)
@@ -2477,7 +2486,8 @@ function setFavoriteUi(btn, on, count) {
   }
 }
 
-async function toggleFavorite(docId, btn, queryId) {
+async function addFavorite(docId, btn, queryId) {
+  if (btn.getAttribute("aria-pressed") === "true") return;
   try {
     // #3 (parity js/search.js:137): include query_id so the click is attributed to its query.
     const env = await api.post("/documents/" + encodeURIComponent(docId) + "/favorite", { query_id: queryId || "" });

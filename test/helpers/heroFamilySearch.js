@@ -7,6 +7,7 @@
 //     search, the exec time in the status line and the document title built from the query
 //   - definePagerTests: the pager as real links
 //   - defineSuggestKeyTests: the keyboard model of the home suggest list
+//   - defineFavoriteTests: the favorite star never offers to remove a favorite
 //
 // The per-theme test files (mosaic.search.test.js ...) call the define*Tests() they need.
 //
@@ -438,6 +439,108 @@ export function defineSuggestKeyTests(theme) {
       expect(input.value).toBe("su");
       expect(dd.classList.contains("d-none")).toBe(false);
       expect(dd.querySelectorAll('[aria-selected="true"]').length).toBe(1);
+    });
+  });
+}
+
+/**
+ * The favorite star never promises what the API cannot do. /api/v2 can add a favorite
+ * (POST .../favorite) but not remove one, so a favorited star is named "Added to favorites", is
+ * aria-disabled and sends nothing on a click, rather than offering "Remove from favorites".
+ *
+ * @param {string} theme
+ * @param {{listView?: boolean}} [opts] listView: the theme draws the star only on its list cards, so
+ *   switch the result view to the list first (mosaic).
+ */
+export function defineFavoriteTests(theme, opts = {}) {
+  describe(`${theme}: the favorite star (the API can add a favorite, never remove one)`, () => {
+    resetPage();
+    afterEach(() => localStorage.clear());
+
+    const CFG = { ...FULL_CFG, features: { ...FULL_CFG.features, user_favorite: true } };
+    const DOCS = [
+      { doc_id: "d1", title: "One", url: "https://e.com/1", favorite_count: 2 },
+      { doc_id: "d2", title: "Two", url: "https://e.com/2", favorite_count: 0 },
+    ];
+    const star = (i) => document.querySelectorAll("#results > li")[i].querySelector(".favorite-btn");
+
+    /** Signed in; the server already lists `favorites` (doc ids) as favorites. */
+    async function bootFavorites(favorites = []) {
+      const flow = await loadEnglishFlow(theme, CFG);
+      flow.isAuthenticated.mockReturnValue(true);
+      installDispatch(flow.get, { search: makeSearchEnv(DOCS), favorites });
+      mountBody(SEARCH_FIXTURE);
+      if (opts.listView) flow.mod.setViewMode("list");
+      flow.mod._state.q = "foo";
+      await flow.mod.runSearch();
+      await settle();
+      return flow;
+    }
+
+    it("an unfavorited star offers to add, and is pressed and named a favorite once the add succeeded", async () => {
+      const flow = await bootFavorites();
+      flow.post.mockResolvedValue({ favorite: true, count: 3 });
+      expect(star(0).getAttribute("aria-pressed")).toBe("false");
+      expect(star(0).getAttribute("aria-label")).toBe("Add to favorites");
+      expect(star(0).hasAttribute("aria-disabled")).toBe(false);
+      star(0).click();
+      await settle();
+      expect(flow.post).toHaveBeenCalledTimes(1);
+      expect(flow.post.mock.calls[0][0]).toBe("/documents/d1/favorite");
+      expect(star(0).getAttribute("aria-pressed")).toBe("true");
+      expect(star(0).getAttribute("aria-label")).toBe("Added to favorites");
+      expect(star(0).title).toBe("Added to favorites");
+      expect(star(0).getAttribute("aria-disabled")).toBe("true");
+      expect(star(0).querySelector(".favorite-count").textContent).toBe("3");
+    });
+
+    it("a favorited star never offers removal, and a click on it sends nothing", async () => {
+      const flow = await bootFavorites(["d1"]);
+      expect(star(0).getAttribute("aria-pressed")).toBe("true");
+      expect(star(0).getAttribute("aria-label")).toBe("Added to favorites");
+      expect(star(0).getAttribute("aria-label")).not.toBe("Remove from favorites");
+      expect(star(0).getAttribute("aria-disabled")).toBe("true");
+      star(0).click();
+      star(0).click();
+      await settle();
+      expect(flow.post).not.toHaveBeenCalled();
+      expect(star(0).getAttribute("aria-pressed")).toBe("true");
+      // the other row is unaffected
+      expect(star(1).getAttribute("aria-pressed")).toBe("false");
+    });
+
+    it("stays unpressed when the add did not happen", async () => {
+      const flow = await bootFavorites();
+      flow.post.mockResolvedValue({ favorite: false, count: 0 });
+      star(0).click();
+      await settle();
+      expect(star(0).getAttribute("aria-pressed")).toBe("false");
+      expect(star(0).getAttribute("aria-label")).toBe("Add to favorites");
+      expect(star(0).hasAttribute("aria-disabled")).toBe(false);
+    });
+
+    it("styles a favorited star as not clickable, with the theme's own stylesheet", async () => {
+      const style = document.createElement("style");
+      style.textContent = readFileSync(modulePath(theme, "styles.css"), "utf8");
+      document.head.appendChild(style);
+      try {
+        await bootFavorites(["d1"]);
+        expect(star(0).getAttribute("aria-disabled")).toBe("true");
+        expect(getComputedStyle(star(0)).cursor).toBe("default");
+        // the rule is about the favorited star only
+        expect(getComputedStyle(star(1)).cursor).not.toBe("default");
+      } finally {
+        style.remove();
+      }
+    });
+
+    it("a click as a guest is refused by the server and leaves the star as it was", async () => {
+      const flow = await bootFavorites();
+      flow.post.mockRejectedValue(Object.assign(new Error("login"), { code: "auth_required", httpStatus: 401 }));
+      star(0).click();
+      await settle();
+      expect(star(0).getAttribute("aria-pressed")).toBe("false");
+      expect(star(0).getAttribute("aria-label")).toBe("Add to favorites");
     });
   });
 }
