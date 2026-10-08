@@ -440,11 +440,16 @@ function renderResultsStatus(env) {
     }
   });
   if (env.exec_time != null) {
-    const execSec = typeof env.exec_time === "number"
-      ? env.exec_time.toFixed(2)
+    // The v2 API sends exec_time as a decimal string ("0.06"); a number is accepted too.
+    // Anything that does not parse falls back to query_time (milliseconds).
+    const execTime = typeof env.exec_time === "string" && env.exec_time.trim() !== ""
+      ? Number(env.exec_time)
+      : env.exec_time;
+    const execSec = Number.isFinite(execTime)
+      ? execTime.toFixed(2)
       : (typeof env.query_time === "number" ? (env.query_time / 1000).toFixed(2) : null);
     if (execSec !== null) {
-      statusEl.appendChild(document.createTextNode(" " + t("labels.search_result_time").replace("{0}", execSec)));
+      statusEl.appendChild(document.createTextNode(" " + t("labels.search_result_time", [execSec])));
     }
   }
 }
