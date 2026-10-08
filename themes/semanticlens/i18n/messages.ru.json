@@ -18,6 +18,7 @@
   "facet.not_found": "No matching filters.",
   "pagination.next": "Далее",
   "pagination.prev": "Назад",
+  "pagination.page": "Страница {0}",
   "result.favorite_add": "Добавить в избранное",
   "result.favorite_remove": "Удалить из избранного",
   "result.cache": "Кэш",
