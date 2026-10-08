@@ -48,6 +48,11 @@ The suites:
 - `helpdesk.plaintitle.test.js` — characterization test for helpdesk's own
   DOM-free `plainTitle()` entity decode (it does not route through
   `format.js` like the other themes' `search.js`).
+- `helpdesk.searchstate.test.js` — helpdesk's header search box carrying only the
+  categories the user picked in the drawer (not the one a home tile put in the URL),
+  a related-searches chip being a link to its own `/search?q=` URL that the router
+  follows, and a search the server rejects with HTTP 400 clearing the previous
+  query's cards, status line, featured answer, pager, facets and related searches.
 - `mosaic.searcher.test.js` / `semanticlens.searcher.test.js` — searcher-
   provenance and query-verbatim behaviour for the two vector-search themes
   against Fess's core semantic search.
@@ -101,8 +106,8 @@ The suites:
   default-sort-only case.
 - `search-conditions.test.js` — `sdh` and `as.*` carried by JSP-made
   `/search` URLs, a facet click narrowing the search with an `ex_q` clause,
-  and the header search form dropping both while carrying the drawer's
-  labels — for the same nine themes.
+  and the header search form dropping both while carrying the labels picked
+  in the drawer — for the same nine themes.
 - `label-names.test.js` — a label from `ui/config`'s `label_options`
   (`{ value, name }`) is shown by its name, falling back to its value: in the
   search-options label select, the current-filters badge and the options bar
@@ -207,7 +212,7 @@ test/
 │   ├── net.js            # Response-like fetch stubs used by auth.test.js
 │   └── dom.js            # serialise a sanitized DocumentFragment for assertions; reset/mount helpers
 ├── format.test.js  format.nodom.test.js  markdown.test.js  pipeline.test.js
-├── scheme.test.js  search.test.js  search-flows.test.js  helpdesk.plaintitle.test.js
+├── scheme.test.js  search.test.js  search-flows.test.js  helpdesk.plaintitle.test.js  helpdesk.searchstate.test.js
 ├── mosaic.searcher.test.js  semanticlens.searcher.test.js  semanticlens.results.test.js
 ├── notification-banners.test.js  parity.test.js
 ├── wire-error-codes.test.js  wire-error-codes.contract.test.js
