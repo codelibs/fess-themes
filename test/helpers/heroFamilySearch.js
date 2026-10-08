@@ -8,12 +8,13 @@
 //   - definePagerTests: the pager as real links
 //   - defineSuggestKeyTests: the keyboard model of the home suggest list
 //   - defineFavoriteTests: the favorite star never offers to remove a favorite
+//   - defineLayoutTests: a long query or cache value wraps instead of widening the page
 //
 // The per-theme test files (mosaic.search.test.js ...) call the define*Tests() they need.
 //
 // Not a *.test.js file, so Vitest does not collect it as a suite.
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { loadSearchFlow } from "./loadSearch.js";
@@ -541,6 +542,47 @@ export function defineFavoriteTests(theme, opts = {}) {
       await settle();
       expect(star(0).getAttribute("aria-pressed")).toBe("false");
       expect(star(0).getAttribute("aria-label")).toBe("Add to favorites");
+    });
+  });
+}
+
+/**
+ * Layout, as the stylesheet's contract: jsdom has no layout engine, so the declarations that carry
+ * each fix are read back from the parsed rules of the theme's real styles.css (the pixels were
+ * checked in a browser). A long unbroken token in the echoed query or in the cache metadata wraps
+ * instead of widening the page.
+ *
+ * @param {string} theme
+ */
+export function defineLayoutTests(theme) {
+  describe(`${theme} layout: stylesheet contract`, () => {
+    let sheet;
+    beforeAll(() => {
+      const style = document.createElement("style");
+      style.textContent = readFileSync(modulePath(theme, "styles.css"), "utf8");
+      document.head.appendChild(style);
+      sheet = style.sheet;
+    });
+
+    /** The value `prop` ends up with for `selector`: the last declaration among the top-level rules naming it exactly. */
+    function declared(selector, prop) {
+      let value = null;
+      for (const rule of sheet.cssRules) {
+        const names = (rule.selectorText || "").split(",").map((n) => n.trim());
+        if (names.includes(selector) && rule.style.getPropertyValue(prop)) value = rule.style.getPropertyValue(prop);
+      }
+      return value;
+    }
+
+    it("lets the echoed query wrap anywhere", () => {
+      expect(declared("#empty-did-not-match", "overflow-wrap")).toBe("anywhere");
+      expect(declared("#results-status", "overflow-wrap")).toBe("anywhere");
+    });
+
+    it("keeps a cache metadata value (URL, document id) inside the row: no start margin, wraps anywhere", () => {
+      // the UA gives <dd> margin-inline-start: 40px, which pushed it past the right edge at 375px
+      expect(declared(".cache-meta dd", "margin")).toBe("0px 0px 0.5rem");
+      expect(declared(".cache-meta dd", "overflow-wrap")).toBe("anywhere");
     });
   });
 }

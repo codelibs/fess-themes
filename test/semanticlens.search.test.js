@@ -3,9 +3,10 @@
 // time and the title leave on the page is covered in semanticlens.results.test.js.
 
 import {
-  definePagerTests, defineSuggestKeyTests, defineFavoriteTests,
+  definePagerTests, defineSuggestKeyTests, defineFavoriteTests, defineLayoutTests,
 } from "./helpers/heroFamilySearch.js";
 
 definePagerTests("semanticlens");
 defineSuggestKeyTests("semanticlens");
 defineFavoriteTests("semanticlens");
+defineLayoutTests("semanticlens");
