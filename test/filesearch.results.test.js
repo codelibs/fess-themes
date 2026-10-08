@@ -6,6 +6,7 @@
 //   - a search the server rejects with HTTP 400 (a query the page accepts but the API does not)
 //     replaces the previous results with the error, the way a fresh load of the same URL looks.
 //     It used to leave the previous rows, pager and filter counts on screen under the red banner.
+//   - the pager is made of real links with aria-current and page names
 //
 // The title, exec time and pager cases come from helpers/resultsContract.js, shared with the other themes that
 // keep the bootstrap runSearch() contract; the failed-search cases run against the theme's own index.html.
@@ -15,12 +16,13 @@ import { loadSearchFlow } from "./helpers/loadSearch.js";
 import { resetDom, setLocation } from "./helpers/dom.js";
 import { mountIndexBody } from "./helpers/themes.js";
 import { FULL_CFG, SAMPLE_DOCS, makeSearchEnv, settle } from "./helpers/searchFlow.js";
-import { defineExecTimeTests, defineTitleTests } from "./helpers/resultsContract.js";
+import { defineExecTimeTests, defineTitleTests, definePagerTests } from "./helpers/resultsContract.js";
 
 const THEME = "filesearch";
 
 defineExecTimeTests(THEME);
 defineTitleTests(THEME);
+definePagerTests(THEME);
 
 describe(`${THEME}: a search the server rejects with HTTP 400`, () => {
   const MESSAGE = "The query is too long (limit 1000 characters).";
