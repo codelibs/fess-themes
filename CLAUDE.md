@@ -58,8 +58,10 @@ Nothing outside these three is enforced anywhere.
 **There is no build and no dev server.** A theme cannot be previewed from `file://`: it
 is an SPA on relative paths resolved against the `<base href>` Fess inserts and calls
 `/api/v2/*`, so it only runs when served by Fess. The loop is package → upload at
-**Admin → Theme** (`/admin/theme/`) → activate, or set `theme.default=<name>` in
-`fess_config.properties` against a running Fess 15.9+.
+**Admin → Theme** (`/admin/theme/`) → choose it under *Default Theme* and *Set*, against a
+running Fess 15.9+. `theme.default` is a **system property** (`system.properties`, or
+`-Dfess.system.theme.default=<name>` while that file has no `theme.default` key); a line in
+`fess_config.properties` is not read, and `Admin → General` has no such field.
 
 ## Theme versioning
 
