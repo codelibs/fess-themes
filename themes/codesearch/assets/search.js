@@ -611,26 +611,38 @@ function renderPagination(env) {
   ul.innerHTML = ""; // empty literal
   if (!env.prev_page && !env.next_page) return;
 
-  const goToPage = (start) => {
+  // A num above the server's cap is replaced by the size actually served, so the URL
+  // and the offsets in it agree.
+  const pageParams = (start) => {
     const params = new URLSearchParams(location.search);
     params.set("start", String(Math.max(0, start)));
-    // A num above the server's cap is replaced by the size actually served, so the URL
-    // and the offsets in it agree.
     if (params.has("num")) params.set("num", String(state.num));
-    navigate("search?" + params.toString());
+    return params;
+  };
+  const goToPage = (start) => {
+    navigate("search?" + pageParams(start).toString());
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const makeItem = (cls) => el("li", { className: "page-item" + (cls ? " " + cls : "") });
+  // Each link is the URL of its page, so it can be opened in a new tab and read as a link; a
+  // plain click still pages in place. A disabled end (no previous / next page) has no href.
+  const makeLink = (start, attrs, text) => el("a", {
+    className: "page-link",
+    attrs: start == null ? { ...attrs, "aria-disabled": "true" } : { ...attrs, href: "search?" + pageParams(start).toString() },
+    text,
+  });
+  const onPlainClick = (go) => ev => {
+    if (ev.button !== 0 || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
+    ev.preventDefault();
+    go();
+  };
 
   // Prev
   {
     const li = makeItem(env.prev_page ? "" : "disabled");
-    const a = el("a", { className: "page-link", attrs: { href: "#", "aria-label": t("pagination.prev") }, text: "‹" });
-    a.addEventListener("click", ev => {
-      ev.preventDefault();
-      if (env.prev_page) goToPage(state.start - state.num);
-    });
+    const a = makeLink(env.prev_page ? state.start - state.num : null, { "aria-label": t("pagination.prev") }, "‹");
+    a.addEventListener("click", onPlainClick(() => { if (env.prev_page) goToPage(state.start - state.num); }));
     li.appendChild(a);
     ul.appendChild(li);
   }
@@ -639,8 +651,9 @@ function renderPagination(env) {
   (env.page_numbers || []).forEach(n => {
     const pageNum = Number(n);
     const li = makeItem(pageNum === env.page_number ? "active" : "");
-    const a = el("a", { className: "page-link", attrs: { href: "#" }, text: String(pageNum) });
-    a.addEventListener("click", ev => { ev.preventDefault(); goToPage((pageNum - 1) * state.num); });
+    const a = makeLink((pageNum - 1) * state.num, { "aria-label": t("pagination.page", [pageNum]) }, String(pageNum));
+    if (pageNum === env.page_number) a.setAttribute("aria-current", "page");
+    a.addEventListener("click", onPlainClick(() => goToPage((pageNum - 1) * state.num)));
     li.appendChild(a);
     ul.appendChild(li);
   });
@@ -648,11 +661,8 @@ function renderPagination(env) {
   // Next
   {
     const li = makeItem(env.next_page ? "" : "disabled");
-    const a = el("a", { className: "page-link", attrs: { href: "#", "aria-label": t("pagination.next") }, text: "›" });
-    a.addEventListener("click", ev => {
-      ev.preventDefault();
-      if (env.next_page) goToPage(state.start + state.num);
-    });
+    const a = makeLink(env.next_page ? state.start + state.num : null, { "aria-label": t("pagination.next") }, "›");
+    a.addEventListener("click", onPlainClick(() => { if (env.next_page) goToPage(state.start + state.num); }));
     li.appendChild(a);
     ul.appendChild(li);
   }

@@ -19,6 +19,7 @@
   "facet.not_found": "No matching filters.",
   "pagination.next": "Berikutnya",
   "pagination.prev": "Sebelumnya",
+  "pagination.page": "Halaman {0}",
   "result.favorite_add": "Tambah ke favorit",
   "result.favorite_remove": "Hapus dari favorit",
   "result.cache": "Tembolok",
