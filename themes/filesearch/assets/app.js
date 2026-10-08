@@ -383,6 +383,34 @@ function syncHeaderOffset() {
 }
 
 /**
+ * The search-options drawer is a panel over the page, so Escape closes it and the focus goes
+ * back to the control that opened it. Opening it moves the focus into it: the drawer sits ahead
+ * of <main> in the document, so Tab from the options bar would never reach it.
+ */
+function attachOptionsDrawer() {
+  const drawer = document.getElementById("searchOptions");
+  const Collapse = window.bootstrap && window.bootstrap.Collapse;
+  if (!drawer || !Collapse) return;
+  let opener = null;
+  document.addEventListener("click", ev => {
+    const toggle = ev.target.closest('[data-bs-target="#searchOptions"], a[href="#searchOptions"]');
+    if (!toggle) return;
+    // compat.js has already toggled the drawer by the time this runs.
+    opener = toggle;
+    if (drawer.classList.contains("show")) drawer.querySelector(".container").focus({ preventScroll: true });
+  });
+  // Listening in the capture phase and stopping the event keeps the key the drawer's alone, whichever
+  // order the page's other Escape listeners were added in: the preview pane closes on Escape too.
+  document.addEventListener("keydown", ev => {
+    if (ev.key !== "Escape" || ev.defaultPrevented || !drawer.classList.contains("show")) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    Collapse.getOrCreateInstance(drawer, { toggle: false }).hide();
+    if (opener && opener.isConnected) opener.focus();
+  }, true);
+}
+
+/**
  * Below 768px the header nav (sign-in, AI search, help) is a menu behind #headerNavToggle.
  * It closes when a choice is made, on a route change and on Escape (focus goes back to the button).
  */
@@ -736,6 +764,7 @@ async function main() {
     }
   });
 
+  attachOptionsDrawer();
   attachHeaderMenu();
 
   // Wire back-to-top button.

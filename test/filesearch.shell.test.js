@@ -4,13 +4,16 @@
 //   1. Every route names itself in document.title (WCAG 2.4.2). Only the search route did, so
 //      Help, Advanced Search and an error page were all "Fess Search", and moving from a search
 //      to Help kept the search's title.
+//   2. The search options drawer slides in from beyond the right edge. Opening it moves the
+//      focus into it (it sits ahead of <main>, so Tab from the options bar never reached it) and
+//      Escape closes it with the focus back on the control that opened it.
 //
 // The theme's real index.html, styles.css, compat.js (the Collapse behind the drawer toggles),
 // app.js, router.js, search.js and i18n.js (loading the real English bundle) run together; api.js
 // is a double. jsdom has no layout, so the drawer is checked by the computed `visibility` the
 // stylesheet gives it, not by pixels.
 
-import { describe, it, expect, beforeAll, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { modulePath } from "./helpers/themes.js";
@@ -169,3 +172,98 @@ describe("filesearch: the tab title names every page", () => {
   });
 });
 
+describe("filesearch: the search options drawer", () => {
+  const isOpen = () => $("searchOptions").classList.contains("show");
+  const panel = () => $("searchOptions").querySelector(".container");
+
+  it("is out of the tab order while closed", async () => {
+    await boot("/help");
+    expect(isOpen()).toBe(false);
+    expect(window.getComputedStyle(panel()).visibility).toBe("hidden");
+    expect(window.getComputedStyle($("numSearchOption")).visibility).toBe("hidden");
+  });
+
+  it("moves the focus into the drawer when a toggle opens it", async () => {
+    await boot("/help");
+    $("searchOptionsButton").focus();
+    $("searchOptionsButton").click();
+    expect(isOpen()).toBe(true);
+    expect(window.getComputedStyle(panel()).visibility).toBe("visible");
+    expect(document.activeElement).toBe(panel());
+  });
+
+  it("closes on Escape and puts the focus back on the control that opened it", async () => {
+    await boot("/help");
+    $("searchOptionsButton").focus();
+    $("searchOptionsButton").click();
+    expect(isOpen()).toBe(true);
+    key("Escape", $("numSearchOption"));
+    expect(isOpen()).toBe(false);
+    expect($("searchOptionsButton").getAttribute("aria-expanded")).toBe("false");
+    expect(document.activeElement).toBe($("searchOptionsButton"));
+  });
+
+  it("returns the focus to the home page's options button when that one opened it", async () => {
+    await boot("/");
+    $("home-options-toggle").focus();
+    $("home-options-toggle").click();
+    expect(isOpen()).toBe(true);
+    expect(document.activeElement).toBe(panel());
+    key("Escape");
+    expect(isOpen()).toBe(false);
+    expect(document.activeElement).toBe($("home-options-toggle"));
+  });
+
+  describe("on the results page, where the preview pane is open on a wide screen", () => {
+    beforeEach(() => {
+      window.matchMedia = () => ({ matches: false, addEventListener() {}, removeEventListener() {} });
+    });
+    afterEach(() => {
+      window.matchMedia = () => ({ matches: true, addEventListener() {}, removeEventListener() {} });
+    });
+
+    it("Escape closes the drawer first, leaving the preview pane, and the next Escape closes the pane", async () => {
+      await boot("/search?q=password+reset");
+      expect($("fs-workspace").dataset.preview).toBe("open");
+      $("searchOptionsButton").focus();
+      $("searchOptionsButton").click();
+      expect(isOpen()).toBe(true);
+      const ev = key("Escape", panel());
+      expect(ev.defaultPrevented).toBe(true);
+      expect(isOpen()).toBe(false);
+      expect($("fs-workspace").dataset.preview).toBe("open");
+      expect(document.activeElement).toBe($("searchOptionsButton"));
+      key("Escape");
+      expect($("fs-workspace").dataset.preview).toBe("closed");
+    });
+
+    it("leaves the / shortcut alone while the drawer is open", async () => {
+      await boot("/search?q=password+reset");
+      $("searchOptionsButton").focus();
+      $("searchOptionsButton").click();
+      const ev = key("/", panel());
+      expect(ev.defaultPrevented).toBe(false);
+      expect(document.activeElement).toBe(panel());
+    });
+
+    it("takes the / shortcut again once the drawer is closed", async () => {
+      await boot("/search?q=password+reset");
+      $("searchOptionsButton").focus();
+      $("searchOptionsButton").click();
+      key("Escape", panel());
+      document.body.focus();
+      const ev = key("/");
+      expect(ev.defaultPrevented).toBe(true);
+      expect(document.activeElement).toBe($("query"));
+    });
+  });
+
+  it("leaves Escape alone while the drawer is closed", async () => {
+    await boot("/help");
+    const other = $("brand-link");
+    other.focus();
+    const ev = key("Escape");
+    expect(ev.defaultPrevented).toBe(false);
+    expect(document.activeElement).toBe(other);
+  });
+});

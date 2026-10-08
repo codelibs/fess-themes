@@ -942,6 +942,10 @@ function renderRecent() {
 // ── page-wide keys: / focuses the search box, Esc closes the preview or the folder drawer ──
 
 function onGlobalKey(ev) {
+  // The options drawer is a panel over the page: while it is open, the page-wide keys are its own
+  // (app.js closes it on Escape), not the preview pane's or the search box's.
+  const drawer = $("searchOptions");
+  if (drawer && drawer.classList.contains("show")) return;
   const results = $("results-view");
   const home = $("home-view");
   const onResults = !!results && !results.hasAttribute("hidden");

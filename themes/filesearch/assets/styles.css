@@ -535,6 +535,7 @@ body.modal-open { overflow: hidden; }
      accessibility tree. The delay lets the slide-out finish before it is hidden. */
   visibility: hidden; transition: right .3s ease, visibility 0s linear .3s;
 }
+#searchOptions .container:focus { outline: none; }
 #searchOptions.show .container { right: 0; visibility: visible; transition: right .3s ease, visibility 0s; }
 #searchOptions h3 { color: #fff; }
 #searchOptions label, #searchOptions legend { color: #b8c4d0; font-size: .85rem; }
