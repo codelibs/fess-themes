@@ -190,6 +190,13 @@ The suites:
   960px: open, close on Escape / scrim / route change, never open together with the Ask drawer),
   the stylesheet rules that carry it (read back from the parsed `styles.css`), and the `/`
   shortcut that focuses the search box.
+- `codesearch.results.test.js` — codesearch's result page: a failed search (HTTP 400 or a server
+  error) clearing the previous cards, summary, pager, facet rail and qualifier chips under the error
+  banner, the summary reading `exec_time` sent as a decimal string, a title that keeps `$&` / `$$`
+  in the query literal, and a pager of real links (`aria-current`, "Page N" names, a disabled end
+  that is not a link, modified clicks left to the browser).
+- `codesearch.titles.test.js` — codesearch's tab title on every route (home, search, Help, Advanced
+  Search, password, cache, chat, errors), including a client-side move from a search to Help.
 - `app-boot.test.js` — the UI language `app.js` requests at boot
   (`?browser_lang=`, session, `Accept-Language`), in every theme.
 - `app-auth.test.js` — the `login.required` gate at boot, and what a login, a

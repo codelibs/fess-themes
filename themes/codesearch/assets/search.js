@@ -531,14 +531,18 @@ function renderSummary(env) {
     (isOver ? "≈ " : "") + t("result.files")
   ));
 
-  // exec time (seconds), when supplied.
-  const execSec = typeof env.exec_time === "number" ? env.exec_time
+  // exec time (seconds), when supplied. The v2 API sends exec_time as a decimal string ("0.06");
+  // a number is accepted too. Anything that does not parse falls back to query_time (milliseconds).
+  const execTime = typeof env.exec_time === "string" && env.exec_time.trim() !== ""
+    ? Number(env.exec_time)
+    : env.exec_time;
+  const execSec = Number.isFinite(execTime) ? execTime
     : (typeof env.query_time === "number" ? env.query_time / 1000 : null);
   if (execSec !== null) {
     summary.appendChild(document.createTextNode(" "));
     summary.appendChild(el("span", {
       className: "exec-time",
-      text: t("labels.search_result_time").replace("{0}", execSec.toFixed(2))
+      text: t("labels.search_result_time", [execSec.toFixed(2)])
     }));
   }
 
@@ -607,26 +611,38 @@ function renderPagination(env) {
   ul.innerHTML = ""; // empty literal
   if (!env.prev_page && !env.next_page) return;
 
-  const goToPage = (start) => {
+  // A num above the server's cap is replaced by the size actually served, so the URL
+  // and the offsets in it agree.
+  const pageParams = (start) => {
     const params = new URLSearchParams(location.search);
     params.set("start", String(Math.max(0, start)));
-    // A num above the server's cap is replaced by the size actually served, so the URL
-    // and the offsets in it agree.
     if (params.has("num")) params.set("num", String(state.num));
-    navigate("search?" + params.toString());
+    return params;
+  };
+  const goToPage = (start) => {
+    navigate("search?" + pageParams(start).toString());
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const makeItem = (cls) => el("li", { className: "page-item" + (cls ? " " + cls : "") });
+  // Each link is the URL of its page, so it can be opened in a new tab and read as a link; a
+  // plain click still pages in place. A disabled end (no previous / next page) has no href.
+  const makeLink = (start, attrs, text) => el("a", {
+    className: "page-link",
+    attrs: start == null ? { ...attrs, "aria-disabled": "true" } : { ...attrs, href: "search?" + pageParams(start).toString() },
+    text,
+  });
+  const onPlainClick = (go) => ev => {
+    if (ev.button !== 0 || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
+    ev.preventDefault();
+    go();
+  };
 
   // Prev
   {
     const li = makeItem(env.prev_page ? "" : "disabled");
-    const a = el("a", { className: "page-link", attrs: { href: "#", "aria-label": t("pagination.prev") }, text: "‹" });
-    a.addEventListener("click", ev => {
-      ev.preventDefault();
-      if (env.prev_page) goToPage(state.start - state.num);
-    });
+    const a = makeLink(env.prev_page ? state.start - state.num : null, { "aria-label": t("pagination.prev") }, "‹");
+    a.addEventListener("click", onPlainClick(() => { if (env.prev_page) goToPage(state.start - state.num); }));
     li.appendChild(a);
     ul.appendChild(li);
   }
@@ -635,8 +651,9 @@ function renderPagination(env) {
   (env.page_numbers || []).forEach(n => {
     const pageNum = Number(n);
     const li = makeItem(pageNum === env.page_number ? "active" : "");
-    const a = el("a", { className: "page-link", attrs: { href: "#" }, text: String(pageNum) });
-    a.addEventListener("click", ev => { ev.preventDefault(); goToPage((pageNum - 1) * state.num); });
+    const a = makeLink((pageNum - 1) * state.num, { "aria-label": t("pagination.page", [pageNum]) }, String(pageNum));
+    if (pageNum === env.page_number) a.setAttribute("aria-current", "page");
+    a.addEventListener("click", onPlainClick(() => goToPage((pageNum - 1) * state.num)));
     li.appendChild(a);
     ul.appendChild(li);
   });
@@ -644,11 +661,8 @@ function renderPagination(env) {
   // Next
   {
     const li = makeItem(env.next_page ? "" : "disabled");
-    const a = el("a", { className: "page-link", attrs: { href: "#", "aria-label": t("pagination.next") }, text: "›" });
-    a.addEventListener("click", ev => {
-      ev.preventDefault();
-      if (env.next_page) goToPage(state.start + state.num);
-    });
+    const a = makeLink(env.next_page ? state.start + state.num : null, { "aria-label": t("pagination.next") }, "›");
+    a.addEventListener("click", onPlainClick(() => { if (env.next_page) goToPage(state.start + state.num); }));
     li.appendChild(a);
     ul.appendChild(li);
   }
@@ -880,6 +894,23 @@ function showSearchLoading(show) {
 }
 
 /**
+ * Take the previous search's output off the page, leaving what a fresh load of the same URL shows
+ * when the search failed: no result cards, summary, pager, facet entries or qualifier chips. The
+ * error banner is the caller's.
+ */
+function clearResultsView() {
+  for (const id of ["results", "result-summary", "pagination", "active-chips"]) {
+    const node = document.getElementById(id);
+    if (node) node.innerHTML = ""; // empty literal
+  }
+  const empty = document.getElementById("empty-state");
+  if (empty) empty.hidden = true;
+  const warning = document.getElementById("results-warning");
+  if (warning) warning.hidden = true;
+  renderFacets(null);
+}
+
+/**
  * Issue GET /api/v2/search from the current `state`, cancelling any in-flight
  * request first. Requests the facets Task 5 will render
  * (repository, filetype, organization, filename).
@@ -890,7 +921,8 @@ async function runSearch() {
   const signal = currentSearchAbort.signal;
   state.requestedTime = Date.now();
 
-  document.title = state.q ? t("page.search_title").replace("{0}", state.q) : t("page.title");
+  // t() fills {0} from a replacer function, so a `$&` or `$$` in the query stays literal.
+  document.title = state.q ? t("page.search_title", [state.q]) : t("page.title");
 
   const errBox = document.getElementById("search-error");
   if (errBox) errBox.hidden = true;
@@ -939,9 +971,9 @@ async function runSearch() {
     if (e && (e.code === "auth_required" || e.code === "AUTH_REQUIRED")) {
       document.dispatchEvent(new CustomEvent("fess:auth:required"));
     }
-    // Clear stale results/summary/pagination on a hard failure.
-    const list = document.getElementById("results");
-    if (list) list.innerHTML = "";
+    // The failed search has no output of its own; the previous search's would sit under the
+    // banner as if they answered it.
+    clearResultsView();
   } finally {
     if (currentSearchAbort && currentSearchAbort.signal === signal) showSearchLoading(false);
   }
