@@ -20,6 +20,7 @@
   "pagination.prev": "Назад",
   "pagination.page": "Страница {0}",
   "result.favorite_add": "Добавить в избранное",
+  "result.favorite_added": "Добавлено в избранное",
   "result.favorite_remove": "Удалить из избранного",
   "result.cache": "Кэш",
   "result.click_count": "{n} просмотров",

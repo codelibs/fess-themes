@@ -20,6 +20,7 @@
   "pagination.prev": "Sebelumnya",
   "pagination.page": "Halaman {0}",
   "result.favorite_add": "Tambah ke favorit",
+  "result.favorite_added": "Ditambahkan ke favorit",
   "result.favorite_remove": "Hapus dari favorit",
   "result.cache": "Tembolok",
   "result.click_count": "{n} tayangan",
