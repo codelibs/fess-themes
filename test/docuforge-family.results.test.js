@@ -17,11 +17,15 @@
 //   5. The favorite star never promises what the API cannot do. /api/v2 can add a favorite
 //      (POST .../favorite) but not remove one, so a favorited star is named "Added to favorites",
 //      is aria-disabled and sends nothing on a click, rather than offering "Remove from favorites".
+//   6. Layout: jsdom has no layout engine, so the stylesheet's contract is read back from the parsed
+//      rules of the theme's real styles.css (the declarations that carry each fix; the pixels were
+//      checked in a browser). A long unbroken token in the echoed query or in the cache metadata
+//      wraps instead of widening the page.
 //
 // The theme's real English bundle is loaded (through the real i18n.js init), so the assertions
 // see the text a user sees rather than raw i18n keys.
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { loadSearchFlow } from "./helpers/loadSearch.js";
@@ -380,5 +384,40 @@ describe.each(FAMILY)("%s: the favorite star (the API can add a favorite, never 
     await settle();
     expect(star(0).getAttribute("aria-pressed")).toBe("false");
     expect(star(0).getAttribute("aria-label")).toBe("Add to favorites");
+  });
+});
+
+describe.each(FAMILY)("%s layout: stylesheet contract", (theme) => {
+  let sheet;
+  beforeAll(() => {
+    const style = document.createElement("style");
+    style.textContent = readFileSync(modulePath(theme, "styles.css"), "utf8");
+    document.head.appendChild(style);
+    sheet = style.sheet;
+  });
+
+  /** The value `prop` ends up with for `selector`: the last declaration among the top-level rules naming it exactly. */
+  function declared(selector, prop) {
+    let value = null;
+    for (const rule of sheet.cssRules) {
+      const names = (rule.selectorText || "").split(",").map((n) => n.trim());
+      if (names.includes(selector) && rule.style.getPropertyValue(prop)) value = rule.style.getPropertyValue(prop);
+    }
+    return value;
+  }
+
+  it("lets the echoed query wrap anywhere", () => {
+    expect(declared("#empty-did-not-match", "overflow-wrap")).toBe("anywhere");
+    expect(declared("#results-status", "overflow-wrap")).toBe("anywhere");
+  });
+
+  it("keeps a cache metadata value (URL, document id) inside the row: no start margin, wraps anywhere", () => {
+    // the UA gives <dd> margin-inline-start: 40px, which pushed it past the right edge at 375px
+    expect(declared(".cache-meta dd", "margin")).toBe("0px 0px 0.5rem");
+    expect(declared(".cache-meta dd", "overflow-wrap")).toBe("anywhere");
+  });
+
+  it("styles a favorited star as not clickable", () => {
+    expect(declared('.favorite-btn[aria-disabled="true"]', "cursor")).toBe("default");
   });
 });
