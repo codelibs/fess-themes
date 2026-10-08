@@ -670,8 +670,9 @@ describe.each(STD_THEMES)("runSearch active filters [%s]", (theme) => {
     const chips = document.getElementById("active-chips");
     expect(chips.classList.contains("d-none")).toBe(false);
     const text = chips.textContent;
-    // docsearch names a label by its label_options name (docsearch.filters.test.js); the others show the value
-    const [a, b] = theme === "docsearch" ? ["Label A", "Label B"] : ["lblA", "lblB"];
+    // docsearch and helpdesk name a label by its label_options name (docsearch.filters.test.js,
+    // helpdesk.results.test.js); the others show the value
+    const [a, b] = ["docsearch", "helpdesk"].includes(theme) ? ["Label A", "Label B"] : ["lblA", "lblB"];
     expect(text).toContain(a);
     expect(text).toContain(b);
   });

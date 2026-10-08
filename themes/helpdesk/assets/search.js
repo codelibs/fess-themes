@@ -786,7 +786,10 @@ async function runSearch() {
   // Record the request time before the call so /go/ URLs embedded in result
   // cards carry the correct rt parameter (mirrors JSP #rt hidden field).
   state.requestedTime = Date.now();
-  document.title = state.q ? t("page.search_title").replace("{0}", state.q) : "Fess";
+  // WCAG 2.4.2: the tab title names the search: the query or, for a blank-query category
+  // browse (a home tile), the category names the status line also uses, else the site title.
+  const titleSubject = resultsStatusSubject();
+  document.title = titleSubject ? t("page.search_title", [titleSubject]) : t("page.title");
   // Clear any stale error banner from a previous attempt and show the loading indicator.
   const prevErr = document.getElementById("search-error");
   if (prevErr) prevErr.classList.add("d-none");
@@ -1895,9 +1898,17 @@ function renderActiveChips() {
     (Array.isArray(values) ? values : []).forEach(v => { (chipFieldSets[field] = chipFieldSets[field] || new Set()).add(v); });
   }
 
+  // A label chip shows the label's display name (label_options), as the options bar and the
+  // drawer do, falling back to its value; the value is what the URL and the request carry.
+  const labelOptions = (api.getConfig() || {}).label_options || [];
+  const chipText = (field, v) => {
+    if (field !== "label") return field + ": " + v;
+    const opt = labelOptions.find(o => o.value === v);
+    return t("labels.facet_label_title") + ": " + (opt ? (opt.name || opt.value) : v);
+  };
   for (const [field, valueSet] of Object.entries(chipFieldSets)) {
     valueSet.forEach(v => chips.push({
-      label: field + ": " + v,
+      label: chipText(field, v),
       remove: () => {
         // Remove from whichever store(s) hold this value.
         if (state.facets[field]) {
@@ -2155,7 +2166,22 @@ function renderPagination(env) {
   nav.classList.remove("d-none");
 
   const makeLi = (cls) => el("li", { className: cls });
-  const makeLink = () => el("a", { className: "page-link", attrs: { href: "#" } });
+  // Each link is the URL of its page, so it can be opened in a new tab and read as a link;
+  // a plain click still pages in place. A disabled end (no previous / next page) has no href.
+  const pageHref = (start) => {
+    const params = new URLSearchParams(location.search);
+    if (start > 0) params.set("start", String(start)); else params.delete("start");
+    const qs = params.toString();
+    return location.pathname + (qs ? "?" + qs : "");
+  };
+  const makeLink = (start) => start == null
+    ? el("a", { className: "page-link", attrs: { "aria-disabled": "true" } })
+    : el("a", { className: "page-link", attrs: { href: pageHref(Math.max(0, start)) } });
+  const onPlainClick = (go) => ev => {
+    if (ev.button !== 0 || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
+    ev.preventDefault();
+    go();
+  };
 
   // Navigate to a page and scroll back to the top so the new results start in view.
   const goToPage = (start) => {
@@ -2169,16 +2195,13 @@ function renderPagination(env) {
   {
     const li = makeLi("page-item" + (env.prev_page ? "" : " disabled"));
     li.setAttribute("aria-label", t("pagination.prev"));
-    const a = makeLink();
+    const a = makeLink(env.prev_page ? state.start - state.num : null);
     const s1 = el("span", { attrs: { "aria-hidden": "true" } });
     s1.appendChild(document.createTextNode("«"));
     a.appendChild(s1);
     a.appendChild(document.createTextNode(" "));
     a.appendChild(el("span", { className: "visually-hidden", text: t("pagination.prev") }));
-    a.addEventListener("click", ev => {
-      ev.preventDefault();
-      if (env.prev_page) goToPage(state.start - state.num);
-    });
+    a.addEventListener("click", onPlainClick(() => { if (env.prev_page) goToPage(state.start - state.num); }));
     li.appendChild(a);
     ul.appendChild(li);
   }
@@ -2190,9 +2213,11 @@ function renderPagination(env) {
     const pageNum = Number(n);
     const isFar = Math.abs(pageNum - env.page_number) > 2;
     const li = makeLi("page-item" + (pageNum === env.page_number ? " active" : "") + (isFar ? " d-none d-sm-inline-block" : ""));
-    const a = makeLink();
+    const a = makeLink((pageNum - 1) * state.num);
     a.textContent = String(pageNum);
-    a.addEventListener("click", ev => { ev.preventDefault(); goToPage((pageNum - 1) * state.num); });
+    a.setAttribute("aria-label", t("pagination.page", [pageNum]));
+    if (pageNum === env.page_number) a.setAttribute("aria-current", "page");
+    a.addEventListener("click", onPlainClick(() => goToPage((pageNum - 1) * state.num)));
     li.appendChild(a);
     ul.appendChild(li);
   });
@@ -2201,16 +2226,13 @@ function renderPagination(env) {
   {
     const li = makeLi("page-item" + (env.next_page ? "" : " disabled"));
     li.setAttribute("aria-label", t("pagination.next"));
-    const a = makeLink();
+    const a = makeLink(env.next_page ? state.start + state.num : null);
     a.appendChild(el("span", { className: "visually-hidden", text: t("pagination.next") }));
     a.appendChild(document.createTextNode(" "));
     const s2 = el("span", { attrs: { "aria-hidden": "true" } });
     s2.appendChild(document.createTextNode("»"));
     a.appendChild(s2);
-    a.addEventListener("click", ev => {
-      ev.preventDefault();
-      if (env.next_page) goToPage(state.start + state.num);
-    });
+    a.addEventListener("click", onPlainClick(() => { if (env.next_page) goToPage(state.start + state.num); }));
     li.appendChild(a);
     ul.appendChild(li);
   }

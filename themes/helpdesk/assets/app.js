@@ -74,6 +74,24 @@ function showView(id) {
   // box. So no per-view brand/advanced toggling is done here.
 }
 
+/**
+ * WCAG 2.4.2: name the page in the tab title. The search route sets its own title (search.js
+ * runSearch); every other view passes the name it shows, in the same "{0} - Fess" shape,
+ * or nothing for the site title.
+ *
+ * @param {string} [name]
+ */
+function setPageTitle(name) {
+  document.title = name ? t("page.search_title", [name]) : t("page.title");
+}
+
+/** Render the error view and title the page with the error it shows ("Page Not Found." ...). */
+function attachErrorView() {
+  errorView.attach();
+  const heading = document.querySelector("#error-view .error-title");
+  setPageTitle(heading ? heading.textContent : "");
+}
+
 /** Toggle the header search form visibility (hides the whole input-group wrapper). */
 function setSearchFormVisible(visible) {
   const wrap = document.getElementById("search-form-wrap") || document.getElementById("search-form");
@@ -440,6 +458,52 @@ function attachBackToTop() {
   });
 }
 
+/**
+ * The search-options drawer is a panel over the page, so Escape closes it and the focus goes
+ * back to the control that opened it. Opening it moves the focus into it: the drawer sits
+ * ahead of <main> in the document, so Tab from the options bar would never reach it.
+ */
+function attachOptionsDrawer() {
+  const drawer = document.getElementById("searchOptions");
+  const Collapse = window.bootstrap && window.bootstrap.Collapse;
+  if (!drawer || !Collapse) return;
+  let opener = null;
+  document.addEventListener("click", ev => {
+    const toggle = ev.target.closest('[data-bs-target="#searchOptions"], a[href="#searchOptions"]');
+    if (!toggle) return;
+    // compat.js has already toggled the drawer by the time this runs.
+    opener = toggle;
+    if (drawer.classList.contains("show")) drawer.querySelector(".container").focus({ preventScroll: true });
+  });
+  document.addEventListener("keydown", ev => {
+    if (ev.key !== "Escape" || ev.defaultPrevented || !drawer.classList.contains("show")) return;
+    Collapse.getOrCreateInstance(drawer, { toggle: false }).hide();
+    if (opener && opener.isConnected) opener.focus();
+  });
+}
+
+/**
+ * "/" focuses the search box (the Help page lists the shortcut). Typed into a field or with a
+ * modifier it is left alone, as it is during an IME conversion and while the options drawer, a
+ * modal or the facet panel is open. The header box is used when it is shown, else the home box.
+ */
+function attachSearchShortcut() {
+  document.addEventListener("keydown", ev => {
+    if (ev.key !== "/" || ev.defaultPrevented || ev.ctrlKey || ev.metaKey || ev.altKey || ev.isComposing) return;
+    const target = ev.target;
+    if (target instanceof Element
+      && target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
+    if (document.querySelector("#searchOptions.show, .modal.show, .offcanvas.show")) return;
+    const input = ["query", "contentQuery"]
+      .map(id => document.getElementById(id))
+      .find(el => el && isRendered(el));
+    if (!input) return;
+    ev.preventDefault();
+    input.focus();
+    input.select();
+  });
+}
+
 /** Returns true when the current URL contains a non-empty q= parameter. */
 function hasSearchQuery() {
   return new URLSearchParams(location.search).get("q")?.trim().length > 0;
@@ -566,7 +630,7 @@ function registerRoutes() {
       setChatNavSearchMode(false);
       setSearchFormVisible(true);
       showView("error-view");
-      errorView.attach();
+      attachErrorView();
     }
   );
 
@@ -577,6 +641,7 @@ function registerRoutes() {
       setChatNavSearchMode(false);
       setSearchFormVisible(false);
       showView("home-view");
+      setPageTitle();
       // JSP parity (index.jsp): returning to the search top clears the form. Reset the
       // keyword box, the option drawer (label / language / count / sort / geo) and the
       // in-memory search state so nothing carries over from the previous search (e.g. a
@@ -607,6 +672,7 @@ function registerRoutes() {
       setChatNavSearchMode(false);
       setSearchFormVisible(false);
       showView("profile-view");
+      setPageTitle(t("profile.title"));
       profile.attach();
     }
   );
@@ -619,6 +685,7 @@ function registerRoutes() {
       setChatNavSearchMode(false);
       setSearchFormVisible(false);
       showView("advance-view");
+      setPageTitle(t("advance.title"));
       advance.attach();
     }
   );
@@ -631,6 +698,7 @@ function registerRoutes() {
       setChatNavSearchMode(false);
       setSearchFormVisible(true);
       showView("help-view");
+      setPageTitle(t("help.title"));
       help.attach();
     }
   );
@@ -642,6 +710,8 @@ function registerRoutes() {
       setSearchFormVisible(false);
       setChatNavSearchMode(true);
       showView("chat-view");
+      // labels.chat_title is a whole title already ("KI-Suche - Fess" in most locales).
+      document.title = t("labels.chat_title");
       chat.attachStandalone();
     }
   );
@@ -655,6 +725,7 @@ function registerRoutes() {
       setChatNavSearchMode(false);
       setSearchFormVisible(false);
       showView("cache-view");
+      setPageTitle(t("labels.cache_title"));
       cache.attach();
     }
   );
@@ -667,7 +738,7 @@ function registerRoutes() {
       setChatNavSearchMode(false);
       setSearchFormVisible(true);
       showView("error-view");
-      errorView.attach();
+      attachErrorView();
     }
   );
 
@@ -678,7 +749,7 @@ function registerRoutes() {
       setChatNavSearchMode(false);
       setSearchFormVisible(false);
       showView("error-view");
-      errorView.attach();
+      attachErrorView();
     }
   );
 }
@@ -735,6 +806,9 @@ async function main() {
       window.bootstrap.Collapse.getOrCreateInstance(so, { toggle: false }).hide();
     }
   });
+
+  attachOptionsDrawer();
+  attachSearchShortcut();
 
   // Wire back-to-top button.
   attachBackToTop();

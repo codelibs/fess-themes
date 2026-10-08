@@ -176,6 +176,15 @@ Following the same pattern documented in this repository's `mosaic` theme
   interrupting the user: `#results-status`, `#results-notification`,
   `#related-queries`, `#similar-doc-banner`, and the featured-answer section
   (`#related-content[aria-live="polite"]`) all update this way after a search.
+- **Keyboard and focus.** The search-options drawer is `visibility: hidden` while closed (the
+  hide is delayed until the slide-out ends), so its controls are neither Tab stops nor read by
+  assistive technology; opening it moves the focus into it, and Escape closes it with the focus
+  back on the control that opened it (`app.js` `attachOptionsDrawer()`). `/` focuses the search
+  box, except while typing, with Ctrl/Meta/Alt, during an IME conversion, or with the drawer, a
+  modal or the facet panel open (`attachSearchShortcut()`).
+- **Names.** Every route sets `document.title` (WCAG 2.4.2) in the `{0} - Fess` shape of the
+  search title; the header search button carries a visually hidden label; pager links are real
+  URLs with `aria-current="page"` on the current page and a "Page N" name on each number.
 - **`prefers-reduced-motion`.** Every transition in `styles.css` that actually
   moves something is neutralized in an `@media (prefers-reduced-motion: reduce)`
   block (`styles.css:779` and `:903`): the offcanvas panel's `transform`

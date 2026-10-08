@@ -18,6 +18,7 @@
   "facet.not_found": "No matching filters.",
   "pagination.next": "Volgende",
   "pagination.prev": "Vorige",
+  "pagination.page": "Pagina {0}",
   "result.favorite_add": "Toevoegen aan favorieten",
   "result.favorite_remove": "Verwijderen uit favorieten",
   "result.cache": "Cache",
