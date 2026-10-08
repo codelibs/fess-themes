@@ -573,11 +573,16 @@ function renderResultsStatus(env) {
     }
   });
   if (env.exec_time != null) {
-    const execSec = typeof env.exec_time === "number"
-      ? env.exec_time.toFixed(2)
+    // The v2 API sends exec_time as a decimal string ("0.06"); a number is accepted too.
+    // Anything that does not parse falls back to query_time (milliseconds).
+    const execTime = typeof env.exec_time === "string" && env.exec_time.trim() !== ""
+      ? Number(env.exec_time)
+      : env.exec_time;
+    const execSec = Number.isFinite(execTime)
+      ? execTime.toFixed(2)
       : (typeof env.query_time === "number" ? (env.query_time / 1000).toFixed(2) : null);
     if (execSec !== null) {
-      statusEl.appendChild(document.createTextNode(" " + t("labels.search_result_time").replace("{0}", execSec)));
+      statusEl.appendChild(document.createTextNode(" " + t("labels.search_result_time", [execSec])));
     }
   }
 }
@@ -804,6 +809,26 @@ function renderResults(env) {
 }
 
 /**
+ * Take the previous search's output off the page, leaving what a fresh load of the same
+ * URL shows when the server rejects the request: no result cards, composition band,
+ * status line, pager, facet sidebar or related searches. The error banner is the
+ * caller's.
+ */
+function clearResultsView() {
+  ["results", "results-status", "search-composition", "results-popular-words",
+    "pagination", "facet-body", "facet-body-mobile"].forEach(id => {
+    const node = document.getElementById(id);
+    if (node) while (node.firstChild) node.removeChild(node.firstChild);
+  });
+  ["search-composition", "results-popular-words", "subfooter", "empty-state", "results-warning"].forEach(id => {
+    const node = document.getElementById(id);
+    if (node) node.classList.add("d-none");
+  });
+  renderRelatedQueries([]);
+  renderRelatedContent("");
+}
+
+/**
  * Toggle the in-flight search loading indicator (#search-loading).
  * Gives sighted users visible feedback during a /search request; cache and chat
  * already have loading states, search did not.
@@ -866,7 +891,8 @@ async function runSearch() {
   // Record the request time before the call so /go/ URLs embedded in result
   // cards carry the correct rt parameter (mirrors JSP #rt hidden field).
   state.requestedTime = Date.now();
-  document.title = state.q ? t("page.search_title").replace("{0}", state.q) : "Fess";
+  // t() fills {0} from a replacer function, so a `$&` or `$$` in the query stays literal.
+  document.title = state.q ? t("page.search_title", [state.q]) : "Fess";
   // Clear any stale error banner from a previous attempt and show the loading indicator.
   const prevErr = document.getElementById("search-error");
   if (prevErr) prevErr.classList.add("d-none");
@@ -923,10 +949,14 @@ async function runSearch() {
       params["geo.location.point"] = state.geo.lat + "," + state.geo.lon;
       params["geo.location.distance"] = state.geo.distance;
     }
-    // Request only the cheap "label" field facet (still supports a label facet group
-    // when configured). SemanticLens renders a count-free filter sidebar whose options
-    // come from /api/v2/ui/config, so we no longer request facet.query counts — removing
-    // them also drops the "counts exclude semantic results" discomfort.
+    // Request only the cheap "label" field facet; renderFacets shows its buckets, with
+    // counts, as the label group. The File type / Updated / Size groups are count-free and
+    // come from /api/v2/ui/config, so no facet.query counts are requested. What the label
+    // buckets count depends on how Fess fuses the searchers: with engine-side fusion
+    // (rank.fusion.engine.enabled=true) they describe the fused result set, semantic
+    // matches included; with Fess-side fusion (false, the 15.8 behaviour) they come from
+    // the keyword searcher alone, so a semantic-only result has none and the label group
+    // is not rendered.
     params["facet.field"] = ["label"];
     const env = await api.get("/search", params, { signal });
     // Prefer the server-supplied requested_time when available (more accurate).
@@ -971,6 +1001,9 @@ async function runSearch() {
     if (e && e.name === "AbortError") return; // request superseded — newer request owns the UI
     const errBox = document.getElementById("search-error");
     if (e && (e.code === "invalid_request" || e.code === "INVALID_REQUEST" || e.httpStatus === 400)) {
+      // The rejected search has no results of its own; the previous search's would sit
+      // under the banner as if they answered it.
+      clearResultsView();
       if (errBox) { errBox.textContent = e.message || t("error.invalid_request"); errBox.classList.remove("d-none"); }
       else { document.getElementById("results-meta").textContent = e.message || t("error.invalid_request"); }
       return;
@@ -1941,8 +1974,9 @@ function renderFacets(env, labels) {
   }
 
   // 3. Count-free filter groups (File type / Updated / Size) built from
-  //    /api/v2/ui/config — always present and functional in every mode, including
-  //    semantic-only (where the server returns no facet buckets). Clicking a row
+  //    /api/v2/ui/config — always present and functional, whatever the facet buckets
+  //    hold: with Fess-side fusion (rank.fusion.engine.enabled=false) a semantic-only
+  //    result has no buckets, and these are then the only groups. Clicking a row
   //    re-queries the server with the clause appended.
   renderFilterGroups(body);
 
