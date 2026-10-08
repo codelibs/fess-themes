@@ -531,14 +531,18 @@ function renderSummary(env) {
     (isOver ? "≈ " : "") + t("result.files")
   ));
 
-  // exec time (seconds), when supplied.
-  const execSec = typeof env.exec_time === "number" ? env.exec_time
+  // exec time (seconds), when supplied. The v2 API sends exec_time as a decimal string ("0.06");
+  // a number is accepted too. Anything that does not parse falls back to query_time (milliseconds).
+  const execTime = typeof env.exec_time === "string" && env.exec_time.trim() !== ""
+    ? Number(env.exec_time)
+    : env.exec_time;
+  const execSec = Number.isFinite(execTime) ? execTime
     : (typeof env.query_time === "number" ? env.query_time / 1000 : null);
   if (execSec !== null) {
     summary.appendChild(document.createTextNode(" "));
     summary.appendChild(el("span", {
       className: "exec-time",
-      text: t("labels.search_result_time").replace("{0}", execSec.toFixed(2))
+      text: t("labels.search_result_time", [execSec.toFixed(2)])
     }));
   }
 
