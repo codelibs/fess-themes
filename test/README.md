@@ -75,6 +75,20 @@ The suites:
 - `mosaic.gallery.test.js` — mosaic's label-filter chip and options bar for a
   label set through `ex_q`, the lightbox's no-thumbnail fallback, and the
   single popular-words request on the home view.
+- `mosaic.shell.test.js` — the page shell of mosaic for keyboard and screen-reader
+  users: the closed options drawer being `visibility: hidden` (out of the tab order), Escape
+  closing it with the focus returning to its opener and opening moving the focus in, the `/`
+  shortcut (not while typing, with a modifier, composing, or over the drawer or the result
+  preview), the tab title of every route, and the accessible name of the header search button.
+  The cases are in `helpers/heroFamilyShell.js`, shared by the three themes with a hero home
+  page (mosaic, storefront, semanticlens); `compat.js` installs document-level listeners, so each
+  theme runs in a window of its own.
+- `mosaic.search.test.js` — mosaic's search page (cases in `helpers/heroFamilySearch.js`, shared
+  with storefront and semanticlens): a search the server rejects with HTTP 400 clears the previous
+  tiles, composition band, status line, pager, facets and related searches; the string `exec_time`;
+  `$&` in the title; the pager as real links; the keyboard model of the home suggest list
+  (`attachSuggest`); the add-only favorite star of the list view; and the stylesheet contract of
+  the layout fixes.
 - `notification-banners.test.js` — the five notification/error banners whose
   visibility the shared JS owns through the `d-none` class alone
   (`#home-notification`, `#results-notification`, `#home-flash`,
