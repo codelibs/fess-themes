@@ -45,6 +45,10 @@ The suites:
   facets, pagination, active-filter chips, related content, favorites,
   similar docs) plus the type-ahead suggest (`attachSuggest`), across every
   theme's own `search.js`.
+- `search-ime.test.js` — the header search box's suggest list in every theme's own `search.js`:
+  the keys of an IME conversion (keydown with `isComposing`, or `keyCode` 229 as Safari reports
+  the confirming Enter) neither move the highlight nor take the highlighted suggestion; plain keys
+  still do.
 - `helpdesk.plaintitle.test.js` — characterization test for helpdesk's own
   DOM-free `plainTitle()` entity decode (it does not route through
   `format.js` like the other themes' `search.js`).
@@ -72,9 +76,37 @@ The suites:
   the error banner; the `(0.06 seconds)` suffix reads `exec_time` sent as a
   string; the document title carries a query containing `$&` or `$$` literally.
   It primes the theme's real `i18n.js` with the English bundle.
+- `no-external-hosts.test.js` — every theme's `index.html` loads nothing from a third-party host
+  (no absolute http(s) stylesheet, script, image or preconnect target) and its `<meta>` policy names
+  no host: Fess's own Content-Security-Policy header on the entry page would refuse it anyway.
+- `docuforge.shell.test.js`, `nomadkit.shell.test.js`, `rawblock.shell.test.js`,
+  `voicebox.shell.test.js` — the page shell of the four themes forked from docuforge, one file each
+  (cases in `helpers/familyShell.js`; `compat.js` installs document-level listeners, so each theme
+  needs a window of its own): the closed options drawer out of the tab order, Escape returning the
+  focus to the opener, the `/` shortcut, the tab title of every route, the name of the header
+  search button.
+- `docuforge-family.results.test.js` — the same four themes' results page: a rejected (400) search
+  clears the previous output, the string `exec_time`, `$&` in the title, the pager as real links,
+  the add-only favorite star, and the stylesheet contract of the layout fixes.
+- `docuforge-family.suggest.test.js` — the keyboard model of the home search box's suggest list
+  (`attachSuggest`) and its IME handling in those four themes.
 - `mosaic.gallery.test.js` — mosaic's label-filter chip and options bar for a
   label set through `ex_q`, the lightbox's no-thumbnail fallback, and the
   single popular-words request on the home view.
+- `mosaic.shell.test.js` — the page shell of mosaic for keyboard and screen-reader
+  users: the closed options drawer being `visibility: hidden` (out of the tab order), Escape
+  closing it with the focus returning to its opener and opening moving the focus in, the `/`
+  shortcut (not while typing, with a modifier, composing, or over the drawer or the result
+  preview), the tab title of every route, and the accessible name of the header search button.
+  The cases are in `helpers/heroFamilyShell.js`, shared by the three themes with a hero home
+  page (mosaic, storefront, semanticlens); `compat.js` installs document-level listeners, so each
+  theme runs in a window of its own.
+- `mosaic.search.test.js` — mosaic's search page (cases in `helpers/heroFamilySearch.js`, shared
+  with storefront and semanticlens): a search the server rejects with HTTP 400 clears the previous
+  tiles, composition band, status line, pager, facets and related searches; the string `exec_time`;
+  `$&` in the title; the pager as real links; the keyboard model of the home suggest list
+  (`attachSuggest`); the add-only favorite star of the list view; and the stylesheet contract of
+  the layout fixes.
 - `notification-banners.test.js` — the five notification/error banners whose
   visibility the shared JS owns through the `d-none` class alone
   (`#home-notification`, `#results-notification`, `#home-flash`,
@@ -167,6 +199,13 @@ The suites:
   960px: open, close on Escape / scrim / route change, never open together with the Ask drawer),
   the stylesheet rules that carry it (read back from the parsed `styles.css`), and the `/`
   shortcut that focuses the search box.
+- `codesearch.results.test.js` — codesearch's result page: a failed search (HTTP 400 or a server
+  error) clearing the previous cards, summary, pager, facet rail and qualifier chips under the error
+  banner, the summary reading `exec_time` sent as a decimal string, a title that keeps `$&` / `$$`
+  in the query literal, and a pager of real links (`aria-current`, "Page N" names, a disabled end
+  that is not a link, modified clicks left to the browser).
+- `codesearch.titles.test.js` — codesearch's tab title on every route (home, search, Help, Advanced
+  Search, password, cache, chat, errors), including a client-side move from a search to Help.
 - `app-boot.test.js` — the UI language `app.js` requests at boot
   (`?browser_lang=`, session, `Accept-Language`), in every theme.
 - `app-auth.test.js` — the `login.required` gate at boot, and what a login, a

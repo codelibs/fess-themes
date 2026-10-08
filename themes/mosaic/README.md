@@ -12,13 +12,12 @@ cd repos/fess-themes
 # Produces dist/mosaic-<version>.zip
 ```
 
-Upload the ZIP via **Admin > Theme** (`/admin/theme/`) in the Fess admin console, or set
-
-```properties
-theme.default=mosaic
-```
-
-in `fess_config.properties` (or as a Java system property) and restart Fess.
+Upload the ZIP via **Admin > Theme** (`/admin/theme/`) in the Fess admin console and choose it
+under **Default Theme** there. `theme.default` is a **system property**: it can also be set in
+`system.properties` (`app/WEB-INF/conf/` in the ZIP distribution) or with the JVM option
+`-Dfess.system.theme.default=mosaic`; a `theme.default` line in `fess_config.properties` has no
+effect. The JVM option is read only while `system.properties` has no `theme.default` key, so once
+the Theme screen has saved one (even **(no default)**, which stores an empty value), that key wins.
 
 ## What it is
 
