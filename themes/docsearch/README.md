@@ -7,8 +7,8 @@ mode) to deliver a developer-grade search experience: a ⌘K / Ctrl+K command
 palette with instant grouped results, breadcrumb result cards, persistent faceted
 navigation, and an optional cited Ask-AI (RAG) mode.
 
-Activate it by setting `theme.default=docsearch` in the admin UI
-(`/admin/theme/`) or by binding it to a virtual host.
+Activate it by choosing it as the default theme in the admin UI (**Admin > Theme**,
+`/admin/theme/`) or by binding it to a virtual host.
 
 ## Features
 
@@ -123,11 +123,14 @@ the `--bs-*` custom properties the SPA modules already reference. Key choices:
 # 1. Package
 cd /path/to/fess-themes
 ./scripts/package.sh docsearch
-# → dist/docsearch-15.9.9.zip
+# → dist/docsearch-15.9.10.zip
 
 # 2. Upload
 # In Fess admin UI: /admin/theme/ → Upload ZIP → Activate
-#   Set as default:   Admin → General → theme.default = docsearch
+#   Set as default:   Default Theme selector on the same screen, then Set
+#                     (or theme.default=docsearch in system.properties, or
+#                      -Dfess.system.theme.default=docsearch while system.properties
+#                      has no theme.default key; fess_config.properties is not read)
 #   Per virtual host: bind theme name to the virtual host entry
 ```
 

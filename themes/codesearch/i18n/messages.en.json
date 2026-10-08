@@ -19,6 +19,7 @@
   "facet.not_found": "No matching filters.",
   "pagination.next": "Next",
   "pagination.prev": "Previous",
+  "pagination.page": "Page {0}",
   "result.favorite_add": "Add to favorites",
   "result.favorite_remove": "Remove from favorites",
   "result.cache": "Cached",

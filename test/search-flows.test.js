@@ -47,7 +47,7 @@ const STD_THEMES = [
 ];
 
 // Themes whose favorite star is add-only: a starred document's star is disabled, not a toggle.
-const ADD_ONLY_FAVORITE = ["helpdesk"];
+const ADD_ONLY_FAVORITE = ["docuforge", "helpdesk", "nomadkit", "rawblock", "voicebox"];
 
 beforeEach(() => {
   resetDom();
@@ -751,7 +751,8 @@ describe.each(STD_THEMES)("runSearch favorites & similar docs [%s]", (theme) => 
     await settle();
     const call = flow.post.mock.calls.find((c) => c[0].includes("/documents/d1/favorite"));
     // The v2 API can only add a favorite, so these themes send nothing for a star that is
-    // already one (helpdesk.favorite.test.js covers their star).
+    // already one (helpdesk.favorite.test.js and docuforge-family.results.test.js
+    // cover their star).
     if (ADD_ONLY_FAVORITE.includes(theme)) expect(call).toBeUndefined();
     else expect(call).toBeTruthy();
   });
