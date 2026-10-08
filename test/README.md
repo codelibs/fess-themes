@@ -51,6 +51,12 @@ The suites:
 - `mosaic.searcher.test.js` / `semanticlens.searcher.test.js` — searcher-
   provenance and query-verbatim behaviour for the two vector-search themes
   against Fess's core semantic search.
+- `semanticlens.results.test.js` — what semanticlens' `runSearch()` leaves on the
+  page: a search the server rejects with HTTP 400 clears the previous results,
+  composition band, status line, pager, facet sidebar and related searches under
+  the error banner; the `(0.06 seconds)` suffix reads `exec_time` sent as a
+  string; the document title carries a query containing `$&` or `$$` literally.
+  It primes the theme's real `i18n.js` with the English bundle.
 - `mosaic.gallery.test.js` — mosaic's label-filter chip and options bar for a
   label set through `ex_q`, the lightbox's no-thumbnail fallback, and the
   single popular-words request on the home view.
@@ -202,7 +208,7 @@ test/
 │   └── dom.js            # serialise a sanitized DocumentFragment for assertions; reset/mount helpers
 ├── format.test.js  format.nodom.test.js  markdown.test.js  pipeline.test.js
 ├── scheme.test.js  search.test.js  search-flows.test.js  helpdesk.plaintitle.test.js
-├── mosaic.searcher.test.js  semanticlens.searcher.test.js
+├── mosaic.searcher.test.js  semanticlens.searcher.test.js  semanticlens.results.test.js
 ├── notification-banners.test.js  parity.test.js
 ├── wire-error-codes.test.js  wire-error-codes.contract.test.js
 ├── relative-urls.test.js  compat-modal.test.js  i18n-keys.test.js

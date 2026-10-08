@@ -56,11 +56,18 @@ The `tallyKinds(data)` helper that drives the bar is also reused by the sidebar 
 
 ### Rationale for no counts
 
-In a hybrid deployment, the server's facet counts come exclusively from the BM25 (`default`) searcher's aggregation response. The semantic searcher's matches are fused into the result list by `RankFusionProcessor` after the fact; their contribution is not reflected in any facet bucket. Showing these counts would be actively misleading — users would see "PDF (12)" while the result list contains 30 PDFs found semantically. Removing counts entirely avoids the discomfort, is honest, and is consistent with the count-free composition band. The new `record_count` after each filter click provides immediate real feedback.
+What a facet bucket counts depends on how Fess fuses the searchers of a hybrid deployment (`rank.fusion.engine.enabled`):
+
+- **Engine-side fusion (`true`).** The search engine ranks the keyword and semantic branches in one request, so facets and `record_count` describe the fused result set. A request the engine cannot fuse (for example one with a sort order) is fused by Fess instead.
+- **Fess-side fusion (`false`, the Fess 15.8 behaviour).** The facets come from the keyword (`default`) searcher's aggregation response alone. The semantic searcher's matches are fused into the result list by `RankFusionProcessor` after the fact and are not reflected in any facet bucket, so a count would read "PDF (12)" beside a result list holding 30 PDFs found semantically. A semantic-only result has no buckets at all.
+
+The File type, Updated and Size groups therefore carry no counts and are not built from the response: they read the same in either mode, which is also consistent with the count-free composition band. The new `record_count` after each filter click provides immediate real feedback.
+
+The label group is the exception. The theme requests the `label` field facet (`facet.field=label`) and shows its buckets with their counts, dropping zero counts and labels the `/labels` list does not know. Under engine-side fusion those counts describe the fused result set; under Fess-side fusion they count the keyword matches only, and a semantic-only result has no buckets, so the group is not rendered.
 
 ### Option sourcing from `/api/v2/ui/config`
 
-Filter options are built at render time from `api.getConfig()` — a query-independent endpoint that is always populated regardless of whether the current query has BM25 matches. This solves the "empty sidebar for semantic-only results" problem: the three groups (File type from `filetype_options`, Updated and Size from `facet_views`) are structurally stable across every search.
+Filter options are built at render time from `api.getConfig()` — a query-independent endpoint that is always populated, whatever the response's facet buckets hold. This solves the "empty sidebar for semantic-only results" problem of Fess-side fusion, where a semantic-only result has no buckets: the three groups (File type from `filetype_options`, Updated and Size from `facet_views`) are structurally stable across every search.
 
 ### Checked rows of one field OR together
 
@@ -125,7 +132,7 @@ The following were explicitly excluded to keep the implementation theme-only and
 
 - **Accurate per-bucket counts via server fan-out.** Each filter option would need its own `GET /api/v2/search?ex_q=…&num=0` request to get a real `record_count`. This adds N parallel requests per render; count-free was chosen instead.
 - **Interactive server-side mode switch.** `rank.fusion.searchers` is read once at Fess boot; switching between hybrid, keyword-only, and semantic-only modes requires a server change and is outside the theme's scope.
-- **Keeping semantic matching alive under a filter.** The syntax gate lives in Fess core (`SemanticChunkSearcher`), which decides on the assembled query string. A client cannot opt out of it, and faking a filter by post-filtering results would break paging and `record_count`. Surfacing the behaviour is the theme-level answer.
+- **Keeping semantic matching alive for the queries core still skips.** Fess 15.9 already keeps it alive under a field filter (see "Filters reach the semantic search on Fess 15.9"). What remains skipped — a sort order, a quoted phrase or wildcard in the free text, `allintitle:` / `allinurl:` — is decided in Fess core (`SemanticChunkSearcher`, through `StructuredQuerySplitter`) on the assembled query string. A client cannot opt out of it, and faking the effect by post-filtering results would break paging and `record_count`.
 
 ## System font stack rationale
 

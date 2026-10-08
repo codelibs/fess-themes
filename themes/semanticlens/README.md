@@ -56,9 +56,9 @@ The band is hidden (`d-none`) when `searcher` is absent on all page results (non
 
 ### Count-free unified filter sidebar
 
-The sidebar always shows three option groups — **File type**, **Updated**, and **Size** — sourced from `GET /api/v2/ui/config` (`filetype_options` and `facet_views`). This makes the groups query-independent and always populated, even for semantic-only queries that return empty BM25 facet buckets.
+The sidebar always shows three option groups — **File type**, **Updated**, and **Size** — sourced from `GET /api/v2/ui/config` (`filetype_options` and `facet_views`). This makes the groups query-independent and always populated, whatever the response's facet buckets hold: with Fess-side fusion (`rank.fusion.engine.enabled=false`) the buckets come from the keyword searcher alone, so a semantic-only result has none; with engine-side fusion (`true`) they describe the fused result set.
 
-Options are rendered as clickable `li.filter-opt` rows with a `.filter-chk` checkbox (filled when active) and a label. **No counts are shown.** Clicking toggles the clause in `state.facetQueries` and re-queries the server.
+Options are rendered as clickable `li.filter-opt` rows with a `.filter-chk` checkbox (filled when active) and a label. **No counts are shown on these rows** (only the label group, built from the response's `label` buckets, shows counts). Clicking toggles the clause in `state.facetQueries` and re-queries the server.
 
 A **mode-aware caption** (`.facet-cap`) at the top of the sidebar states how the current page was matched and what a filter will do:
 
@@ -186,7 +186,7 @@ Key DOM landmarks added by the redesign:
 ```bash
 cd repos/fess-themes
 ./scripts/package.sh semanticlens
-# Produces dist/semanticlens-15.9.9.zip
+# Produces dist/semanticlens-15.9.10.zip
 ```
 
 Upload the ZIP via `/admin/theme/` or place it in Fess's theme directory.
