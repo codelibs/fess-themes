@@ -14,6 +14,9 @@
 //      aria-current="page", every page number has an accessible page name, and a disabled end (no
 //      previous / next page) is not a link. A plain click still pages in place; a modified one
 //      (new tab, new window) is the browser's.
+//   5. The favorite star never promises what the API cannot do. /api/v2 can add a favorite
+//      (POST .../favorite) but not remove one, so a favorited star is named "Added to favorites",
+//      is aria-disabled and sends nothing on a click, rather than offering "Remove from favorites".
 //
 // The theme's real English bundle is loaded (through the real i18n.js init), so the assertions
 // see the text a user sees rather than raw i18n keys.
@@ -39,7 +42,11 @@ const english = (theme) => JSON.parse(readFileSync(
  * what makes search.js's t() return English.
  */
 async function loadEnglishFlow(theme) {
-  const flow = await loadSearchFlow(theme, FULL_CFG);
+  return loadEnglishFlowWith(theme, FULL_CFG);
+}
+
+async function loadEnglishFlowWith(theme, cfg) {
+  const flow = await loadSearchFlow(theme, cfg);
   const i18n = await import(`../themes/${theme}/assets/i18n.js`);
   vi.stubGlobal("fetch", async () => ({ ok: true, json: async () => english(theme) }));
   try {
@@ -301,5 +308,77 @@ describe.each(FAMILY)("%s: the pager", (theme) => {
     expect(prev.closest("li").classList.contains("disabled")).toBe(true);
     // the other end still is one
     expect(links().at(-1).getAttribute("href")).toContain("start=");
+  });
+});
+
+describe.each(FAMILY)("%s: the favorite star (the API can add a favorite, never remove one)", (theme) => {
+  const CFG = { ...FULL_CFG, features: { ...FULL_CFG.features, user_favorite: true } };
+  const DOCS = [
+    { doc_id: "d1", title: "One", url: "https://e.com/1", favorite_count: 2 },
+    { doc_id: "d2", title: "Two", url: "https://e.com/2", favorite_count: 0 },
+  ];
+  const star = (i) => document.querySelectorAll("#results > li")[i].querySelector(".favorite-btn");
+
+  /** Signed in; the server already lists `favorites` (doc ids) as favorites. */
+  async function bootFavorites(favorites = []) {
+    const flow = await loadEnglishFlowWith(theme, CFG);
+    flow.isAuthenticated.mockReturnValue(true);
+    installDispatch(flow.get, { search: makeSearchEnv(DOCS), favorites });
+    mountBody(SEARCH_FIXTURE);
+    flow.mod._state.q = "foo";
+    await flow.mod.runSearch();
+    await settle();
+    return flow;
+  }
+
+  it("an unfavorited star offers to add, and is pressed and named a favorite once the add succeeded", async () => {
+    const flow = await bootFavorites();
+    flow.post.mockResolvedValue({ favorite: true, count: 3 });
+    expect(star(0).getAttribute("aria-pressed")).toBe("false");
+    expect(star(0).getAttribute("aria-label")).toBe("Add to favorites");
+    expect(star(0).hasAttribute("aria-disabled")).toBe(false);
+    star(0).click();
+    await settle();
+    expect(flow.post).toHaveBeenCalledTimes(1);
+    expect(flow.post.mock.calls[0][0]).toBe("/documents/d1/favorite");
+    expect(star(0).getAttribute("aria-pressed")).toBe("true");
+    expect(star(0).getAttribute("aria-label")).toBe("Added to favorites");
+    expect(star(0).title).toBe("Added to favorites");
+    expect(star(0).getAttribute("aria-disabled")).toBe("true");
+    expect(star(0).querySelector(".favorite-count").textContent).toBe("3");
+  });
+
+  it("a favorited star never offers removal, and a click on it sends nothing", async () => {
+    const flow = await bootFavorites(["d1"]);
+    expect(star(0).getAttribute("aria-pressed")).toBe("true");
+    expect(star(0).getAttribute("aria-label")).toBe("Added to favorites");
+    expect(star(0).getAttribute("aria-label")).not.toBe("Remove from favorites");
+    expect(star(0).getAttribute("aria-disabled")).toBe("true");
+    star(0).click();
+    star(0).click();
+    await settle();
+    expect(flow.post).not.toHaveBeenCalled();
+    expect(star(0).getAttribute("aria-pressed")).toBe("true");
+    // the other row is unaffected
+    expect(star(1).getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("stays unpressed when the add did not happen", async () => {
+    const flow = await bootFavorites();
+    flow.post.mockResolvedValue({ favorite: false, count: 0 });
+    star(0).click();
+    await settle();
+    expect(star(0).getAttribute("aria-pressed")).toBe("false");
+    expect(star(0).getAttribute("aria-label")).toBe("Add to favorites");
+    expect(star(0).hasAttribute("aria-disabled")).toBe(false);
+  });
+
+  it("a click as a guest is refused by the server and leaves the star as it was", async () => {
+    const flow = await bootFavorites();
+    flow.post.mockRejectedValue(Object.assign(new Error("login"), { code: "auth_required", httpStatus: 401 }));
+    star(0).click();
+    await settle();
+    expect(star(0).getAttribute("aria-pressed")).toBe("false");
+    expect(star(0).getAttribute("aria-label")).toBe("Add to favorites");
   });
 });

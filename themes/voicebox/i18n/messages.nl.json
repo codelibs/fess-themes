@@ -20,6 +20,7 @@
   "pagination.prev": "Vorige",
   "pagination.page": "Pagina {0}",
   "result.favorite_add": "Toevoegen aan favorieten",
+  "result.favorite_added": "Toegevoegd aan favorieten",
   "result.favorite_remove": "Verwijderen uit favorieten",
   "result.cache": "Cache",
   "result.click_count": "{n} weergaven",
