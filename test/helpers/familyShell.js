@@ -10,6 +10,8 @@
 //      reachable. It closes on Escape, with the focus back on the control that opened it, and
 //      opening it moves the focus in (the drawer sits ahead of <main>).
 //   2. "/" focuses the search box, as the Help page says.
+//   3. Every route names itself in document.title, not only the search route.
+//   4. The header search button has an accessible name.
 //
 // The theme's real index.html, styles.css, compat.js (the Collapse behind the drawer toggles),
 // app.js, router.js, search.js and i18n.js (loading the real English bundle) run together; api.js
@@ -236,6 +238,101 @@ export function defineShellTests(THEME) {
     it("leaves the key alone on a page with no search box", async () => {
       await boot("/search/advance");
       expect(key("/").defaultPrevented).toBe(false);
+    });
+  });
+
+  describe(`${THEME}: the tab title names every page`, () => {
+    it("is the site title on the home page", async () => {
+      await boot("/");
+      expect(document.title).toBe("Fess Search");
+    });
+
+    it("is the query on a search", async () => {
+      await boot("/search?q=password+reset");
+      expect(document.title).toBe("password reset - Fess");
+    });
+
+    it("changes from the search's to the Help page's when the visitor opens Help", async () => {
+      await boot("/search?q=password+reset");
+      await goTo("/help");
+      expect(document.title).toBe("Help - Fess");
+    });
+
+    it("is the Help page's when the page is opened directly", async () => {
+      await boot("/help");
+      expect(document.title).toBe("Help - Fess");
+    });
+
+    it("changes to the advanced search page's", async () => {
+      await boot("/search?q=password+reset");
+      await goTo("/search/advance");
+      expect(document.title).toBe("Advanced Search - Fess");
+      await goTo("/advance");
+      expect(document.title).toBe("Advanced Search - Fess");
+    });
+
+    it("changes to the password page's and the cache page's", async () => {
+      await boot("/search?q=password+reset");
+      await goTo("/profile");
+      expect(document.title).toBe("Change Password - Fess");
+      await goTo("/cache/?docId=d1");
+      expect(document.title).toBe("Cached page - Fess");
+    });
+
+    it("changes to the chat page's, which the bundle gives as a whole title", async () => {
+      await boot("/search?q=password+reset");
+      await goTo("/chat");
+      expect(document.title).toBe("Chat");
+    });
+
+    it("changes to the error the error page shows", async () => {
+      await boot("/search?q=password+reset");
+      await goTo("/error/404");
+      expect($("error-view").querySelector(".error-title").textContent).toBe("Page Not Found.");
+      expect(document.title).toBe("Page Not Found. - Fess");
+    });
+
+    it("is the error's when /error/notfound is opened directly", async () => {
+      await boot("/error/notfound");
+      const shown = $("error-view").querySelector(".error-title").textContent;
+      expect(shown).not.toBe("");
+      expect(document.title).toBe(shown + " - Fess");
+    });
+
+    it("changes to the error the unknown-address page shows", async () => {
+      await boot("/search?q=password+reset");
+      await goTo("/no/such/page");
+      const shown = $("error-view").querySelector(".error-title").textContent;
+      expect(shown).not.toBe("");
+      expect(document.title).toBe(shown + " - Fess");
+    });
+
+    it("returns to the site title when the visitor goes home", async () => {
+      await boot("/search?q=password+reset");
+      await goTo("/");
+      expect(document.title).toBe("Fess Search");
+    });
+
+    it("gives every route a different title", async () => {
+      const titles = [];
+      for (const url of ["/", "/search?q=paging", "/help", "/advance", "/error/notfound", "/profile"]) {
+        await boot(url);
+        titles.push(document.title);
+        if (app) app.detach();
+        vi.unstubAllGlobals();
+        vi.resetModules();
+      }
+      expect(new Set(titles).size).toBe(titles.length);
+    });
+  });
+
+  describe(`${THEME}: the header search button`, () => {
+    it("has an accessible name, in the visitor's language", async () => {
+      await boot("/help");
+      const name = $("searchButton").querySelector(".visually-hidden");
+      expect(name).not.toBeNull();
+      expect(name.textContent).toBe("Search");
+      expect($("searchButton").querySelector("i").getAttribute("aria-hidden")).toBe("true");
     });
   });
 }
