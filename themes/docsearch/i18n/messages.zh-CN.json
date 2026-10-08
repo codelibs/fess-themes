@@ -18,6 +18,7 @@
   "facet.not_found": "没有匹配的筛选条件。",
   "pagination.next": "下一页",
   "pagination.prev": "上一页",
+  "pagination.page": "第 {0} 页",
   "result.favorite_add": "添加到收藏",
   "result.favorite_remove": "取消收藏",
   "result.cache": "缓存",
