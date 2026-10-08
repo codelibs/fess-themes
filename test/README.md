@@ -148,6 +148,15 @@ The suites:
   `label_options` name (value kept in the URL and the request), and the "Similar Results"
   view is written to the URL as `sdh` (a new history entry; shown again from a URL that
   carries it).
+- `docsearch.results.test.js` — docsearch's result page: the status line reading `exec_time` sent as
+  a decimal string, a title that keeps `$&` / `$$` in the query literal, a pager of real links
+  (`aria-current`, "Page N" names, a disabled end that is not a link), a favorited star that offers
+  no removal and sends nothing on a click, and the stylesheet contract (read back from the parsed
+  `styles.css`): cache metadata values that wrap, and a tertiary text colour with 4.5:1 on every
+  surface in both palettes.
+- `docsearch.titles.test.js` — docsearch's tab title on every route (home, search, Help, Advanced
+  Search, password, cache, chat, errors), including a client-side move from a search to Help (the
+  theme's real `index.html`, `app.js`, `router.js`, `search.js` and English bundle).
 - `codesearch.query.test.js` — codesearch's query box -> Fess query translation (`query.js`):
   qualifier values escaped for the Lucene parser, `path:` as a prefix or an exact path, ranges,
   phrases (`"foo bar"~3`) kept as one term, a leading `--` read as text, the facet and chip
@@ -219,6 +228,7 @@ test/
 │   ├── loadSearch.js     # import a theme's search.js with api/router doubles injected
 │   ├── loadShell.js      # import a theme's auth.js / profile.js / boot its app.js against the real index.html
 │   ├── searchFlow.js     # DOM scaffold + /search fixtures for the runSearch() flows
+│   ├── resultsContract.js # exec time / title / pager / favorite cases shared by themes with the bootstrap result DOM
 │   ├── net.js            # Response-like fetch stubs used by auth.test.js
 │   └── dom.js            # serialise a sanitized DocumentFragment for assertions; reset/mount helpers
 ├── format.test.js  format.nodom.test.js  markdown.test.js  pipeline.test.js
