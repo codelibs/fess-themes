@@ -72,6 +72,20 @@ The suites:
   the error banner; the `(0.06 seconds)` suffix reads `exec_time` sent as a
   string; the document title carries a query containing `$&` or `$$` literally.
   It primes the theme's real `i18n.js` with the English bundle.
+- `no-external-hosts.test.js` — every theme's `index.html` loads nothing from a third-party host
+  (no absolute http(s) stylesheet, script, image or preconnect target) and its `<meta>` policy names
+  no host: Fess's own Content-Security-Policy header on the entry page would refuse it anyway.
+- `docuforge.shell.test.js`, `nomadkit.shell.test.js`, `rawblock.shell.test.js`,
+  `voicebox.shell.test.js` — the page shell of the four themes forked from docuforge, one file each
+  (cases in `helpers/familyShell.js`; `compat.js` installs document-level listeners, so each theme
+  needs a window of its own): the closed options drawer out of the tab order, Escape returning the
+  focus to the opener, the `/` shortcut, the tab title of every route, the name of the header
+  search button.
+- `docuforge-family.results.test.js` — the same four themes' results page: a rejected (400) search
+  clears the previous output, the string `exec_time`, `$&` in the title, the pager as real links,
+  the add-only favorite star, and the stylesheet contract of the layout fixes.
+- `docuforge-family.suggest.test.js` — the keyboard model of the home search box's suggest list
+  (`attachSuggest`) and its IME handling in those four themes.
 - `mosaic.gallery.test.js` — mosaic's label-filter chip and options bar for a
   label set through `ex_q`, the lightbox's no-thumbnail fallback, and the
   single popular-words request on the home view.
