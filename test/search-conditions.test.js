@@ -87,7 +87,9 @@ describe.each(DNONE_THEMES)("JSP URL conditions [%s]", (theme) => {
     mountIndexBody(theme);
     mod.attach();
     setLocation("/search?q=old&sdh=h1&as.q=legacy&fields.label=lblB");
+    // Picked by the user: a click on the select fires change.
     document.getElementById("labelSearchOption").value = "lblA";
+    document.getElementById("labelSearchOption").dispatchEvent(new Event("change", { bubbles: true }));
     document.getElementById("query").value = "hello";
     document.getElementById("search-form").dispatchEvent(new Event("submit", { cancelable: true }));
     const target = navigate.mock.calls.at(-1)[0];
