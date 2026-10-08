@@ -45,6 +45,10 @@ The suites:
   facets, pagination, active-filter chips, related content, favorites,
   similar docs) plus the type-ahead suggest (`attachSuggest`), across every
   theme's own `search.js`.
+- `search-ime.test.js` — the header search box's suggest list in every theme's own `search.js`:
+  the keys of an IME conversion (keydown with `isComposing`, or `keyCode` 229 as Safari reports
+  the confirming Enter) neither move the highlight nor take the highlighted suggestion; plain keys
+  still do.
 - `helpdesk.plaintitle.test.js` — characterization test for helpdesk's own
   DOM-free `plainTitle()` entity decode (it does not route through
   `format.js` like the other themes' `search.js`).

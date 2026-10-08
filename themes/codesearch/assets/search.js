@@ -1239,6 +1239,9 @@ export function attachSuggest(input, dropdown, opts = {}) {
     timer = setTimeout(() => render(v), 150);
   });
   input.addEventListener("keydown", ev => {
+    // An IME conversion owns the arrows, Enter, Tab and Escape until it is confirmed. (Safari
+    // reports the confirming Enter with isComposing already false, but still keyCode 229.)
+    if (ev.isComposing || ev.keyCode === 229) return;
     const items = options();
     // Only steer keys while the list is actually on screen. Both hiding regimes
     // count: the home/header dropdowns toggle .visually-hidden, while advance.js
