@@ -936,10 +936,13 @@ export function disableSubmitBriefly(btn) {
 export function attachSuggest(input, dropdown, opts = {}) {
   if (!input || !dropdown) return;
   let timer = null;
+  let active = -1;
   const clear = () => {
     while (dropdown.firstChild) dropdown.removeChild(dropdown.firstChild);
     dropdown.classList.add("d-none");
     input.setAttribute("aria-expanded", "false");
+    input.removeAttribute("aria-activedescendant");
+    active = -1;
   };
   const choose = (text) => {
     input.value = text;
@@ -975,12 +978,33 @@ export function attachSuggest(input, dropdown, opts = {}) {
       });
       dropdown.classList.remove("d-none");
       input.setAttribute("aria-expanded", "true");
+      input.removeAttribute("aria-activedescendant");
+      active = -1;
     } catch { /* best-effort */ }
   };
   input.addEventListener("input", () => {
     if (timer) clearTimeout(timer);
     const v = input.value.trim();
     timer = setTimeout(() => render(v), 150);
+  });
+  // ArrowDown/ArrowUp walk the list (aria-selected + aria-activedescendant), Enter takes the
+  // highlighted entry and Escape closes the list; without a highlighted entry Enter submits as usual.
+  input.addEventListener("keydown", ev => {
+    // An IME conversion owns these keys until it is confirmed (Safari reports the confirming
+    // Enter with isComposing already false, but still keyCode 229).
+    if (ev.isComposing || ev.keyCode === 229) return;
+    const items = dropdown.querySelectorAll(".list-group-item");
+    if (!items.length || dropdown.classList.contains("d-none")) return;
+    if (ev.key === "Escape") { ev.preventDefault(); clear(); return; }
+    if (ev.key === "Enter" && active >= 0) { ev.preventDefault(); choose(items[active].textContent); return; }
+    if (ev.key !== "ArrowDown" && ev.key !== "ArrowUp") return;
+    ev.preventDefault();
+    active = ev.key === "ArrowDown" ? (active + 1) % items.length : (active <= 0 ? items.length - 1 : active - 1);
+    items.forEach((it, i) => {
+      it.classList.toggle("active", i === active);
+      it.setAttribute("aria-selected", i === active ? "true" : "false");
+    });
+    input.setAttribute("aria-activedescendant", items[active].id);
   });
   input.addEventListener("blur", () => setTimeout(clear, 120));
 }
