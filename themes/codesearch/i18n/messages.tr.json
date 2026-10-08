@@ -19,6 +19,7 @@
   "facet.not_found": "No matching filters.",
   "pagination.next": "Sonraki",
   "pagination.prev": "Önceki",
+  "pagination.page": "Sayfa {0}",
   "result.favorite_add": "Favorilere ekle",
   "result.favorite_remove": "Favorilerden kaldır",
   "result.cache": "Önbellek",
