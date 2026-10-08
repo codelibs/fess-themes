@@ -6,6 +6,7 @@
 //   - The status line's "(0.06 seconds)" reads `exec_time` (a decimal string on the v2 API)
 //   - The pager is made of real links with aria-current and page names
 //   - A favorited star is "Added to favorites" and not clickable, since the API cannot remove one
+//   - The cache metadata values stay inside the row
 //
 // The cases are shared with the other themes that keep the bootstrap runSearch() contract
 // (helpers/resultsContract.js); jsdom has no layout engine, so the stylesheet is read back from the
@@ -44,6 +45,12 @@ describe(`${THEME} layout: stylesheet contract`, () => {
     }
     return value;
   }
+
+  it("keeps a cache metadata value (URL, document id) inside the row: no start margin, wraps anywhere", () => {
+    // the UA gives <dd> margin-inline-start: 40px, which pushed it past the right edge at 375px
+    expect(declared(".cache-meta dd", "margin")).toBe("0px 0px 0.5rem");
+    expect(declared(".cache-meta dd", "overflow-wrap")).toBe("anywhere");
+  });
 
   it("styles a favorited star as not clickable", () => {
     expect(declared('.result-card .favorite-btn[aria-disabled="true"]', "cursor")).toBe("default");
