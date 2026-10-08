@@ -79,11 +79,17 @@
   function Modal(el) {
     this._el = el;
     this._backdrop = null;
+    this._opener = null;
   }
-  Modal.prototype.show = function () {
+  Modal.prototype.show = function (relatedTarget) {
     var el = this._el;
     if (!el || el.classList.contains("show")) return;
     var self = this;
+    // Remember what opened the dialog so closing it can hand the focus back, as Bootstrap
+    // does: the trigger that was clicked (Safari does not focus a link or button on click)
+    // or else the control that had the focus (a script such as the login prompt).
+    var opener = relatedTarget || document.activeElement;
+    this._opener = opener && opener !== document.body && !el.contains(opener) ? opener : null;
     el.style.display = "block";
     // reflow for fade
     // eslint-disable-next-line no-unused-expressions
@@ -109,15 +115,27 @@
     el.classList.remove("show");
     el.setAttribute("aria-hidden", "true");
     el.removeAttribute("aria-modal");
+    var self = this;
     var done = function () {
       el.style.display = "none";
       el.dispatchEvent(new CustomEvent("hidden.bs.modal", { bubbles: true }));
+      self._restoreFocus();
     };
     if (prefersReducedMotion) done();
     else setTimeout(done, 200);
     removeBackdrop(this._backdrop);
     this._backdrop = null;
     if (!anyOpen(".modal")) document.body.classList.remove("modal-open");
+  };
+  // Give the focus back to the control that opened the dialog, unless the opener is gone (the
+  // login prompt removes its own button) or the user has already moved on to another control.
+  Modal.prototype._restoreFocus = function () {
+    var opener = this._opener;
+    this._opener = null;
+    var active = document.activeElement;
+    if (!opener || !opener.isConnected) return;
+    if (active && active !== document.body && !this._el.contains(active)) return;
+    try { opener.focus(); } catch (e) { /* ignore */ }
   };
   var modalStore = instanceStore("modal");
   Modal.getOrCreateInstance = function (el) {
@@ -318,7 +336,7 @@
       if (type === "modal") {
         ev.preventDefault();
         var mt = resolveTarget(toggle);
-        if (mt) Modal.getOrCreateInstance(mt).show();
+        if (mt) Modal.getOrCreateInstance(mt).show(toggle);
         return;
       }
       if (type === "offcanvas") {
