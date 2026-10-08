@@ -894,6 +894,23 @@ function showSearchLoading(show) {
 }
 
 /**
+ * Take the previous search's output off the page, leaving what a fresh load of the same URL shows
+ * when the search failed: no result cards, summary, pager, facet entries or qualifier chips. The
+ * error banner is the caller's.
+ */
+function clearResultsView() {
+  for (const id of ["results", "result-summary", "pagination", "active-chips"]) {
+    const node = document.getElementById(id);
+    if (node) node.innerHTML = ""; // empty literal
+  }
+  const empty = document.getElementById("empty-state");
+  if (empty) empty.hidden = true;
+  const warning = document.getElementById("results-warning");
+  if (warning) warning.hidden = true;
+  renderFacets(null);
+}
+
+/**
  * Issue GET /api/v2/search from the current `state`, cancelling any in-flight
  * request first. Requests the facets Task 5 will render
  * (repository, filetype, organization, filename).
@@ -954,9 +971,9 @@ async function runSearch() {
     if (e && (e.code === "auth_required" || e.code === "AUTH_REQUIRED")) {
       document.dispatchEvent(new CustomEvent("fess:auth:required"));
     }
-    // Clear stale results/summary/pagination on a hard failure.
-    const list = document.getElementById("results");
-    if (list) list.innerHTML = "";
+    // The failed search has no output of its own; the previous search's would sit under the
+    // banner as if they answered it.
+    clearResultsView();
   } finally {
     if (currentSearchAbort && currentSearchAbort.signal === signal) showSearchLoading(false);
   }

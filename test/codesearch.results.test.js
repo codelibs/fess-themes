@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 // codesearch: what runSearch() leaves on the page.
 //
-//   1. The summary's "(0.06 seconds)" reads `exec_time`, which the v2 API sends as a decimal
+//   1. A search that fails (the API's HTTP 400 for a query the page accepts but the API does not,
+//      e.g. "foo AND") replaces the previous results with the error, the way a fresh load of the
+//      same URL looks. It used to clear the cards only and leave the previous summary, pager,
+//      facet entries and qualifier chips on screen under the red banner.
+//   2. The summary's "(0.06 seconds)" reads `exec_time`, which the v2 API sends as a decimal
 //      STRING ("0.06"), not a number.
-//   2. The document title carries the query literally. String.prototype.replace() treats `$&` and
+//   3. The document title carries the query literally. String.prototype.replace() treats `$&` and
 //      `$$` in a replacement string as patterns, so "a$&b" used to come out as "a{0}b - Fess".
-//   3. The pager links are the URLs of their pages (not "#"), the current page is marked
+//   4. The pager links are the URLs of their pages (not "#"), the current page is marked
 //      aria-current="page", every page number has an accessible page name, and a disabled end (no
 //      previous / next page) is not a link. A plain click still pages in place; a modified one
 //      (new tab, new window) is the browser's.
@@ -49,6 +53,110 @@ afterEach(() => {
   setLocation("/");
 });
 
+describe("codesearch: a search the server rejects with HTTP 400", () => {
+  const MESSAGE = "The query is too long (limit 1000 characters).";
+
+  /** Search successfully, then fail the next search with the API's 400 envelope. */
+  async function successThenBadRequest() {
+    const flow = await loadEnglishFlow();
+    installDispatch(flow.get, {
+      search: makeSearchEnv(SAMPLE_DOCS, {
+        facet_field: [
+          { name: "repository", result: [{ value: "fess", count: 5 }, { value: "fess-crawler", count: 3 }] },
+          { name: "filetype", result: [{ value: "java", count: 6 }] },
+        ],
+      }),
+    });
+    mountBody(SEARCH_FIXTURE);
+    flow.mod._state.q = "coffee";
+    await flow.mod.runSearch();
+    await settle();
+    // The first search really did put everything on the page; otherwise the assertions after the
+    // failure would pass on an empty page.
+    expect($("results").children.length).toBe(2);
+    expect($("result-summary").textContent).not.toBe("");
+    expect($("pagination").children.length).toBeGreaterThan(0);
+    expect($("facet-rail").querySelectorAll("label.facet-label").length).toBeGreaterThan(0);
+
+    flow.get.mockRejectedValueOnce(Object.assign(new Error(MESSAGE), { code: "invalid_request", httpStatus: 400 }));
+    flow.mod._state.q = "x".repeat(1001);
+    await flow.mod.runSearch();
+    await settle();
+    return flow;
+  }
+
+  it("shows the server's message in the error banner", async () => {
+    await successThenBadRequest();
+    expect($("search-error").textContent).toBe(MESSAGE);
+    expect($("search-error").hidden).toBe(false);
+  });
+
+  it("removes the previous result cards", async () => {
+    await successThenBadRequest();
+    expect($("results").children.length).toBe(0);
+  });
+
+  it("clears the summary", async () => {
+    await successThenBadRequest();
+    expect($("result-summary").textContent).toBe("");
+  });
+
+  it("empties the pager", async () => {
+    await successThenBadRequest();
+    expect($("pagination").children.length).toBe(0);
+  });
+
+  it("empties the facet rail, down to its placeholder", async () => {
+    await successThenBadRequest();
+    expect($("facet-rail").querySelectorAll("label.facet-label").length).toBe(0);
+    expect($("facet-rail").querySelector(".rail-empty").textContent).toBe("No filters available for this search.");
+  });
+
+  it("drops the qualifier chips of the previous query", async () => {
+    const flow = await loadEnglishFlow();
+    installDispatch(flow.get, { search: makeSearchEnv(SAMPLE_DOCS) });
+    mountBody(SEARCH_FIXTURE);
+    $("query-input").value = "repo:fess lang:java parse";
+    flow.mod._state.q = "repository:fess filetype:java parse";
+    await flow.mod.runSearch();
+    await settle();
+    expect($("active-chips").children.length).toBeGreaterThan(0);
+    flow.get.mockRejectedValueOnce(Object.assign(new Error(MESSAGE), { code: "invalid_request", httpStatus: 400 }));
+    await flow.mod.runSearch();
+    await settle();
+    expect($("active-chips").children.length).toBe(0);
+  });
+
+  it("does not show the no-results state, which is a different outcome", async () => {
+    await successThenBadRequest();
+    expect($("empty-state").hidden).toBe(true);
+  });
+
+  it("recovers: the next good search renders its results again", async () => {
+    const flow = await successThenBadRequest();
+    flow.mod._state.q = "coffee";
+    await flow.mod.runSearch();
+    await settle();
+    expect($("results").children.length).toBe(2);
+    expect($("search-error").hidden).toBe(true);
+  });
+
+  it("clears the previous results for a server error too", async () => {
+    const flow = await loadEnglishFlow();
+    installDispatch(flow.get, { search: makeSearchEnv(SAMPLE_DOCS) });
+    mountBody(SEARCH_FIXTURE);
+    flow.mod._state.q = "coffee";
+    await flow.mod.runSearch();
+    await settle();
+    flow.get.mockRejectedValueOnce(Object.assign(new Error("boom"), { code: "server_error", httpStatus: 500 }));
+    await flow.mod.runSearch();
+    await settle();
+    expect($("search-error").hidden).toBe(false);
+    expect($("results").children.length).toBe(0);
+    expect($("pagination").children.length).toBe(0);
+  });
+});
+
 describe("codesearch: the exec time in the summary", () => {
   // query_time is deliberately far from every exec_time below, so a suffix that came from the
   // wrong field cannot pass.
@@ -85,7 +193,6 @@ describe("codesearch: the exec time in the summary", () => {
   });
 });
 
-
 describe("codesearch: the document title of a search", () => {
   async function titleFor(q) {
     const flow = await loadEnglishFlow();
@@ -113,7 +220,6 @@ describe("codesearch: the document title of a search", () => {
     expect(await titleFor(q)).toBe(q + " - Fess");
   });
 });
-
 
 describe("codesearch: the pager", () => {
   // Page 2 of 3, ten per page: there is a page before and a page after.
