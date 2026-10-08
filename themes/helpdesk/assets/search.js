@@ -11,6 +11,15 @@ let attached = false;
 /** AbortController for the most-recent in-flight search; null when idle. */
 let currentSearchAbort = null;
 
+/**
+ * True once the user has changed the drawer's category select since it was last filled
+ * from the search on screen (renderLabelOptions). The select always shows that search's
+ * categories, including one that came with the URL (a home category tile, a shared link)
+ * without the user choosing it, so only a pick of the user's own may ride along with the
+ * next query typed in the header box.
+ */
+let labelsPicked = false;
+
 const state = {
   q: "",
   start: 0,
@@ -696,6 +705,28 @@ function renderResults(env) {
 }
 
 /**
+ * Take the previous search's output off the page, leaving what a fresh load of the same
+ * URL shows when the server rejects the request: no result cards, status line, featured
+ * answer, pager, facet sidebar or related searches. The error banner is the caller's.
+ */
+function clearResultsView() {
+  ["results", "results-status", "results-popular-words", "pagination",
+    "facet-body", "facet-body-mobile", "active-chips"].forEach(id => {
+    const node = document.getElementById(id);
+    if (node) while (node.firstChild) node.removeChild(node.firstChild);
+  });
+  ["results-popular-words", "subfooter", "empty-state", "results-warning",
+    "facet-toggle-wrap", "active-chips"].forEach(id => {
+    const node = document.getElementById(id);
+    if (node) node.classList.add("d-none");
+  });
+  const facetBody = document.getElementById("facet-body");
+  if (facetBody) facetBody.classList.remove("d-md-block");
+  renderRelatedQueries([]);
+  renderBestBet({});
+}
+
+/**
  * Toggle the in-flight search loading indicator (#search-loading).
  * Gives sighted users visible feedback during a /search request; cache and chat
  * already have loading states, search did not.
@@ -847,6 +878,9 @@ async function runSearch() {
     if (e && e.name === "AbortError") return; // request superseded — newer request owns the UI
     const errBox = document.getElementById("search-error");
     if (e && (e.code === "invalid_request" || e.code === "INVALID_REQUEST" || e.httpStatus === 400)) {
+      // The rejected search has no results of its own; the previous search's would sit
+      // under the banner as if they answered it.
+      clearResultsView();
       if (errBox) { errBox.textContent = e.message || t("error.invalid_request"); errBox.classList.remove("d-none"); }
       else { document.getElementById("results-meta").textContent = e.message || t("error.invalid_request"); }
       return;
@@ -1137,6 +1171,7 @@ function renderLabelOptions() {
   const sel = document.getElementById("labelSearchOption");
   const fieldset = document.getElementById("labelSearchOptionFieldset");
   if (!sel) return;
+  labelsPicked = false; // the select is about to show the search on screen again
   const cfg = api.getConfig() || {};
   const labelOpts = cfg.label_options || [];
   const show = !!(cfg.features && cfg.features.display_label_type) && labelOpts.length > 0;
@@ -1458,9 +1493,12 @@ export function attach() {
           params.delete("lang");
           Array.from(langSel.selectedOptions).map(o => o.value).filter(Boolean).forEach(v => params.append("lang", v));
         }
-        // The drawer's labels ride along too: on the JSP page they sit inside the header form.
+        // The labels the user picked in the drawer ride along too: on the JSP page they sit
+        // inside the header form. A label that merely came with the URL does not (the
+        // select shows it, but nobody chose it for this query), or a home category tile
+        // would stay on for every query typed afterwards.
         const labelSel = document.getElementById("labelSearchOption");
-        if (labelSel) Array.from(labelSel.selectedOptions).map(o => o.value).filter(Boolean).forEach(v => params.append("fields.label", v));
+        if (labelSel && labelsPicked) Array.from(labelSel.selectedOptions).map(o => o.value).filter(Boolean).forEach(v => params.append("fields.label", v));
       }
       navigate("search?" + params.toString());
       // JSP parity: disable the submit button for 3s after the search has been
@@ -1468,6 +1506,8 @@ export function attach() {
       disableSubmitBriefly(document.getElementById("searchButton"));
     });
   }
+  const labelSelect = document.getElementById("labelSearchOption");
+  if (labelSelect) labelSelect.addEventListener("change", () => { labelsPicked = true; });
   // Search-options "Clear" button (searchOptions.jsp #searchOptionsClearButton):
   // reset the drawer option controls (num/sort/lang/label + geo) to their defaults.
   // JSP parity: this is a purely visual reset — it does NOT re-run the search.
@@ -2040,18 +2080,14 @@ function renderRelatedQueries(queries) {
   const label = el("span", { className: "related-queries-label text-muted small me-2", text: t("search.related_queries") + ":" });
   container.appendChild(label);
   queries.forEach(q => {
+    // data-spa anchor, like the popular words: the router intercepts the click and
+    // navigates to /search?q=…, which runFromUrl() turns into the search, so the address
+    // bar carries the query (reload, share and Back keep it) and the link opens in a new
+    // tab. The href is relative to <base href>, so it needs the "search" path.
     const btn = el("a", {
       className: "btn btn-sm btn-outline-secondary me-1 mb-1",
       text: q,
-      attrs: { href: "?q=" + encodeURIComponent(q) }
-    });
-    btn.addEventListener("click", ev => {
-      ev.preventDefault();
-      const input = document.getElementById("query");
-      if (input) input.value = q;
-      state.q = q;
-      state.start = 0;
-      runSearch();
+      attrs: { href: "search?q=" + encodeURIComponent(q), "data-spa": "" }
     });
     container.appendChild(btn);
   });
