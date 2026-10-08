@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-src blob:; child-src blob:; base-uri 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src blob:; child-src blob:; base-uri 'self'">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Fess</title>
@@ -12,9 +12,6 @@
   <!-- Fess inserts <base href="{context path}/"> right after <head>. Every URL in this
        theme is relative to it, so the theme works under any context path. -->
   <link rel="stylesheet" href="css/font-awesome.min.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
   <link rel="stylesheet" href="themes/rawblock/assets/styles.css">
   <link rel="icon" href="favicon.ico">
 
@@ -53,7 +50,7 @@
                 aria-controls="suggest-dropdown"
                 aria-autocomplete="list"
                 aria-haspopup="listbox">
-            <button type="submit" name="search" id="searchButton" class="btn btn-primary"><i class="fa fa-search" aria-hidden="true"></i></button>
+            <button type="submit" name="search" id="searchButton" class="btn btn-primary"><i class="fa fa-search" aria-hidden="true"></i> <span class="visually-hidden" data-i18n="search.button">Search</span></button>
             <button type="button" class="btn btn-light" id="searchOptionsButton" data-bs-toggle="collapse" data-bs-target="#searchOptions" aria-expanded="false" aria-controls="searchOptions"><i class="fa fa-cog" aria-hidden="true"></i> <span class="visually-hidden" data-i18n="search.options">Options</span></button>
             <ul class="list-group position-absolute top-100 start-0 end-0 mt-1 d-none shadow-sm" id="suggest-dropdown" role="listbox" aria-label="Search suggestions"></ul>
           </form>
@@ -78,7 +75,7 @@
        populated by search.js renderSearchOptions().
        =================================================================== -->
   <div id="searchOptions" class="collapse">
-    <div class="container">
+    <div class="container" tabindex="-1">
       <h3 id="searchOptionsLabel" data-i18n="search.options_title">Search Options</h3>
       <div>
         <fieldset class="mb-3">
