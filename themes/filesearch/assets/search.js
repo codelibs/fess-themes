@@ -445,7 +445,8 @@ async function runSearch(opts = {}) {
   // Record the request time before the call so /go/ URLs embedded in result
   // cards carry the correct rt parameter (mirrors JSP #rt hidden field).
   state.requestedTime = Date.now();
-  document.title = state.q ? t("page.search_title").replace("{0}", state.q) : "Fess";
+  // t() fills {0} from a replacer function, so a `$&` or `$$` in the query stays literal.
+  document.title = state.q ? t("page.search_title", [state.q]) : "Fess";
   // Clear any stale error banner from a previous attempt and show the loading indicator.
   const prevErr = document.getElementById("search-error");
   if (prevErr) prevErr.classList.add("d-none");
