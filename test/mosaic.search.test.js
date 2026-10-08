@@ -5,9 +5,11 @@
 
 import {
   defineRejectedSearchTests, definePagerTests, defineSuggestKeyTests, defineFavoriteTests,
+  defineLayoutTests,
 } from "./helpers/heroFamilySearch.js";
 
 defineRejectedSearchTests("mosaic", { searcher: ["default", "multi_modal"] });
 definePagerTests("mosaic");
 defineSuggestKeyTests("mosaic");
 defineFavoriteTests("mosaic", { listView: true });
+defineLayoutTests("mosaic");
