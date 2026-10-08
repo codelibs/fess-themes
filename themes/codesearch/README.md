@@ -37,13 +37,20 @@ vanilla JS and CSS (no Bootstrap, no CDN).
    # → dist/codesearch-15.9.8.zip
    ```
 2. Open **Admin → Theme** (`/admin/theme/`) and upload the ZIP.
-3. Activate it or set `theme.default=codesearch`.
+3. Choose it under **Default Theme** on the same screen and click **Set**.
 
-### Via server config property
+### Via system property
+
+`theme.default` is a **system property**. Set it in `system.properties` (`app/WEB-INF/conf/` in
+the ZIP distribution) or start Fess with `-Dfess.system.theme.default=codesearch`; a
+`theme.default` line in `fess_config.properties` has no effect.
 
 ```properties
 theme.default=codesearch
 ```
+
+The JVM option is read only while `system.properties` has no `theme.default` key, so once the
+Theme screen has saved one (even **(no default)**, which stores an empty value), that key wins.
 
 ## Required server configuration
 

@@ -52,9 +52,11 @@ backslash-escaped (`smb://srv/share/` is `url:smb\:\/\/srv\/share\/*`).
 
 Upload the ZIP at **Admin → Theme** (`/admin/theme/`) and set it as the default theme, or
 bind it to a virtual host whose key is `filesearch`. `theme.default` is a **system
-property** (admin **General → Default Theme**, `system.properties`, or
-`-Dfess.system.theme.default=filesearch`); writing it into `fess_config.properties` has no
-effect.
+property** (the **Default Theme** selector on the **Admin → Theme** screen, `system.properties`,
+or `-Dfess.system.theme.default=filesearch`); writing it into `fess_config.properties` has no
+effect. The JVM option is read only while `system.properties` has no `theme.default` key, so
+once the Theme screen has saved one (even **(no default)**, which stores an empty value), that
+key wins.
 
 ## Fess settings
 
