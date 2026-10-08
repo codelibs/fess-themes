@@ -336,6 +336,29 @@ function renderResults(env) {
 }
 
 /**
+ * Take the previous search's output off the page, leaving what a fresh load of the same URL
+ * shows when the server rejects the request: no result rows or preview, status line, pager,
+ * filter panel or related searches. The error banner is the caller's.
+ */
+function clearResultsView() {
+  ensureUi();
+  ui.queryId = "";
+  if (ui.list) ui.list.render([], rowContext(""));
+  else { const list = document.getElementById("results"); if (list) clear(list); }
+  if (ui.preview) ui.preview.clear();
+  for (const id of ["results-status", "results-meta", "pagination", "fs-filters"]) {
+    const node = document.getElementById(id);
+    if (node) clear(node);
+  }
+  for (const id of ["subfooter", "empty-state", "results-warning", "fs-filter-count"]) {
+    const node = document.getElementById(id);
+    if (node) node.classList.add("d-none");
+  }
+  renderRelatedQueries([]);
+  renderRelatedContent("");
+}
+
+/**
  * Toggle the in-flight search loading indicator (#search-loading).
  * Gives sighted users visible feedback during a /search request; cache and chat
  * already have loading states, search did not.
@@ -533,6 +556,9 @@ async function runSearch(opts = {}) {
     }
     const errBox = document.getElementById("search-error");
     if (e && (e.code === "invalid_request" || e.code === "INVALID_REQUEST" || e.httpStatus === 400)) {
+      // The rejected search has no results of its own; the previous search's would sit
+      // under the banner as if they answered it.
+      clearResultsView();
       if (errBox) { errBox.textContent = e.message || t("error.invalid_request"); errBox.classList.remove("d-none"); }
       else { document.getElementById("results-meta").textContent = e.message || t("error.invalid_request"); }
       return;
