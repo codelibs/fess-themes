@@ -61,6 +61,33 @@ describe("default order", () => {
   });
 });
 
+describe("a sort on a field that has no column (the options drawer offers created, click_count, favorite_count)", () => {
+  it("puts no column in effect, so no header and no toolbar entry is marked", () => {
+    for (const sort of ["created.desc", "click_count.desc", "favorite_count.asc"]) {
+      const d = describeSort(sort, true);
+      expect(d.column, sort).toBe("");
+      expect(d.dir, sort).toBe(sort.endsWith(".asc") ? "asc" : "desc");
+      expect(d.isDefault, sort).toBe(false);
+    }
+    // browsing and searching alike: it is not the name order the page falls back to
+    expect(describeSort("created.desc", false).column).toBe("");
+  });
+  it("reads the first key of a multi-key sort, and still ignores what is not field.direction", () => {
+    expect(describeSort("created.desc,filename.asc", true).column).toBe("");
+    expect(describeSort("created", false)).toEqual({ column: "name", dir: "asc", isDefault: true });
+    expect(describeSort("created.up", true)).toEqual({ column: "relevance", dir: "desc", isDefault: true });
+  });
+  it("a click on a column header starts that column in its first direction", () => {
+    expect(nextSort("created.desc", "name", false)).toBe("filename.asc");
+    expect(nextSort("click_count.desc", "modified", true)).toBe("last_modified.desc");
+    expect(nextSort("favorite_count.asc", "relevance", true)).toBe("");
+  });
+  it("is still not a parseable column: the 400 fallback names none", () => {
+    expect(parseSort("created.desc")).toBeNull();
+    expect(sortFallback({ httpStatus: 400, sort: "created.desc" })).toEqual({ sort: "", column: null });
+  });
+});
+
 describe("nextSort (a click on a column header)", () => {
   it("starts a new column ascending, except date and size which start newest/largest first", () => {
     expect(nextSort("", "location", false)).toBe("url.asc");

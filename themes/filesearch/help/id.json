@@ -13,7 +13,7 @@
     {
       "id": "filters",
       "title": "Filter",
-      "html": "<p>Tekan <strong>Filter</strong> di atas daftar untuk mempersempit hasil menurut jenis berkas, waktu terakhir berkas diubah, atau ukuran. Pilih sebuah tombol untuk menerapkannya dan pilih lagi untuk menghapusnya. Filter yang telah Anda terapkan juga tampil sebagai chip di atas daftar.</p><p>Anda dapat memilih beberapa jenis berkas sekaligus; kelompok waktu diubah dan ukuran masing-masing hanya menerima satu pilihan.</p><p>Angka pada tombol menghitung hasil yang cocok berdasarkan filter yang sudah Anda terapkan. Setelah Anda memilih tombol waktu diubah atau ukuran, tombol lain dalam kelompok itu akan hilang sampai pilihan itu dihapus.</p>"
+      "html": "<p>Tekan <strong>Filter</strong> di atas daftar untuk mempersempit hasil menurut jenis berkas, waktu terakhir berkas diubah, atau ukuran. Pilih sebuah tombol untuk menerapkannya dan pilih lagi untuk menghapusnya. Filter yang telah Anda terapkan juga tampil sebagai chip di atas daftar.</p><p>Anda dapat memilih beberapa jenis berkas sekaligus; kelompok waktu diubah dan ukuran masing-masing hanya menerima satu pilihan.</p><p>Angka pada tombol menghitung hasil yang cocok berdasarkan filter yang sudah Anda terapkan. Rentang ukuran tidak saling tumpang tindih, sehingga setelah Anda memilih tombol ukuran, tombol ukuran lainnya akan hilang sampai pilihan itu dihapus. Tombol waktu diubah adalah jangka waktu yang saling mencakup (seminggu terakhir mencakup 24 jam terakhir), sehingga semuanya tetap tampil saat Anda memilih salah satunya.</p>"
     },
     {
       "id": "views",

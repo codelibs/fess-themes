@@ -13,7 +13,7 @@
     {
       "id": "filters",
       "title": "Filtry",
-      "html": "<p>Naciśnij <strong>Filtry</strong> nad listą, aby zawęzić wyniki według typu pliku, daty ostatniej modyfikacji pliku lub rozmiaru. Wybierz przycisk, aby zastosować filtr, i wybierz go ponownie, aby go usunąć. Zastosowane filtry są też widoczne jako chipy nad listą.</p><p>Możesz wybrać kilka typów plików naraz; grupy modyfikacji i rozmiaru pozwalają wybrać po jednej opcji.</p><p>Liczby na przyciskach oznaczają wyniki pasujące przy już zastosowanych filtrach. Po wybraniu przycisku modyfikacji lub rozmiaru pozostałe przyciski z tej grupy znikają, dopóki go nie usuniesz.</p>"
+      "html": "<p>Naciśnij <strong>Filtry</strong> nad listą, aby zawęzić wyniki według typu pliku, daty ostatniej modyfikacji pliku lub rozmiaru. Wybierz przycisk, aby zastosować filtr, i wybierz go ponownie, aby go usunąć. Zastosowane filtry są też widoczne jako chipy nad listą.</p><p>Możesz wybrać kilka typów plików naraz; grupy modyfikacji i rozmiaru pozwalają wybrać po jednej opcji.</p><p>Liczby na przyciskach oznaczają wyniki pasujące przy już zastosowanych filtrach. Zakresy rozmiaru nie nakładają się, więc po wybraniu przycisku rozmiaru pozostałe przyciski rozmiaru znikają, dopóki go nie usuniesz. Przyciski modyfikacji to okresy zawierające się nawzajem (ostatni tydzień obejmuje ostatnie 24 godziny), więc po wybraniu któregokolwiek wszystkie pozostają widoczne.</p>"
     },
     {
       "id": "views",

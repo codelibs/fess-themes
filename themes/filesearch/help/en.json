@@ -13,7 +13,7 @@
     {
       "id": "filters",
       "title": "Filters",
-      "html": "<p>Press <strong>Filters</strong> above the list to narrow the results by file type, by when a file was last modified, or by size. Choose a button to apply it and choose it again to remove it. The filters you have applied also show as chips above the list.</p><p>You can choose several file types at once; the modified and size groups take one choice each.</p><p>The numbers on the buttons count the results that match the filters you have already applied. Once you choose a modified or size button, the other buttons of that group disappear until you remove it.</p>"
+      "html": "<p>Press <strong>Filters</strong> above the list to narrow the results by file type, by when a file was last modified, or by size. Choose a button to apply it and choose it again to remove it. The filters you have applied also show as chips above the list.</p><p>You can choose several file types at once; the modified and size groups take one choice each.</p><p>The numbers on the buttons count the results that match the filters you have already applied. The size ranges do not overlap, so once you choose a size button, the other size buttons disappear until you remove it. The modified buttons are windows that contain one another (the past week includes the past 24 hours), so they all stay when you choose one.</p>"
     },
     {
       "id": "views",

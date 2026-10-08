@@ -13,7 +13,7 @@
     {
       "id": "filters",
       "title": "Filters",
-      "html": "<p>Druk boven de lijst op <strong>Filters</strong> om de resultaten te beperken op bestandstype, op het tijdstip van de laatste wijziging of op grootte. Kies een knop om het filter toe te passen en kies de knop opnieuw om het te verwijderen. De toegepaste filters worden ook als chips boven de lijst getoond.</p><p>U kunt meerdere bestandstypen tegelijk kiezen; de groepen voor wijzigingsdatum en grootte accepteren elk één keuze.</p><p>De getallen op de knoppen tellen de resultaten die overeenkomen met de al toegepaste filters. Zodra u een knop voor wijzigingsdatum of grootte kiest, verdwijnen de andere knoppen van die groep totdat u het filter verwijdert.</p>"
+      "html": "<p>Druk boven de lijst op <strong>Filters</strong> om de resultaten te beperken op bestandstype, op het tijdstip van de laatste wijziging of op grootte. Kies een knop om het filter toe te passen en kies de knop opnieuw om het te verwijderen. De toegepaste filters worden ook als chips boven de lijst getoond.</p><p>U kunt meerdere bestandstypen tegelijk kiezen; de groepen voor wijzigingsdatum en grootte accepteren elk één keuze.</p><p>De getallen op de knoppen tellen de resultaten die overeenkomen met de al toegepaste filters. De groottebereiken overlappen elkaar niet: zodra u een knop voor grootte kiest, verdwijnen de andere knoppen voor grootte totdat u het filter verwijdert. De knoppen voor wijzigingsdatum zijn perioden die elkaar omvatten (de afgelopen week omvat de afgelopen 24 uur), dus ze blijven allemaal staan wanneer u er een kiest.</p>"
     },
     {
       "id": "views",

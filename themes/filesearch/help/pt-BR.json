@@ -13,7 +13,7 @@
     {
       "id": "filters",
       "title": "Filtros",
-      "html": "<p>Pressione <strong>Filtros</strong> acima da lista para refinar os resultados por tipo de arquivo, por quando um arquivo foi modificado pela última vez ou por tamanho. Escolha um botão para aplicá-lo e escolha-o novamente para removê-lo. Os filtros aplicados também aparecem como chips acima da lista.</p><p>Você pode escolher vários tipos de arquivo ao mesmo tempo; os grupos de modificação e de tamanho aceitam uma escolha cada.</p><p>Os números nos botões contam os resultados que correspondem aos filtros já aplicados. Depois de escolher um botão de modificação ou de tamanho, os demais botões desse grupo somem até você removê-lo.</p>"
+      "html": "<p>Pressione <strong>Filtros</strong> acima da lista para refinar os resultados por tipo de arquivo, por quando um arquivo foi modificado pela última vez ou por tamanho. Escolha um botão para aplicá-lo e escolha-o novamente para removê-lo. Os filtros aplicados também aparecem como chips acima da lista.</p><p>Você pode escolher vários tipos de arquivo ao mesmo tempo; os grupos de modificação e de tamanho aceitam uma escolha cada.</p><p>Os números nos botões contam os resultados que correspondem aos filtros já aplicados. As faixas de tamanho não se sobrepõem: depois de escolher um botão de tamanho, os demais botões de tamanho somem até você removê-lo. Os botões de modificação são períodos que contêm uns aos outros (a última semana inclui as últimas 24 horas), por isso todos continuam visíveis quando você escolhe um.</p>"
     },
     {
       "id": "views",

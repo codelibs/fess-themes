@@ -284,6 +284,9 @@ function renderResults(env) {
     const dnm = document.getElementById("empty-did-not-match");
     if (dnm) dnm.textContent = hasKeyword() ? t("search.did_not_match", [state.q]) : t("fs.empty_scope");
     if (empty) empty.classList.remove("d-none");
+    // The empty state's popular words (searchNoResult.jsp parity). Loaded when the state is
+    // shown, so a search opened from its address gets them too; the home view lists its own (app.js).
+    loadPopularWords();
     if (meta) meta.textContent = "";
     const statusEl = document.getElementById("results-status");
     if (statusEl) statusEl.textContent = "";
@@ -659,6 +662,13 @@ function closeTreeDrawer(restoreFocus) {
 
 const SORT_COLUMNS = ["relevance", "name", "modified", "size", "type", "location"];
 
+/** The options drawer's name for a sort value (e.g. "by Date (desc)"); the value itself when it does not list it. */
+function drawerSortLabel(sort) {
+  const sel = $("sortSearchOption");
+  const opt = sel && Array.from(sel.options).find(o => o.value === sort);
+  return opt ? opt.textContent : sort;
+}
+
 /** Bring the sort control, view toggle, preview toggle and filter button in line with the state. */
 function syncToolbar() {
   const keyword = hasKeyword();
@@ -666,6 +676,13 @@ function syncToolbar() {
   const select = $("fs-sort-select");
   if (select) {
     clear(select);
+    if (!current.column) {
+      // A sort from the options drawer that no column sorts by (created, click_count, ...):
+      // name it here rather than leave Name showing.
+      const opt = el("option", { text: drawerSortLabel(state.sort), attrs: { value: "" } });
+      opt.disabled = true;
+      select.appendChild(opt);
+    }
     for (const column of SORT_COLUMNS) {
       if (column === "relevance" && !keyword) continue;
       const opt = el("option", { text: t("fs.sort_" + column), attrs: { value: column } });
@@ -681,7 +698,7 @@ function syncToolbar() {
     const label = current.dir === "asc" ? t("fs.sort_asc") : t("fs.sort_desc");
     dir.setAttribute("aria-label", label);
     dir.title = label;
-    dir.disabled = current.column === "relevance";
+    dir.disabled = !current.column || current.column === "relevance";
   }
   document.querySelectorAll("#fs-view-toggle [data-view]").forEach(btn => {
     btn.setAttribute("aria-pressed", btn.dataset.view === ui.view ? "true" : "false");
@@ -1653,7 +1670,6 @@ export function attach() {
   // listeners and populates the input once — it no longer triggers a search itself.
   const urlQ = new URLSearchParams(location.search).get("q");
   if (urlQ && input) { input.value = urlQ; state.q = urlQ; }
-  if (!urlQ) loadPopularWords();
 }
 
 /**
