@@ -20,6 +20,7 @@
   "pagination.prev": "Précédent",
   "pagination.page": "Page {0}",
   "result.favorite_add": "Ajouter aux favoris",
+  "result.favorite_added": "Ajouté aux favoris",
   "result.favorite_remove": "Supprimer des favoris",
   "result.cache": "Cache",
   "result.click_count": "{n} vues",

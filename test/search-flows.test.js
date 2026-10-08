@@ -46,6 +46,9 @@ const STD_THEMES = [
   "docsearch", "docuforge", "helpdesk", "nomadkit", "rawblock", "voicebox",
 ];
 
+// Themes whose favorite star is add-only: a starred document's star is disabled, not a toggle.
+const ADD_ONLY_FAVORITE = ["docsearch"];
+
 beforeEach(() => {
   resetDom();
   sessionStorage.clear();
@@ -727,7 +730,7 @@ describe.each(STD_THEMES)("runSearch active filters [%s]", (theme) => {
 // ─── Favorites + similar docs (STD, feature-gated) ───────────────────────────────
 
 describe.each(STD_THEMES)("runSearch favorites & similar docs [%s]", (theme) => {
-  it("renders the favorite star, syncs favorited state and toggles on click", async () => {
+  it("renders the favorite star, syncs favorited state and handles a click", async () => {
     const cfg = { ...FULL_CFG, features: { ...FULL_CFG.features, user_favorite: true } };
     const flow = await loadSearchFlow(theme, cfg);
     flow.isAuthenticated.mockReturnValue(true);
@@ -747,7 +750,10 @@ describe.each(STD_THEMES)("runSearch favorites & similar docs [%s]", (theme) => 
     btn.click();
     await settle();
     const call = flow.post.mock.calls.find((c) => c[0].includes("/documents/d1/favorite"));
-    expect(call).toBeTruthy();
+    // The v2 API can only add a favorite, so these themes send nothing for a star that is
+    // already one (docsearch.results.test.js covers their star).
+    if (ADD_ONLY_FAVORITE.includes(theme)) expect(call).toBeUndefined();
+    else expect(call).toBeTruthy();
   });
 
   it("shows the similar-doc banner when state.sdh is set and clears it on close", async () => {
