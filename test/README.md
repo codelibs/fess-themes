@@ -48,6 +48,16 @@ The suites:
 - `helpdesk.plaintitle.test.js` — characterization test for helpdesk's own
   DOM-free `plainTitle()` entity decode (it does not route through
   `format.js` like the other themes' `search.js`).
+- `helpdesk.shell.test.js` — helpdesk's page shell for keyboard and screen-reader users: the
+  closed options drawer being `visibility: hidden` (out of the tab order), Escape closing it
+  with the focus returning to its opener and opening moving the focus in, the `/` shortcut
+  (not while typing, with a modifier, composing, or over the drawer), the tab title of every
+  route, and the accessible name of the header search button (the theme's real `index.html`,
+  `styles.css`, `compat.js`, `app.js` and English bundle).
+- `helpdesk.results.test.js` — helpdesk's pager (real hrefs, `aria-current`, page names, a
+  disabled end that is not a link, modified clicks left to the browser), the label name in the
+  active-filter chip, and the stylesheet contract of the layout fixes (read back from the
+  parsed `styles.css`; jsdom has no layout).
 - `mosaic.searcher.test.js` / `semanticlens.searcher.test.js` — searcher-
   provenance and query-verbatim behaviour for the two vector-search themes
   against Fess's core semantic search.
@@ -208,6 +218,7 @@ test/
 │   └── dom.js            # serialise a sanitized DocumentFragment for assertions; reset/mount helpers
 ├── format.test.js  format.nodom.test.js  markdown.test.js  pipeline.test.js
 ├── scheme.test.js  search.test.js  search-flows.test.js  helpdesk.plaintitle.test.js
+├── helpdesk.shell.test.js  helpdesk.results.test.js
 ├── mosaic.searcher.test.js  semanticlens.searcher.test.js  semanticlens.results.test.js
 ├── notification-banners.test.js  parity.test.js
 ├── wire-error-codes.test.js  wire-error-codes.contract.test.js

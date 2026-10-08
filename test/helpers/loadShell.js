@@ -141,7 +141,9 @@ function recordListeners() {
  *
  * @param {string} theme  - theme directory name under themes/
  * @param {object} config - the object api.getConfig() should return
- * @param {{get?: Function, post?: Function}} [impl] - api.get / api.post implementations
+ * @param {{get?: Function, post?: Function, realI18n?: boolean}} [impl] - api.get / api.post
+ *   implementations; realI18n leaves i18n.init() real, so a case that stubs the global fetch
+ *   with a message bundle sees translated text instead of raw keys
  * @returns {Promise<{mod: object, get: Function, post: Function, i18nInit: Function,
  *                     apiInit: Function, redirect: Function, detach: Function}>}
  */
@@ -167,10 +169,12 @@ export async function bootApp(theme, config = {}, impl = {}) {
       setCsrfToken: vi.fn(),
     };
   });
-  vi.doMock(i18nPath, async (importOriginal) => {
-    const actual = await importOriginal();
-    return { ...actual, init: i18nInit };
-  });
+  if (!impl.realI18n) {
+    vi.doMock(i18nPath, async (importOriginal) => {
+      const actual = await importOriginal();
+      return { ...actual, init: i18nInit };
+    });
+  }
   vi.doMock(routerPath, async (importOriginal) => {
     const actual = await importOriginal();
     return { ...actual, redirect };
