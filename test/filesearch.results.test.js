@@ -7,11 +7,15 @@
 //     replaces the previous results with the error, the way a fresh load of the same URL looks.
 //     It used to leave the previous rows, pager and filter counts on screen under the red banner.
 //   - the pager is made of real links with aria-current and page names
+//   - the query echoed in the status line and the no-results text wraps instead of widening the page
+//     (jsdom has no layout engine, so the stylesheet is read back from the theme's real styles.css)
 //
 // The title, exec time and pager cases come from helpers/resultsContract.js, shared with the other themes that
 // keep the bootstrap runSearch() contract; the failed-search cases run against the theme's own index.html.
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from "vitest";
+import { readFileSync } from "node:fs";
+import { modulePath } from "./helpers/themes.js";
 import { loadSearchFlow } from "./helpers/loadSearch.js";
 import { resetDom, setLocation } from "./helpers/dom.js";
 import { mountIndexBody } from "./helpers/themes.js";
@@ -130,5 +134,30 @@ describe(`${THEME}: a search the server rejects with HTTP 400`, () => {
     await settle();
     expect(document.querySelectorAll("#results .fs-row").length).toBe(2);
     expect($("search-error").classList.contains("d-none")).toBe(true);
+  });
+});
+
+describe(`${THEME} layout: stylesheet contract`, () => {
+  let sheet;
+  beforeAll(() => {
+    const style = document.createElement("style");
+    style.textContent = readFileSync(modulePath(THEME, "styles.css"), "utf8");
+    document.head.appendChild(style);
+    sheet = style.sheet;
+  });
+
+  /** The value `prop` ends up with for `selector`: the last declaration among the top-level rules naming it exactly. */
+  function declared(selector, prop) {
+    let value = null;
+    for (const rule of sheet.cssRules) {
+      const names = (rule.selectorText || "").split(",").map((n) => n.trim());
+      if (names.includes(selector) && rule.style.getPropertyValue(prop)) value = rule.style.getPropertyValue(prop);
+    }
+    return value;
+  }
+
+  it("lets the echoed query wrap anywhere", () => {
+    expect(declared("#empty-did-not-match", "overflow-wrap")).toBe("anywhere");
+    expect(declared("#results-status", "overflow-wrap")).toBe("anywhere");
   });
 });
