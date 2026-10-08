@@ -370,6 +370,30 @@ function attachBackToTop() {
   });
 }
 
+/**
+ * The search-options drawer is a panel over the page, so Escape closes it and the focus goes
+ * back to the control that opened it. Opening it moves the focus into it: the drawer sits ahead
+ * of <main> in the document, so Tab from the options bar would never reach it.
+ */
+function attachOptionsDrawer() {
+  const drawer = document.getElementById("searchOptions");
+  const Collapse = window.bootstrap && window.bootstrap.Collapse;
+  if (!drawer || !Collapse) return;
+  let opener = null;
+  document.addEventListener("click", ev => {
+    const toggle = ev.target.closest('[data-bs-target="#searchOptions"], a[href="#searchOptions"]');
+    if (!toggle) return;
+    // compat.js has already toggled the drawer by the time this runs.
+    opener = toggle;
+    if (drawer.classList.contains("show")) drawer.querySelector(".container").focus({ preventScroll: true });
+  });
+  document.addEventListener("keydown", ev => {
+    if (ev.key !== "Escape" || ev.defaultPrevented || !drawer.classList.contains("show")) return;
+    Collapse.getOrCreateInstance(drawer, { toggle: false }).hide();
+    if (opener && opener.isConnected) opener.focus();
+  });
+}
+
 /** Returns true when the current URL contains a non-empty q= parameter. */
 function hasSearchQuery() {
   return new URLSearchParams(location.search).get("q")?.trim().length > 0;
@@ -665,6 +689,8 @@ async function main() {
       window.bootstrap.Collapse.getOrCreateInstance(so, { toggle: false }).hide();
     }
   });
+
+  attachOptionsDrawer();
 
   // Wire back-to-top button.
   attachBackToTop();

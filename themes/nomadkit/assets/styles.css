@@ -767,9 +767,13 @@ body.modal-open { overflow: hidden; }
   color: var(--df-stone-100);
   background-color: var(--df-stone-900);
   box-shadow: var(--df-shadow-large);
-  transition: right .35s ease;
+  /* Off screen is not enough: a closed drawer is also out of the tab order and the
+     accessibility tree. The delay lets the slide-out finish before it is hidden. */
+  visibility: hidden;
+  transition: right .35s ease, visibility 0s linear .35s;
 }
-#searchOptions.show .container { right: 0; }
+#searchOptions .container:focus { outline: none; }
+#searchOptions.show .container { right: 0; visibility: visible; transition-delay: 0s; }
 #searchOptions h3 { color: #fff; }
 #searchOptions label, #searchOptions legend { color: var(--df-stone-300); font-size: .85rem; }
 #searchOptions .form-control { background: var(--df-stone-800); border-color: var(--df-stone-700); color: #fff; }
