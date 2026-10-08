@@ -13,6 +13,21 @@ import * as help from "./help.js";
 import * as advance from "./advance.js";
 import * as cache from "./cache.js";
 
+/** True when el is rendered, and can therefore take focus. Views hide content
+ *  several ways — .d-none, the hidden attribute, .collapse, the responsive
+ *  .d-*-none utilities, visibility on .offcanvas — and carrying .d-none is not
+ *  conclusive on its own (#facet-body is `d-none d-md-block`, i.e. shown from
+ *  the md breakpoint up), so ask for the computed result rather than test any
+ *  single class. checkVisibilityCSS is the original option name and
+ *  visibilityProperty the standardized one; unknown members are ignored, so
+ *  pass both. */
+function isRendered(el) {
+  if (typeof el.checkVisibility === "function") {
+    return el.checkVisibility({ checkVisibilityCSS: true, visibilityProperty: true });
+  }
+  return el.getClientRects().length > 0; // display:none generates no boxes
+}
+
 /** Show one SPA view section and hide the rest. H.2: focus management on route change. */
 function showView(id) {
   const viewIds = ["home-view", "results-view", "advance-view", "error-view", "profile-view", "help-view", "chat-view", "cache-view"];
@@ -394,6 +409,28 @@ function attachOptionsDrawer() {
   });
 }
 
+/**
+ * "/" focuses the search box (the Help page lists the shortcut). Typed into a field or with a
+ * modifier it is left alone, as it is during an IME conversion and while the options drawer, a
+ * modal or the facet panel is open. The header box is used when it is shown, else the home box.
+ */
+function attachSearchShortcut() {
+  document.addEventListener("keydown", ev => {
+    if (ev.key !== "/" || ev.defaultPrevented || ev.ctrlKey || ev.metaKey || ev.altKey || ev.isComposing) return;
+    const target = ev.target;
+    if (target instanceof Element
+      && target.closest('input, textarea, select, [contenteditable]:not([contenteditable="false"])')) return;
+    if (document.querySelector("#searchOptions.show, .modal.show, .offcanvas.show")) return;
+    const input = ["query", "contentQuery"]
+      .map(id => document.getElementById(id))
+      .find(el => el && isRendered(el));
+    if (!input) return;
+    ev.preventDefault();
+    input.focus();
+    input.select();
+  });
+}
+
 /** Returns true when the current URL contains a non-empty q= parameter. */
 function hasSearchQuery() {
   return new URLSearchParams(location.search).get("q")?.trim().length > 0;
@@ -691,6 +728,7 @@ async function main() {
   });
 
   attachOptionsDrawer();
+  attachSearchShortcut();
 
   // Wire back-to-top button.
   attachBackToTop();

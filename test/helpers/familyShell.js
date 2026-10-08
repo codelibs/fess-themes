@@ -9,6 +9,7 @@
 //      the tab order and the accessibility tree (visibility: hidden); open, its controls are
 //      reachable. It closes on Escape, with the focus back on the control that opened it, and
 //      opening it moves the focus in (the drawer sits ahead of <main>).
+//   2. "/" focuses the search box, as the Help page says.
 //
 // The theme's real index.html, styles.css, compat.js (the Collapse behind the drawer toggles),
 // app.js, router.js, search.js and i18n.js (loading the real English bundle) run together; api.js
@@ -177,6 +178,64 @@ export function defineShellTests(THEME) {
       const ev = key("Escape");
       expect(ev.defaultPrevented).toBe(false);
       expect(document.activeElement).toBe(other);
+    });
+  });
+
+  describe(`${THEME}: the / shortcut`, () => {
+    it("focuses the header search box where it is shown", async () => {
+      await boot("/help");
+      const ev = key("/");
+      expect(ev.defaultPrevented).toBe(true);
+      expect(document.activeElement).toBe($("query"));
+    });
+
+    it("focuses the home search box, where the header box is hidden", async () => {
+      await boot("/");
+      const ev = key("/");
+      expect(ev.defaultPrevented).toBe(true);
+      expect(document.activeElement).toBe($("contentQuery"));
+    });
+
+    it("does not take the key typed into a field", async () => {
+      await boot("/help");
+      $("query").focus();
+      const ev = key("/", $("query"));
+      expect(ev.defaultPrevented).toBe(false);
+    });
+
+    it("does not take a key with Ctrl, Meta or Alt", async () => {
+      await boot("/help");
+      const focused = document.activeElement; // the view root, where showView() put the focus
+      for (const modifier of ["ctrlKey", "metaKey", "altKey"]) {
+        const ev = key("/", document.body, { [modifier]: true });
+        expect(ev.defaultPrevented).toBe(false);
+      }
+      expect(document.activeElement).toBe(focused);
+      expect(document.activeElement).not.toBe($("query"));
+    });
+
+    it("takes it with Shift, which is how some keyboard layouts type a slash", async () => {
+      await boot("/help");
+      expect(key("/", document.body, { shiftKey: true }).defaultPrevented).toBe(true);
+    });
+
+    it("does not take the key of an IME conversion", async () => {
+      await boot("/help");
+      expect(key("/", document.body, { isComposing: true }).defaultPrevented).toBe(false);
+    });
+
+    it("leaves the key alone while the options drawer is open", async () => {
+      await boot("/help");
+      $("searchOptionsButton").click();
+      expect(isOpen()).toBe(true);
+      const ev = key("/", document.activeElement);
+      expect(ev.defaultPrevented).toBe(false);
+      expect(document.activeElement).toBe($("searchOptions").querySelector(".container"));
+    });
+
+    it("leaves the key alone on a page with no search box", async () => {
+      await boot("/search/advance");
+      expect(key("/").defaultPrevented).toBe(false);
     });
   });
 }
