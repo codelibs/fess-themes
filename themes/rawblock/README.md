@@ -22,7 +22,7 @@ loads **none** of those:
 | CSS framework | `/css/bootstrap.min.css` | `assets/styles.css` only — every utility/component class is re-implemented from scratch on top of the RawBlock tokens |
 | JS framework | `/js/popper.min.js` + `/js/bootstrap.min.js` | `assets/compat.js` — a ~9 KB shim exposing the exact `window.bootstrap` API (Modal/Collapse/Dropdown/Offcanvas/Tooltip) the modules call |
 | Icons | `/css/font-awesome.min.css` | unchanged — Font Awesome is independent of Bootstrap and still used for the `fa fa-*` glyphs |
-| Fonts | system | Archivo Black / Work Sans / Space Mono via Google Fonts (CSP relaxed for `fonts.googleapis.com` + `fonts.gstatic.com`; falls back to system fonts if blocked) |
+| Fonts | system | No web font is loaded: the font stacks in `styles.css` name Archivo Black / Work Sans / Space Mono first (used when the viewer has them installed) and fall back to system fonts |
 
 The SPA JavaScript modules (`app.js`, `search.js`, `chat.js`, `auth.js`, …)
 are **byte-for-byte identical** to the reference theme except for the
@@ -108,12 +108,12 @@ single source of truth) and the Fess static-theme API reference doc.
 
 ## CSP
 
-`index.html` keeps the strict `default-src 'self'` policy, relaxed **only** to
-allow the Google Fonts stylesheet (`style-src … https://fonts.googleapis.com`)
-and font files (`font-src 'self' https://fonts.gstatic.com`). Scripts remain
-`script-src 'self'`. To run fully offline / strictly self-hosted, remove the
-two `fonts.*` entries and the Google Fonts `<link>` — the CSS falls back to
-system fonts automatically.
+`index.html` keeps the strict `default-src 'self'` policy: scripts, styles and fonts all come
+from the theme itself (`script-src 'self'`, `font-src 'self'`), so the page makes no request to a
+third-party host. The server sends a Content-Security-Policy header of its own for the theme's
+entry page, which applies on top of this one; a stylesheet from another host would be refused by
+it and logged as a CSP violation on every page load. To use a web font, ship the font file inside
+the theme and load it with `@font-face`.
 
 ## Packaging
 

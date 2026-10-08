@@ -882,6 +882,8 @@ body.modal-open { overflow: hidden; }
 .result-card .result-snippet { color: var(--bs-secondary-color); font-size: .95rem; margin-top: .25rem; }
 .result-card .result-meta { font-size: .8rem; color: var(--bs-tertiary-color); margin-top: .5rem; display: flex; gap: 1rem; flex-wrap: wrap; }
 .result-card .favorite-btn[aria-pressed="true"] { color: var(--bs-warning); }
+/* a favorite cannot be removed (the API only adds): nothing to click */
+.favorite-btn[aria-disabled="true"] { cursor: default; }
 .result-thumbnail { width: 96px; height: 96px; object-fit: contain; border: 2px solid var(--vb-border-subtle); border-radius: var(--vb-radius-sm); background: var(--vb-surface); flex-shrink: 0; }
 @media (max-width: 576px) { .result-thumbnail { width: 64px; height: 64px; } }
 
@@ -950,9 +952,13 @@ body.modal-open { overflow: hidden; }
   background-color: var(--vb-primary);
   border-left: 2px solid #1a1a1a;
   box-shadow: var(--vb-shadow-large);
-  transition: right .35s ease;
+  /* Off screen is not enough: a closed drawer is also out of the tab order and the
+     accessibility tree. The delay lets the slide-out finish before it is hidden. */
+  visibility: hidden;
+  transition: right .35s ease, visibility 0s linear .35s;
 }
-#searchOptions.show .container { right: 0; }
+#searchOptions .container:focus { outline: none; }
+#searchOptions.show .container { right: 0; visibility: visible; transition-delay: 0s; }
 #searchOptions h3 { color: var(--vb-white); font-family: var(--vb-font-head); }
 #searchOptions label, #searchOptions legend { color: var(--vb-text-tertiary); font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
 #searchOptions .form-control { background: #1a1a1a; border-color: #333; color: var(--vb-white); }
@@ -1100,6 +1106,9 @@ cite.result-site-path { color: var(--bs-success); font-size: .85rem; font-style:
 .cache-frame { width: 100%; height: 70vh; border: 2px solid var(--bs-border-color); border-radius: var(--vb-radius); background: var(--vb-bg); }
 .cache-meta { font-size: .9rem; color: var(--bs-secondary-color); }
 .cache-meta dt { font-weight: 700; }
+/* A <dd> has a 40px start margin by default: with dt.col-sm-3 + dd.col-sm-9 it pushed the value
+   past the right edge (and onto its own line from 576px up). A URL or id wraps anywhere. */
+.cache-meta dd { margin: 0 0 .5rem; overflow-wrap: anywhere; }
 
 /* ---- Home / top page ---- */
 legend { display: none; }
@@ -1125,6 +1134,8 @@ footer[role="contentinfo"] {
 }
 
 /* ---- Search results (JSP-parity DOM produced by search.js) ---- */
+/* The query is echoed back unbroken; a long token must wrap, not widen the page. */
+#results-status, #empty-did-not-match { overflow-wrap: anywhere; }
 #result .title { font-size: 1.125rem; line-height: 1.4; }
 #result ol li { margin: 1.25em 0; }
 #result ol li:first-child { margin-top: 0; }
