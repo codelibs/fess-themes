@@ -890,7 +890,8 @@ async function runSearch() {
   const signal = currentSearchAbort.signal;
   state.requestedTime = Date.now();
 
-  document.title = state.q ? t("page.search_title").replace("{0}", state.q) : t("page.title");
+  // t() fills {0} from a replacer function, so a `$&` or `$$` in the query stays literal.
+  document.title = state.q ? t("page.search_title", [state.q]) : t("page.title");
 
   const errBox = document.getElementById("search-error");
   if (errBox) errBox.hidden = true;
