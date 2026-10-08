@@ -4,4 +4,4 @@
 
 import { defineShellTests } from "./helpers/heroFamilyShell.js";
 
-defineShellTests("mosaic");
+defineShellTests("mosaic", { lightbox: true });
