@@ -18,6 +18,7 @@
   "facet.not_found": "No matching filters.",
   "pagination.next": "अगला",
   "pagination.prev": "पिछला",
+  "pagination.page": "पृष्ठ {0}",
   "result.favorite_add": "पसंदीदा में जोड़ें",
   "result.favorite_remove": "पसंदीदा से हटाएं",
   "result.cache": "कैश",
