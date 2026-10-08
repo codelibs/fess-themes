@@ -476,6 +476,66 @@ describe("sorting", () => {
     expect(document.querySelector('.fs-sort-btn[data-col="type"]').disabled).toBe(true);
   });
 
+  describe("a sort chosen in the options drawer that the toolbar has no entry for", () => {
+    const DRAWER_CFG = {
+      ...CFG,
+      sort_options: [
+        ...CFG.sort_options,
+        { value: "created.desc", label_key: "labels.search_result_sort_created_desc" },
+        { value: "click_count.desc", label_key: "labels.search_result_sort_click_count_desc" },
+      ],
+    };
+    const COLUMN_VALUES = ["relevance", "name", "modified", "size", "type", "location"];
+    const select = () => document.getElementById("fs-sort-select");
+    const markedHeaders = () => document.querySelectorAll('#fs-head [role="columnheader"][aria-sort="ascending"], #fs-head [role="columnheader"][aria-sort="descending"]');
+
+    it("shows that sort in the toolbar, with no column marked, instead of Name", async () => {
+      const { get } = await boot({ url: "/search?q=foo&sort=created.desc", cfg: DRAWER_CFG });
+      expect(lastMain(get).sort).toBe("created.desc");
+      const shown = select().selectedOptions[0];
+      expect(shown.textContent).toBe("labels.search_result_sort_created_desc");
+      expect(shown.disabled).toBe(true);
+      expect(select().value).not.toBe("name");
+      // the columns are still offered after it
+      expect([...select().options].slice(1).map(o => o.value)).toEqual(COLUMN_VALUES);
+      expect(markedHeaders().length).toBe(0);
+      expect(document.getElementById("fs-sort-dir").disabled).toBe(true);
+    });
+
+    it("does the same without a keyword, where Name is the order the page falls back to", async () => {
+      await boot({ url: "/search?ex_q=" + encodeURIComponent(SHARE_CLAUSE) + "&sort=click_count.desc", cfg: DRAWER_CFG });
+      expect(select().selectedOptions[0].textContent).toBe("labels.search_result_sort_click_count_desc");
+      expect(markedHeaders().length).toBe(0);
+    });
+
+    it("names a sort the drawer does not list by its value", async () => {
+      await boot({ url: "/search?q=foo&sort=price.asc", cfg: DRAWER_CFG });
+      expect(select().selectedOptions[0].textContent).toBe("price.asc");
+      expect(markedHeaders().length).toBe(0);
+    });
+
+    it("a column heading then starts that column in its first direction, and the toolbar returns to the columns", async () => {
+      // browsing: Name is the order the page falls back to, so a click must not read it as already in effect and flip it
+      const { get } = await boot({ url: "/search?ex_q=" + encodeURIComponent(SHARE_CLAUSE) + "&sort=created.desc", cfg: DRAWER_CFG });
+      document.querySelector('.fs-sort-btn[data-col="name"]').click();
+      await settle();
+      expect(lastMain(get).sort).toBe("filename.asc");
+      expect([...select().options].map(o => o.value)).toEqual(COLUMN_VALUES.filter(v => v !== "relevance"));
+      expect(select().value).toBe("name");
+      expect(markedHeaders().length).toBe(1);
+      expect(document.getElementById("fs-sort-dir").disabled).toBe(false);
+    });
+
+    it("the toolbar select can choose a column from it", async () => {
+      const { get } = await boot({ url: "/search?q=foo&sort=created.desc", cfg: DRAWER_CFG });
+      select().value = "size";
+      select().dispatchEvent(new Event("change"));
+      await settle();
+      expect(lastMain(get).sort).toBe("content_length.desc");
+      expect(select().value).toBe("size");
+    });
+  });
+
   it("still shows a real 400 (a bad query) as an error when no sort was in effect", async () => {
     const flow = await loadSearchFlow(THEME, CFG);
     flow.get.mockImplementation(async (path, params) => {
@@ -903,7 +963,8 @@ describe("preview content", () => {
     expect(frame.getAttribute("sandbox")).toBe("allow-popups allow-popups-to-escape-sandbox");
     expect(frame.getAttribute("sandbox")).not.toMatch(/allow-scripts|allow-same-origin/);
     const html = await URL.createObjectURL.mock.calls[0][0].text();
-    expect(html).toContain('<base href="https://wiki.example.com/page.html">');
+    // the page's CSP (base-uri 'self') would refuse a <base> on the document's own address, so the frame gets none
+    expect(html).toBe("<html><head></head><body>hi</body></html>");
     expect(flow.get.mock.calls.some(c => c[0] === "/cache/c1")).toBe(true);
   });
 
@@ -970,5 +1031,307 @@ describe("preview content", () => {
     document.querySelector('#fs-tree [data-id="host:srv"]').click();
     await settle();
     expect(ws.dataset.tree).toBe("closed");
+  });
+});
+
+describe("reopening the preview pane", () => {
+  const key = (el, k) => el.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true, cancelable: true }));
+  const bytesResponse = text => ({
+    ok: true, status: 200, headers: { get: () => "text/plain; charset=UTF-8" }, body: null,
+    arrayBuffer: async () => new TextEncoder().encode(text).buffer,
+  });
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const select = async index => {
+    rows()[index].querySelector(".fs-c-name").click();
+    await wait(320);
+    await settle();
+  };
+  const toggleTwice = async index => {
+    key(rows()[index], " ");
+    key(rows()[index], " ");
+    await wait(320);
+    await settle();
+  };
+
+  const wide = () => { window.matchMedia = vi.fn(() => ({ matches: false, addEventListener() {}, removeEventListener() {} })); };
+
+  beforeEach(() => {
+    wide();
+    URL.createObjectURL = vi.fn(() => "blob:test/1");
+    URL.revokeObjectURL = vi.fn();
+  });
+  afterEach(() => { vi.unstubAllGlobals(); wide(); });
+
+  // go/ writes a click log entry for every request, so a second fetch is a second click.
+  it("shows the text it already loaded instead of fetching (and click-logging) the original again", async () => {
+    const fetchMock = vi.fn(async () => bytesResponse("first body"));
+    vi.stubGlobal("fetch", fetchMock);
+    await boot({ url: "/search?q=foo" });
+    await select(0);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(document.querySelector("#fs-pv-stage pre.fs-pv-text").textContent).toBe("first body");
+
+    key(rows()[0], " ");
+    expect(document.getElementById("fs-workspace").dataset.preview).toBe("closed");
+    key(rows()[0], " ");
+    expect(document.getElementById("fs-workspace").dataset.preview).toBe("open");
+    // nothing has to wait for the selection to settle: the content is back at once
+    expect(document.querySelector("#fs-pv-stage pre.fs-pv-text").textContent).toBe("first body");
+    await wait(320);
+    await settle();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(document.querySelector("#fs-pv-stage pre.fs-pv-text").textContent).toBe("first body");
+    // the metadata and actions are still the row's own
+    expect(document.getElementById("fs-pv-name").textContent).toBe("a1.txt");
+    expect(document.querySelectorAll("#fs-pv-actions a, #fs-pv-actions button").length).toBeGreaterThan(0);
+  });
+
+  it("does the same for a PDF (no second fetch, a fresh object URL for the same Blob) and a cached copy", async () => {
+    const pdf = doc("p9", "smb://srv/share/p9.pdf", { mimetype: "application/pdf", filetype: "pdf" });
+    const cached = doc("c9", "https://wiki.example.com/page.html", { mimetype: "text/html", filetype: "html", has_cache: "true" });
+    const fetchMock = vi.fn(async () => ({
+      ok: true, status: 200, headers: { get: () => null }, body: null,
+      arrayBuffer: async () => new TextEncoder().encode("%PDF-1.4 body").buffer,
+    }));
+    vi.stubGlobal("fetch", fetchMock);
+    const flow = await loadSearchFlow(THEME, CFG);
+    install(flow.get, { main: [pdf, cached] });
+    const base = flow.get.getMockImplementation();
+    flow.get.mockImplementation(async (path, params, opts) => (path.startsWith("/cache/")
+      ? { doc_id: "c9", mimetype: "text/html", content: "<html><head></head><body>hi</body></html>", url: "https://wiki.example.com/page.html", charset: "UTF-8" }
+      : base(path, params, opts)));
+    setLocation("/search?q=foo");
+    mountIndexBody(THEME);
+    flow.mod.attach();
+    flow.mod.runFromUrl();
+    await settle();
+
+    await select(0);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const pdfBlob = URL.createObjectURL.mock.calls[0][0];
+    await toggleTwice(0);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(URL.createObjectURL.mock.calls.map(c => c[0])).toEqual([pdfBlob, pdfBlob]);
+    expect(document.querySelectorAll("#fs-pv-stage iframe").length).toBe(1);
+
+    await select(1);
+    const cacheCalls = () => flow.get.mock.calls.filter(c => c[0] === "/cache/c9").length;
+    expect(cacheCalls()).toBe(1);
+    await toggleTwice(1);
+    expect(cacheCalls()).toBe(1);
+    expect(document.querySelectorAll("#fs-pv-stage iframe").length).toBe(1);
+  });
+
+  it("does the same for the sheet of a narrow screen, reopened with the toolbar button", async () => {
+    window.matchMedia = vi.fn(() => ({ matches: true, addEventListener() {}, removeEventListener() {} }));
+    const fetchMock = vi.fn(async () => bytesResponse("sheet body"));
+    vi.stubGlobal("fetch", fetchMock);
+    await boot({ url: "/search?q=foo" });
+    const ws = document.getElementById("fs-workspace");
+    await select(0);
+    expect(ws.dataset.sheet).toBe("open");
+    document.getElementById("fs-preview-close").click();
+    expect(ws.dataset.sheet).toBe("closed");
+    document.getElementById("fs-preview-toggle").click();
+    expect(ws.dataset.sheet).toBe("open");
+    await wait(320);
+    await settle();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(document.querySelector("#fs-pv-stage pre.fs-pv-text").textContent).toBe("sheet body");
+  });
+
+  it("keeps the image element it already loaded", async () => {
+    await boot({ url: "/search?q=foo", main: [doc("i1", "smb://srv/share/pic.png", { mimetype: "image/png", filetype: "png" })] });
+    await select(0);
+    const img = document.querySelector("#fs-pv-stage img.fs-pv-image");
+    expect(img).not.toBeNull();
+    await toggleTwice(0);
+    expect(document.querySelector("#fs-pv-stage img.fs-pv-image")).toBe(img);
+  });
+
+  it("loads normally when the pane is closed and opened before the first load has started", async () => {
+    const fetchMock = vi.fn(async () => bytesResponse("late body"));
+    vi.stubGlobal("fetch", fetchMock);
+    await boot({ url: "/search?q=foo" });
+    rows()[0].querySelector(".fs-c-name").click();
+    await toggleTwice(0);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(document.querySelector("#fs-pv-stage pre.fs-pv-text").textContent).toBe("late body");
+  });
+
+  it("shows the row selected meanwhile, not the one that was loaded before the pane closed", async () => {
+    const fetchMock = vi.fn(async url => bytesResponse(String(url).includes("docId=a1") ? "body of a1" : "body of b2"));
+    vi.stubGlobal("fetch", fetchMock);
+    await boot({ url: "/search?q=foo", main: [doc("a1", "smb://srv/share/a1.txt"), doc("b2", "smb://srv/share/b2.txt")] });
+    await select(0);
+    key(rows()[0], " ");
+    key(rows()[0], "ArrowDown");
+    key(rows()[1], " ");
+    await wait(320);
+    await settle();
+    expect(document.getElementById("fs-pv-name").textContent).toBe("b2.txt");
+    expect(document.querySelector("#fs-pv-stage pre.fs-pv-text").textContent).toBe("body of b2");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("is a new view, fetched again, when the selection moved to another row and came back", async () => {
+    const fetchMock = vi.fn(async () => bytesResponse("body"));
+    vi.stubGlobal("fetch", fetchMock);
+    await boot({ url: "/search?q=foo", main: [doc("a1", "smb://srv/share/a1.txt"), doc("b2", "smb://srv/share/b2.txt")] });
+    await select(0);
+    await select(1);
+    await select(0);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("fetches again after a failed load, as a retry", async () => {
+    let calls = 0;
+    const fetchMock = vi.fn(async () => {
+      calls++;
+      if (calls === 1) throw new Error("network down");
+      return bytesResponse("second try");
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    await boot({ url: "/search?q=foo" });
+    await select(0);
+    expect(document.querySelector("#fs-pv-stage pre.fs-pv-text")).toBeNull();
+    expect(document.getElementById("fs-pv-stage").textContent).toContain("fs.preview_failed");
+    await toggleTwice(0);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(document.querySelector("#fs-pv-stage pre.fs-pv-text").textContent).toBe("second try");
+  });
+});
+
+describe("the empty state's popular words", () => {
+  async function bootEmpty({ url, features = CFG.features } = {}) {
+    const cfg = { ...CFG, features };
+    const flow = await loadSearchFlow(THEME, cfg);
+    install(flow.get, { main: [] });
+    const base = flow.get.getMockImplementation();
+    flow.get.mockImplementation(async (path, params, opts) => (path === "/popular-words"
+      ? { popular_words: ["alpha", "beta"] }
+      : base(path, params, opts)));
+    setLocation(url);
+    mountIndexBody(THEME);
+    flow.mod.attach();
+    flow.mod.runFromUrl();
+    await settle();
+    return flow;
+  }
+  const words = () => [...document.querySelectorAll("#popular-words a")].map(a => a.textContent);
+  const popularCalls = get => get.mock.calls.filter(c => c[0] === "/popular-words").length;
+
+  it("lists them when a search opened from its address finds nothing", async () => {
+    await bootEmpty({ url: "/search?q=" + encodeURIComponent("zzqx nosuch") });
+    expect(document.getElementById("empty-state").classList.contains("d-none")).toBe(false);
+    expect(words()).toEqual(["alpha", "beta"]);
+  });
+
+  it("lists them for a folder with nothing in it too", async () => {
+    await bootEmpty({ url: "/search?ex_q=" + encodeURIComponent(SHARE_CLAUSE) });
+    expect(document.getElementById("empty-state").classList.contains("d-none")).toBe(false);
+    expect(words()).toEqual(["alpha", "beta"]);
+  });
+
+  it("does not ask for them while there are results, or at startup (the home view lists its own)", async () => {
+    const { get } = await boot({ url: "/search?q=foo" });
+    expect(popularCalls(get)).toBe(0);
+    const home = await bootEmpty({ url: "/" });
+    expect(popularCalls(home.get)).toBe(0);
+  });
+
+  it("does not ask when the server turns popular words off", async () => {
+    const { get } = await bootEmpty({ url: "/search?q=zzqx", features: { ...CFG.features, popular_word: false } });
+    expect(popularCalls(get)).toBe(0);
+    expect(words()).toEqual([]);
+  });
+});
+
+describe("the cached copy in the preview frame", () => {
+  const select = async index => {
+    rows()[index].querySelector(".fs-c-name").click();
+    await new Promise(r => setTimeout(r, 320));
+    await settle();
+  };
+  /** Preview a cached copy whose /cache answer is `env`, and return the HTML handed to the frame. */
+  async function previewCached(env) {
+    const cached = doc("c1", "https://wiki.example.com/page.html", { mimetype: "text/html", filetype: "html", has_cache: "true" });
+    const flow = await loadSearchFlow(THEME, CFG);
+    install(flow.get, { main: [cached] });
+    const base = flow.get.getMockImplementation();
+    flow.get.mockImplementation(async (path, params, opts) => (path.startsWith("/cache/")
+      ? { doc_id: "c1", mimetype: "text/html", charset: "UTF-8", ...env }
+      : base(path, params, opts)));
+    URL.createObjectURL = vi.fn(() => "blob:test/1");
+    URL.revokeObjectURL = vi.fn();
+    setLocation("/search?q=foo");
+    mountIndexBody(THEME);
+    flow.mod.attach();
+    flow.mod.runFromUrl();
+    await settle();
+    await select(0);
+    expect(document.querySelector("#fs-pv-stage iframe")).not.toBeNull();
+    return URL.createObjectURL.mock.calls[0][0].text();
+  }
+  // What /api/v2/cache returns: cache.hbs puts the document's url_link in a <base> before the banner.
+  const hbs = base => `<!DOCTYPE html>\n<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">\n${base}\n<div>banner</div>\n<img src="pic.png"><a href="next.html">next</a>\n<p>body</p>`;
+
+  it("is given no <base> that points at another origin: the page's CSP (base-uri 'self') would refuse it with a console error", async () => {
+    for (const href of ["file://data/share/doc.html", "file://///srv/share/doc.html", "http://wiki.example.com/dir/page.html", "https://other.example.org:8443/x/", "smb://srv/share/doc.html"]) {
+      const tag = `<base href="${href}">`;
+      const html = await previewCached({ content: hbs(tag), url: href });
+      expect(html, href).not.toMatch(/<base[^>]*href/i);
+      // everything else is the document, untouched: same relative links and images as before
+      expect(html, href).toBe(hbs(tag).replace(tag, ""));
+    }
+  });
+
+  it("drops a base the document carries itself, whatever its spelling, and keeps the rest of the tag", async () => {
+    const content = `<html><head><BASE HREF='http://wiki.example.com/' target="_blank"><base href=http://other.example.org/x/><base target="_top"></head><body><a href="a.html">a</a></body></html>`;
+    const html = await previewCached({ content, url: "http://wiki.example.com/" });
+    expect(html).not.toMatch(/href\s*=\s*['"]?http/i);
+    expect(html).toContain('target="_blank"');
+    expect(html).toContain('<base target="_top">');
+    expect(html).toContain('<a href="a.html">a</a>');
+  });
+
+  it("keeps a <base> on the page's own origin, which the CSP allows, so its relative links and images still resolve", async () => {
+    const own = `${window.location.origin}/wiki/page.html`;
+    const content = hbs(`<base href="${own}">`);
+    const html = await previewCached({ content, url: own });
+    expect(html).toBe(content);
+  });
+
+  it("adds a base from the document's URL only when it is on the page's own origin and the HTML has none", async () => {
+    const own = `${window.location.origin}/wiki/page.html`;
+    expect(await previewCached({ content: "<html><head></head><body>x</body></html>", url: own })).toBe(`<html><head><base href="${own}"></head><body>x</body></html>`);
+    expect(await previewCached({ content: "<html><head></head><body>x</body></html>", url: "https://wiki.example.com/page.html" })).toBe("<html><head></head><body>x</body></html>");
+  });
+});
+
+describe("the filter buttons the help text describes", () => {
+  const group = title => [...document.querySelectorAll("#fs-filters .fs-fgroup")].find(g => g.querySelector("legend").textContent === title);
+  const labels = title => [...group(title).querySelectorAll(".fs-fchip-label")].map(l => l.textContent);
+  const DAY = "last_modified:[now/d-1d TO *]";
+  const WEEK = "last_modified:[now/d-7d TO *]";
+  const MONTH = "last_modified:[now/d-1M TO *]";
+  const YEAR = "last_modified:[now/d-1y TO *]";
+  const MEDIUM = "content_length:[100000 TO 999999]";
+
+  it("all the modified windows stay when one is chosen (they contain one another); the other size ranges go (they do not overlap)", async () => {
+    // what Fess counts inside the narrowed search: the windows are nested, the size ranges are disjoint
+    await boot({
+      url: "/search?q=foo&ex_q=" + encodeURIComponent(WEEK) + "&ex_q=" + encodeURIComponent(MEDIUM),
+      mainExtra: {
+        facet_query: [
+          { value: DAY, count: 4 }, { value: WEEK, count: 9 }, { value: MONTH, count: 9 }, { value: YEAR, count: 9 },
+          { value: "content_length:[0 TO 9999]", count: 0 }, { value: "content_length:[10000 TO 99999]", count: 0 },
+          { value: MEDIUM, count: 9 },
+          { value: "content_length:[1000000 TO 9999999]", count: 0 }, { value: "content_length:[10000000 TO *]", count: 0 },
+        ],
+      },
+    });
+    expect(labels("fs.filter_modified")).toEqual(["fs.date_1d", "fs.date_1w", "fs.date_1m", "fs.date_1y"]);
+    expect(labels("fs.filter_size")).toEqual(["fs.size_m"]);
   });
 });

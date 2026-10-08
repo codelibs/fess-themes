@@ -32,12 +32,17 @@ export function sortParam(column, dir) {
   return SORT_FIELDS[column] + "." + (dir === "desc" ? "desc" : "asc");
 }
 
-/** The column and direction of a sort parameter (first key only), or null. */
-export function parseSort(sort) {
+/** The field and direction of a sort parameter (first key only), or null. */
+function splitSort(sort) {
   if (typeof sort !== "string" || sort === "") return null;
   const m = /^([a-z_]+)\.(asc|desc)$/.exec(sort.split(",")[0]);
-  if (!m || !COLUMN_BY_FIELD[m[1]]) return null;
-  return { column: COLUMN_BY_FIELD[m[1]], dir: m[2] };
+  return m ? { field: m[1], dir: m[2] } : null;
+}
+
+/** The column and direction of a sort parameter (first key only), or null. */
+export function parseSort(sort) {
+  const s = splitSort(sort);
+  return s && COLUMN_BY_FIELD[s.field] ? { column: COLUMN_BY_FIELD[s.field], dir: s.dir } : null;
 }
 
 /** The sort to send: what the user chose, else relevance for a keyword and name for browsing. */
@@ -46,10 +51,16 @@ export function effectiveSort(sort, hasKeyword) {
   return hasKeyword ? "" : sortParam("name", "asc");
 }
 
-/** Which column is in effect, in which direction, and whether that is only the default. */
+/**
+ * Which column is in effect, in which direction, and whether that is only the default.
+ * A sort on a field no column sorts by (the options drawer offers created, click_count and
+ * favorite_count) puts no column in effect: `column` is "".
+ */
 export function describeSort(sort, hasKeyword) {
   const parsed = parseSort(sort);
   if (parsed) return { ...parsed, isDefault: false };
+  const other = splitSort(sort);
+  if (other) return { column: "", dir: other.dir, isDefault: false };
   return hasKeyword
     ? { column: "relevance", dir: "desc", isDefault: true }
     : { column: "name", dir: "asc", isDefault: true };

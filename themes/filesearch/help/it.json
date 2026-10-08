@@ -13,7 +13,7 @@
     {
       "id": "filters",
       "title": "Filtri",
-      "html": "<p>Premere <strong>Filtri</strong> sopra l&#39;elenco per restringere i risultati per tipo di file, per data dell&#39;ultima modifica o per dimensione. Scegliere un pulsante per applicare il filtro e sceglierlo di nuovo per rimuoverlo. I filtri applicati vengono mostrati anche come chip sopra l&#39;elenco.</p><p>È possibile scegliere più tipi di file contemporaneamente; i gruppi di data di modifica e di dimensione accettano una sola scelta ciascuno.</p><p>I numeri sui pulsanti conteggiano i risultati corrispondenti con i filtri già applicati. Dopo aver scelto un pulsante di data di modifica o di dimensione, gli altri pulsanti di quel gruppo scompaiono finché non lo si rimuove.</p>"
+      "html": "<p>Premere <strong>Filtri</strong> sopra l&#39;elenco per restringere i risultati per tipo di file, per data dell&#39;ultima modifica o per dimensione. Scegliere un pulsante per applicare il filtro e sceglierlo di nuovo per rimuoverlo. I filtri applicati vengono mostrati anche come chip sopra l&#39;elenco.</p><p>È possibile scegliere più tipi di file contemporaneamente; i gruppi di data di modifica e di dimensione accettano una sola scelta ciascuno.</p><p>I numeri sui pulsanti conteggiano i risultati corrispondenti con i filtri già applicati. Gli intervalli di dimensione non si sovrappongono: dopo aver scelto un pulsante di dimensione, gli altri pulsanti di dimensione scompaiono finché non lo si rimuove. I pulsanti di data di modifica sono periodi inclusi l&#39;uno nell&#39;altro (l&#39;ultima settimana comprende le ultime 24 ore), quindi restano tutti visibili quando se ne sceglie uno.</p>"
     },
     {
       "id": "views",

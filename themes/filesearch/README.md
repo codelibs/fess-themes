@@ -47,7 +47,7 @@ backslash-escaped (`smb://srv/share/` is `url:smb\:\/\/srv\/share\/*`).
 ## Install and activate
 
 ```bash
-./scripts/package.sh filesearch          # → dist/filesearch-15.9.1.zip
+./scripts/package.sh filesearch          # → dist/filesearch-15.9.2.zip
 ```
 
 Upload the ZIP at **Admin → Theme** (`/admin/theme/`) and set it as the default theme, or
@@ -96,19 +96,23 @@ which Fess allows by default.
   parent folder that fits and says so.
 - **Facet counts shrink as you filter** (Fess has no post-filter). The file types are counted a
   second time without the file-type choice itself, so the other types stay on offer and you can
-  add one; the modified and size groups are not, so choosing one of them drives its siblings
-  to zero and they drop out until you remove it. A group the response gave no counts for is
-  shown without counts; a facet the server did not answer at all (as with some hybrid-search
-  setups) is not drawn.
+  add one; the modified and size groups are not. The size ranges are disjoint, so choosing one
+  drives its siblings to zero and they drop out until you remove it; the modified windows
+  contain one another, so choosing one only narrows the others' counts and they all stay. A
+  group the response gave no counts for is shown without counts; a facet the server did not
+  answer at all (as with some hybrid-search setups) is not drawn.
 - **Previews.** Only the selected file is loaded, one at a time, and a new selection cancels
-  the previous load (`go/` writes a click log and re-reads the file). A PDF is fetched, checked
+  the previous load (`go/` writes a click log and re-reads the file); closing and reopening the
+  pane keeps what has loaded rather than fetching it again. A PDF is fetched, checked
   for the `%PDF-` signature, and shown in the browser's viewer from a Blob whose type is fixed
   to `application/pdf` (at most 25 MB). Plain text, code and CSV show their first 256 KB of the original, as
   text (a file in an encoding the server does not declare may look garbled; the cached copy of a
   text file has lost its line breaks, so it is used only for files too large to fetch). An image is shown
   directly (at most 20 MB). The cached copy is shown in a frame with no scripts and no access
-  to the page. Everything else, and an http(s) page that has no cached copy, shows the details
-  only; the page's content-security policy rules out an in-page viewer for Office files.
+  to the page; the `<base href>` Fess puts in it is left out, because the page's content-security
+  policy (`base-uri 'self'`) refuses one on another origin and it never took effect. Everything
+  else, and an http(s) page that has no cached copy, shows the details only; the page's
+  content-security policy rules out an in-page viewer for Office files.
 - **Paths come from `url`.** `site` is cut at 100 characters, and `url_link` is not a usable path
   for a `file:` document (Fess writes `file://data/…` for `file:/data/…`), so locations,
   breadcrumbs and copied paths are derived from `url`. A `file:` url is stored percent-encoded

@@ -13,7 +13,7 @@
     {
       "id": "filters",
       "title": "Filtreler",
-      "html": "<p>Sonuçları dosya türüne, dosyanın son değiştirilme zamanına veya boyutuna göre daraltmak için listenin üstündeki <strong>Filtreler</strong> düğmesine basın. Uygulamak için bir düğme seçin, kaldırmak için yeniden seçin. Uyguladığınız filtreler listenin üstünde çip olarak da görünür.</p><p>Aynı anda birden fazla dosya türü seçebilirsiniz; son değişiklik ve boyut gruplarında birer seçim yapılabilir.</p><p>Düğmelerdeki sayılar, zaten uyguladığınız filtrelere göre eşleşen sonuçları sayar. Son değişiklik veya boyut düğmesini seçtiğinizde, kaldırana kadar o gruptaki diğer düğmeler kaybolur.</p>"
+      "html": "<p>Sonuçları dosya türüne, dosyanın son değiştirilme zamanına veya boyutuna göre daraltmak için listenin üstündeki <strong>Filtreler</strong> düğmesine basın. Uygulamak için bir düğme seçin, kaldırmak için yeniden seçin. Uyguladığınız filtreler listenin üstünde çip olarak da görünür.</p><p>Aynı anda birden fazla dosya türü seçebilirsiniz; son değişiklik ve boyut gruplarında birer seçim yapılabilir.</p><p>Düğmelerdeki sayılar, zaten uyguladığınız filtrelere göre eşleşen sonuçları sayar. Boyut aralıkları birbiriyle çakışmaz; bu yüzden bir boyut düğmesini seçtiğinizde, kaldırana kadar diğer boyut düğmeleri kaybolur. Son değişiklik düğmeleri birbirini kapsayan zaman aralıklarıdır (son bir hafta son 24 saati de içerir); bu yüzden birini seçtiğinizde hepsi yerinde kalır.</p>"
     },
     {
       "id": "views",

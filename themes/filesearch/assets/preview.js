@@ -2,7 +2,9 @@
 // The preview pane: metadata and actions for the selected row at once, and a content
 // preview a moment later (previewload.js decides what kind). One preview is loaded at a
 // time and a new selection cancels the one before it, because go/ writes a click log and
-// re-reads the file from its source.
+// re-reads the file from its source. For the same reason the content that has loaded is kept
+// until another row is selected: closing and reopening the pane shows it again, it does not
+// fetch it again.
 //
 // Content never runs here: the cached copy goes into a frame sandboxed without scripts or
 // the page's origin (as cache.js does), a PDF goes into the browser's own viewer from a
@@ -41,6 +43,36 @@ function highlightTerms(ctx) {
   return ctx.q ? [ctx.q] : [];
 }
 
+/** Whether the page's CSP (base-uri 'self') lets a <base> point at `url`: only its own origin. */
+function isOwnOrigin(url) {
+  try {
+    const origin = new URL(url).origin;
+    return origin !== "null" && origin === window.location.origin;
+  } catch { return false; }
+}
+
+/**
+ * The cached HTML as the frame should get it. The frame inherits the page's CSP, whose
+ * base-uri 'self' makes the browser refuse a <base href> on any other origin ("Refused to set
+ * the document base URI") and ignore it. Fess puts the document's own address in one
+ * (cache.hbs), so every preview logged that error. That href is taken out here, which changes
+ * nothing the page shows (it was never applied) and keeps the rest of the tag, such as
+ * target. A <base> on the page's own origin is kept, and `url` is added as one when the HTML
+ * has none and is on that origin too.
+ */
+function frameHtml(html, url) {
+  let out = html.replace(/<base\b[^>]*>/gi, tag => {
+    const kept = tag.replace(/\s+href\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'>]+))/i, (attr, dq, sq, bare) => (isOwnOrigin(dq ?? sq ?? bare) ? attr : ""));
+    return /^<base\s*\/?>$/i.test(kept) ? "" : kept;
+  });
+  if (url && !/<base\b/i.test(out) && isOwnOrigin(url)) {
+    const safe = url.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    const tag = '<base href="' + safe + '">';
+    out = /<head\b[^>]*>/i.test(out) ? out.replace(/<head\b[^>]*>/i, m => m + tag) : tag + out;
+  }
+  return out;
+}
+
 export function createPreview({ workspace, root }) {
   const q = sel => root.querySelector(sel);
   const body = q("#fs-preview-body");
@@ -58,6 +90,7 @@ export function createPreview({ workspace, root }) {
   let cancelThumb = null;
   let blobUrl = null;
   let current = null;       // { doc, ctx }
+  let loaded = null;        // { doc, result }: the content last drawn, so reopening the pane need not fetch it again
   let widePref = readPref();
   let sheetOpen = false;
 
@@ -173,13 +206,7 @@ export function createPreview({ workspace, root }) {
       const env = await api.get("/cache/" + encodeURIComponent(doc.doc_id), hq.length ? { hq } : undefined, { signal });
       const mime = env.mimetype || "text/html";
       const charset = env.charset || "utf-8";
-      let html = env.content || "";
-      const base = env.url || "";
-      if (base && !/<base\b/i.test(html)) {
-        const safe = base.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        const tag = '<base href="' + safe + '">';
-        html = /<head\b[^>]*>/i.test(html) ? html.replace(/<head\b[^>]*>/i, m => m + tag) : tag + html;
-      }
+      const html = frameHtml(env.content || "", env.url || "");
       return { type: "cache", blob: new Blob([html], { type: /charset=/i.test(mime) ? mime : mime + ";charset=" + charset }) };
     }
     if (decision.kind === "pdf") return { type: "pdf", blob: await fetchPdfBlob(goHref, signal) };
@@ -204,9 +231,15 @@ export function createPreview({ workspace, root }) {
       stage.appendChild(el("pre", { className: "fs-pv-text", text: result.text, attrs: { tabindex: "0" } }));
       if (result.truncated) stage.appendChild(el("p", { className: "fs-pv-note", text: t("fs.preview_truncated") }));
     } else {
-      const img = el("img", { className: "fs-pv-image", attrs: { alt: nameOf(doc), src: result.src } });
-      img.addEventListener("error", () => message(t("fs.preview_failed"), "is-error"));
-      stage.appendChild(img);
+      // One element per load: put back as it is, it does not request the image again.
+      if (!result.img) {
+        result.img = el("img", { className: "fs-pv-image", attrs: { alt: nameOf(doc), src: result.src } });
+        result.img.addEventListener("error", () => {
+          if (loaded && loaded.result === result) loaded = null;
+          message(t("fs.preview_failed"), "is-error");
+        });
+      }
+      stage.appendChild(result.img);
     }
   }
 
@@ -224,6 +257,7 @@ export function createPreview({ workspace, root }) {
         if (out.stale) return;
         if (cancelThumb) { cancelThumb(); cancelThumb = null; }
         renderContent(out.value, doc);
+        loaded = { doc, result: out.value };
       },
       err => {
         loading.remove();
@@ -251,6 +285,12 @@ export function createPreview({ workspace, root }) {
     serial.cancel();
     clearTimeout(timer);
     revoke();
+    if (loaded && loaded.doc !== doc) loaded = null;
+    if (loaded) {
+      // Reopened on the row it was showing: go/ would be fetched, and click-logged, a second time.
+      renderContent(loaded.result, doc);
+      return;
+    }
     showThumbnail(doc, ctx, kind);
     // Metadata is on screen now; the content waits until the selection has settled.
     timer = setTimeout(() => startContent(doc, ctx), CONTENT_DELAY_MS);
@@ -300,6 +340,7 @@ export function createPreview({ workspace, root }) {
     /** Forget the selection (a new result page without it). */
     clear() {
       current = null;
+      loaded = null;
       sheetOpen = false;
       cancelWork();
       revoke();
