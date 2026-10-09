@@ -18,6 +18,7 @@
   "facet.not_found": "Tidak ada filter yang cocok.",
   "pagination.next": "Berikutnya",
   "pagination.prev": "Sebelumnya",
+  "pagination.page": "Halaman {0}",
   "result.favorite_add": "Tambah ke favorit",
   "result.favorite_added": "Ditambahkan ke favorit",
   "result.cache": "Tembolok",

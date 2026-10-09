@@ -164,6 +164,17 @@ The suites:
 - `i18n-keys.test.js` — the JSP wording shared with the fess bootstrap theme
   (the permission notice, the forced password change, the view count) is
   present with the same keys in every theme's locale bundles.
+- `filesearch.results.test.js` — filesearch's result page: the status line reading `exec_time` sent
+  as a decimal string, a title that keeps `$&` / `$$` in the query literal, a pager of real links
+  (`aria-current`, "Page N" names, a disabled end that is not a link), and a search the API rejects
+  (HTTP 400) clearing the previous rows, preview, status line, pager, filter panel and related
+  searches under the error banner (the theme's real `index.html`).
+- `filesearch.shell.test.js` — filesearch's tab title on every route (including a client-side move
+  from a search to Help) and its options drawer: closed it is out of the tab order, opening it
+  moves the focus in, Escape closes it with the focus back on the opener.
+- `filesearch.suggest.test.js` — filesearch's home search box suggest list: the
+  ArrowDown/ArrowUp/Enter/Escape model (`aria-selected`, `aria-activedescendant`) and no
+  reaction to the keys of an IME conversion.
 - `search-parity.test.js` — view counts, the permission notice, and the
   `fess:auth:required` signal that lets `app.js` ask for login again — JSP
   parity for the themes that carry them (storefront and codesearch opt out

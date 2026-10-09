@@ -18,6 +18,7 @@
   "facet.not_found": "No hay filtros coincidentes.",
   "pagination.next": "Siguiente",
   "pagination.prev": "Anterior",
+  "pagination.page": "Página {0}",
   "result.favorite_add": "Agregar a favoritos",
   "result.favorite_added": "Agregado a favoritos",
   "result.cache": "Caché",

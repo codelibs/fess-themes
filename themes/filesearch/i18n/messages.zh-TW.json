@@ -18,6 +18,7 @@
   "facet.not_found": "沒有符合的篩選條件。",
   "pagination.next": "下一頁",
   "pagination.prev": "上一頁",
+  "pagination.page": "第 {0} 頁",
   "result.favorite_add": "加入收藏",
   "result.favorite_added": "已加入收藏",
   "result.cache": "快取",

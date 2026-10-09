@@ -47,7 +47,7 @@ backslash-escaped (`smb://srv/share/` is `url:smb\:\/\/srv\/share\/*`).
 ## Install and activate
 
 ```bash
-./scripts/package.sh filesearch          # → dist/filesearch-15.9.3.zip
+./scripts/package.sh filesearch          # → dist/filesearch-15.9.4.zip
 ```
 
 Upload the ZIP at **Admin → Theme** (`/admin/theme/`) and set it as the default theme, or
@@ -110,7 +110,9 @@ which Fess allows by default.
   to `application/pdf` (at most 25 MB). Plain text, code and CSV show their first 256 KB of the original, as
   text (a file in an encoding the server does not declare may look garbled; the cached copy of a
   text file has lost its line breaks, so it is used only for files too large to fetch). An image is shown
-  directly (at most 20 MB). The cached copy is shown in a frame with no scripts and no access
+  directly (at most 20 MB). A page crawled over http(s) is not served by `go/` (it redirects to the
+  site, which the page's content-security policy refuses), so its preview is the cached copy, or
+  none when it has no cache. The cached copy is shown in a frame with no scripts and no access
   to the page; the `<base href>` Fess puts in it is left out, because the page's content-security
   policy (`base-uri 'self'`) refuses one on another origin and it never took effect. Everything
   else, and an http(s) page that has no cached copy, shows the details only; the page's

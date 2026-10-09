@@ -18,6 +18,7 @@
   "facet.not_found": "कोई मेल खाता फ़िल्टर नहीं मिला।",
   "pagination.next": "अगला",
   "pagination.prev": "पिछला",
+  "pagination.page": "पृष्ठ {0}",
   "result.favorite_add": "पसंदीदा में जोड़ें",
   "result.favorite_added": "पसंदीदा में जोड़ा गया",
   "result.cache": "कैश",
