@@ -26,7 +26,7 @@
 :root {
   --ds-accent:#4F46E5; --ds-accent-hover:#4338CA; --ds-accent-subtle:#EEF2FF;
   --ds-bg:#FFFFFF; --ds-surface:#FFFFFF; --ds-surface-2:#F8FAFC;
-  --ds-text:#0F172A; --ds-text-muted:#475569; --ds-text-faint:#94A3B8;
+  --ds-text:#0F172A; --ds-text-muted:#475569; --ds-text-faint:#5B6B82;   /* faint is text too (footer, breadcrumbs, hints): 4.5:1 or more on --ds-bg, --ds-surface-2 and --ds-accent-subtle */
   --ds-border:#E2E8F0; --ds-border-strong:#CBD5E1;
   --ds-mark-bg:#FEF08A; --ds-mark-text:#422006;
   --ds-success:#16A34A; --ds-warning:#CA8A04; --ds-error:#DC2626; --ds-info:#4F46E5;
@@ -37,15 +37,17 @@
   --ds-shadow-sm:0 1px 2px rgba(15,23,42,.06); --ds-shadow-md:0 4px 16px rgba(15,23,42,.08);
   --ds-shadow-lg:0 16px 48px rgba(15,23,42,.18);
   --ds-header-h:56px; --ds-sidebar-w:280px; --ds-content-max:68ch;
+  --ds-neutral-fill:#64748B;      /* the secondary badge: white text on it, so it stays mid-tone in both palettes */
   /* fixed dark top-bar — intentionally NOT theme-inverting (slim docs header) */
   --ds-header-bg:#0F172A; --ds-header-border:#1E293B; --ds-header-text:#E2E8F0; --ds-header-text-muted:#94A3B8;
 }
 [data-theme="dark"] {
   --ds-bg:#0B1120; --ds-surface:#111827; --ds-surface-2:#0F172A;
-  --ds-text:#E5E7EB; --ds-text-muted:#9CA3AF; --ds-text-faint:#6B7280;
+  --ds-text:#E5E7EB; --ds-text-muted:#9CA3AF; --ds-text-faint:#8B93A1;
   --ds-border:#1F2937; --ds-border-strong:#374151;
   --ds-accent:#818CF8; --ds-accent-hover:#A5B4FC; --ds-accent-subtle:#1E1B4B;
   --ds-mark-bg:#854D0E; --ds-mark-text:#FEF9C3; --ds-shadow-lg:0 16px 48px rgba(0,0,0,.6);
+  --ds-neutral-fill:#6B7280;
   --ds-success-subtle:#052e16; --ds-warning-subtle:#431407; --ds-error-subtle:#450a0a; --ds-info-subtle:#1E1B4B;
 }
 html,body{ background:var(--ds-bg); color:var(--ds-text); font-family:var(--ds-font-body); }
@@ -340,14 +342,14 @@ button { font-family: inherit; }
 .shadow-sm { box-shadow: var(--df-shadow-subtle) !important; }
 
 .bg-primary { background-color: var(--df-primary) !important; color: #fff; }
-.bg-secondary { background-color: var(--df-zinc-500) !important; color: #fff; }
+.bg-secondary { background-color: var(--ds-neutral-fill) !important; color: #fff; }
 .bg-success { background-color: var(--df-success) !important; color: #fff; }
 .bg-danger { background-color: var(--df-error) !important; color: #fff; }
 .bg-warning { background-color: var(--df-warning) !important; color: #fff; }
 .bg-info { background-color: var(--df-info) !important; color: #fff; }
 .bg-light { background-color: var(--df-zinc-100) !important; color: var(--df-zinc-800); }
 .text-bg-primary { background-color: var(--df-primary) !important; color: #fff !important; }
-.text-bg-secondary { background-color: var(--df-zinc-500) !important; color: #fff !important; }
+.text-bg-secondary { background-color: var(--ds-neutral-fill) !important; color: #fff !important; }
 
 .cursor-pointer { cursor: pointer; }
 .clearfix::after { content: ""; display: block; clear: both; }
@@ -733,6 +735,8 @@ body.modal-open { overflow: hidden; }
 .result-card .result-snippet { color: var(--bs-secondary-color); font-size: .95rem; margin-top: .25rem; }
 .result-card .result-meta { font-size: .8rem; color: var(--bs-tertiary-color); margin-top: .5rem; display: flex; gap: 1rem; flex-wrap: wrap; }
 .result-card .favorite-btn[aria-pressed="true"] { color: var(--bs-warning); }
+/* a favorite cannot be removed (the API only adds): nothing to click */
+.result-card .favorite-btn[aria-disabled="true"] { cursor: default; }
 .result-thumbnail { width: 96px; height: 96px; object-fit: contain; border: 1px solid var(--bs-border-color); border-radius: var(--df-radius-sm); background: var(--df-zinc-100); flex-shrink: 0; }
 @media (max-width: 576px) { .result-thumbnail { width: 64px; height: 64px; } }
 
@@ -930,6 +934,9 @@ cite.result-site-path { color: var(--bs-success); font-size: .85rem; font-style:
 .cache-frame { width: 100%; height: 70vh; border: 1px solid var(--bs-border-color); border-radius: var(--df-radius); background: var(--bs-body-bg); }
 .cache-meta { font-size: .9rem; color: var(--bs-secondary-color); }
 .cache-meta dt { font-weight: 600; }
+/* A <dd> has a 40px start margin by default: with dt.col-sm-3 + dd.col-sm-9 it pushed the value
+   past the right edge (and onto its own line from 576px up). A URL or id wraps anywhere. */
+.cache-meta dd { margin: 0 0 .5rem; overflow-wrap: anywhere; }
 
 /* The query is echoed back ("did not match", the status line); an unbroken one must wrap, not widen the page. */
 #empty-did-not-match, #results-status { overflow-wrap: anywhere; }
