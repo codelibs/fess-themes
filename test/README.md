@@ -67,6 +67,12 @@ The suites:
   a related-searches chip being a link to its own `/search?q=` URL that the router
   follows, and a search the server rejects with HTTP 400 clearing the previous
   query's cards, status line, featured answer, pager, facets and related searches.
+- `helpdesk.suggest.test.js` — helpdesk's home search box suggest list: the
+  ArrowDown/ArrowUp/Enter/Escape model (`aria-selected`, `aria-activedescendant`) and no
+  reaction to the keys of an IME conversion.
+- `helpdesk.exectime.test.js` / `helpdesk.favorite.test.js` — helpdesk's status line reading
+  `exec_time` sent as a decimal string, and a favorited star that offers no removal and sends
+  nothing on a click (cases shared with the other bootstrap-result themes).
 - `mosaic.searcher.test.js` / `semanticlens.searcher.test.js` — searcher-
   provenance and query-verbatim behaviour for the two vector-search themes
   against Fess's core semantic search.

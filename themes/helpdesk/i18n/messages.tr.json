@@ -20,6 +20,7 @@
   "pagination.prev": "Önceki",
   "pagination.page": "Sayfa {0}",
   "result.favorite_add": "Favorilere ekle",
+  "result.favorite_added": "Favorilere eklendi",
   "result.favorite_remove": "Favorilerden kaldır",
   "result.cache": "Önbellek",
   "result.click_count": "{n} görüntüleme",
