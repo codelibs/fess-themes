@@ -968,6 +968,39 @@ describe("preview content", () => {
     expect(flow.get.mock.calls.some(c => c[0] === "/cache/c1")).toBe(true);
   });
 
+  it("previews a file crawled over http through its cached copy, never through go/, which redirects off this origin", async () => {
+    // The redirect target is another origin: the page's connect-src / img-src 'self' refuse it and report a violation.
+    const withCache = doc("t1", "http://wiki.example.com/notes.txt", { has_cache: "true" });
+    const withoutCache = doc("t2", "https://wiki.example.com/other.txt");
+    const pdf = doc("t3", "https://wiki.example.com/a.pdf", { mimetype: "application/pdf", filetype: "pdf" });
+    const fetchMock = vi.fn(async () => { throw new Error("go/ must not be asked for a page crawled over http"); });
+    vi.stubGlobal("fetch", fetchMock);
+    try {
+      const flow = await loadSearchFlow(THEME, CFG);
+      install(flow.get, { main: [withCache, withoutCache, pdf] });
+      const base = flow.get.getMockImplementation();
+      flow.get.mockImplementation(async (path, params, opts) => (path.startsWith("/cache/")
+        ? { doc_id: "t1", mimetype: "text/plain", content: "notes", url: "http://wiki.example.com/notes.txt", charset: "UTF-8" }
+        : base(path, params, opts)));
+      setLocation("/search?q=foo");
+      mountIndexBody(THEME);
+      flow.mod.attach();
+      flow.mod.runFromUrl();
+      await settle();
+      await select(0);
+      expect(document.querySelector("#fs-pv-stage iframe")).not.toBeNull();
+      expect(flow.get.mock.calls.some(c => c[0] === "/cache/t1")).toBe(true);
+      await select(1);
+      expect(document.querySelector("#fs-pv-stage iframe")).toBeNull();
+      expect(document.getElementById("fs-pv-stage").textContent).toContain("fs.preview_none");
+      await select(2);
+      expect(document.getElementById("fs-pv-stage").textContent).toContain("fs.preview_none");
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("shows an image through its go/ URL and a too-large file as such", async () => {
     await boot({ url: "/search?q=foo", main: [
       doc("i1", "smb://srv/share/pic.png", { mimetype: "image/png", filetype: "png" }),

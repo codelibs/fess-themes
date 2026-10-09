@@ -41,7 +41,7 @@ Font license: both families are released under the **SIL Open Font License 1.1 (
 | `--ds-surface-2` | `#F8FAFC` | Secondary surfaces (sidebars, inset areas) |
 | `--ds-text` | `#0F172A` | Body text |
 | `--ds-text-muted` | `#475569` | Secondary text, labels |
-| `--ds-text-faint` | `#94A3B8` | Placeholder, disabled |
+| `--ds-text-faint` | `#5B6B82` | Tertiary text (footer, breadcrumbs, hints), placeholder; 4.5:1 or more on `--ds-bg`, `--ds-surface-2` and `--ds-accent-subtle` |
 | `--ds-border` | `#E2E8F0` | Default border |
 | `--ds-border-strong` | `#CBD5E1` | Emphasized border |
 | `--ds-mark-bg` | `#FEF08A` | Search highlight background |
@@ -62,6 +62,7 @@ Font license: both families are released under the **SIL Open Font License 1.1 (
 | `--ds-header-h` | `56px` | Fixed header height |
 | `--ds-sidebar-w` | `280px` | Sidebar width |
 | `--ds-content-max` | `68ch` | Max reading width |
+| `--ds-neutral-fill` | `#64748B` | Fill of the neutral (`bg-secondary`) badge; it carries white text |
 
 ### Dark mode (`[data-theme="dark"]`)
 
@@ -74,7 +75,7 @@ Overrides only the tokens that differ. Everything else inherits from `:root`.
 | `--ds-surface-2` | `#0F172A` |
 | `--ds-text` | `#E5E7EB` |
 | `--ds-text-muted` | `#9CA3AF` |
-| `--ds-text-faint` | `#6B7280` |
+| `--ds-text-faint` | `#8B93A1` |
 | `--ds-border` | `#1F2937` |
 | `--ds-border-strong` | `#374151` |
 | `--ds-accent` | `#818CF8` |
@@ -83,6 +84,7 @@ Overrides only the tokens that differ. Everything else inherits from `:root`.
 | `--ds-mark-bg` | `#854D0E` |
 | `--ds-mark-text` | `#FEF9C3` |
 | `--ds-shadow-lg` | `0 16px 48px rgba(0,0,0,.6)` |
+| `--ds-neutral-fill` | `#6B7280` |
 
 ### Bootstrap bridge (`--bs-*`)
 

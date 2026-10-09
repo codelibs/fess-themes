@@ -18,6 +18,7 @@
   "facet.not_found": "Eşleşen filtre yok.",
   "pagination.next": "Sonraki",
   "pagination.prev": "Önceki",
+  "pagination.page": "Sayfa {0}",
   "result.favorite_add": "Favorilere ekle",
   "result.favorite_added": "Favorilere eklendi",
   "result.cache": "Önbellek",

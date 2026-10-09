@@ -9,6 +9,11 @@
 //   text    the first part of the original as text, set with textContent (never as markup)
 //   image   the original as an <img> (go/ is same-origin, so img-src allows it)
 //
+// go/ only serves the original itself for the file systems (file:, smb:, ftp:, s3:, gcs:); for a
+// page crawled over http(s) it answers with a redirect to that site, which `connect-src 'self'`
+// and `img-src 'self'` refuse (and report to the console). Such a hit has the cached copy, or
+// no preview.
+//
 // Everything else (office files, archives, media, an http page that has no cached copy)
 // has no preview. Previews are loaded for the selected row only, one at a time, and every
 // load can be cancelled: go/ writes a click log and re-reads the file from its source.
@@ -38,6 +43,10 @@ const TEXT_MIME = /^text\/(?!html)|\/json|\/xml|javascript|x-sh|x-yaml/;
 /** @returns {{kind:"cache"|"pdf"|"text"|"image"}|{kind:"none",reason:"too_large"|"unsupported"}} */
 export function previewKind(doc) {
   if (!doc) return { kind: "none", reason: "unsupported" };
+  // go/ would redirect off this origin: never ask it for the original of a web page.
+  if (/^https?:/i.test(String(doc.url || doc.url_link || ""))) {
+    return hasCache(doc) ? { kind: "cache" } : { kind: "none", reason: "unsupported" };
+  }
   const kind = fileKind(doc);
   const size = sizeOf(doc);
   if (kind === "pdf") {

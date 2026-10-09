@@ -18,6 +18,7 @@
   "facet.not_found": "該当する絞り込みがありません。",
   "pagination.next": "次へ",
   "pagination.prev": "前へ",
+  "pagination.page": "{0}ページ",
   "result.favorite_add": "お気に入りに追加",
   "result.favorite_added": "お気に入りに追加済み",
   "result.cache": "キャッシュ",

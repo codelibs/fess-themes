@@ -49,6 +49,28 @@ describe("previewKind", () => {
   it("has no preview for an html page without a cached copy: it would load another site", () => {
     expect(previewKind({ mimetype: "text/html", filetype: "html" })).toEqual({ kind: "none", reason: "unsupported" });
   });
+  it("never asks go/ for the original of a page crawled over http(s): it redirects to another origin", () => {
+    // The page's connect-src / img-src 'self' refuse that redirect and log a policy violation.
+    const text = { mimetype: "text/plain", filetype: "txt", content_length: 100 };
+    const pdf = { mimetype: "application/pdf", content_length: 1000 };
+    const image = { mimetype: "image/png", content_length: 5000 };
+    for (const url of ["http://wiki.example.com/notes.txt", "https://wiki.example.com/a.pdf", "HTTPS://wiki.example.com/p.png"]) {
+      for (const doc of [text, pdf, image]) {
+        expect(previewKind({ ...doc, url })).toEqual({ kind: "none", reason: "unsupported" });
+        expect(previewKind({ ...doc, url, has_cache: "true" })).toEqual({ kind: "cache" });
+        expect(previewKind({ ...doc, url: undefined, url_link: url, has_cache: true })).toEqual({ kind: "cache" });
+      }
+    }
+    // a size past the cap is not the reason there is no preview
+    expect(previewKind({ ...pdf, url: "http://h/a.pdf", content_length: MAX_PDF_BYTES + 1 })).toEqual({ kind: "none", reason: "unsupported" });
+  });
+  it("still previews a file on a file system through the original", () => {
+    for (const url of ["file:///srv/notes.txt", "smb://srv/share/notes.txt", "ftp://h/notes.txt", "s3://bucket/notes.txt", "gcs://bucket/notes.txt"]) {
+      expect(previewKind({ mimetype: "text/plain", content_length: 100, url, has_cache: "true" })).toEqual({ kind: "text" });
+    }
+    expect(previewKind({ mimetype: "application/pdf", content_length: 1000, url: "smb://srv/share/a.pdf" })).toEqual({ kind: "pdf" });
+    expect(previewKind({ mimetype: "image/png", content_length: 5000, url: "file:///srv/a.png" })).toEqual({ kind: "image" });
+  });
   it("treats an unknown size as small enough, and reads the string sizes Fess sends", () => {
     expect(previewKind({ mimetype: "application/pdf" })).toEqual({ kind: "pdf" });
     expect(previewKind({ mimetype: "application/pdf", content_length: "2516" })).toEqual({ kind: "pdf" });

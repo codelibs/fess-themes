@@ -99,6 +99,19 @@ The suites:
 - `mosaic.gallery.test.js` — mosaic's label-filter chip and options bar for a
   label set through `ex_q`, the lightbox's no-thumbnail fallback, and the
   single popular-words request on the home view.
+- `storefront.shell.test.js` — the page shell of storefront for keyboard and screen-reader
+  users: the closed options drawer being `visibility: hidden` (out of the tab order), Escape
+  closing it with the focus returning to its opener and opening moving the focus in, the `/`
+  shortcut (not while typing, with a modifier, composing, or over the drawer), the tab
+  title of every route, and the accessible name of the header search button. The cases are in
+  `helpers/heroFamilyShell.js`, shared by the three themes with a hero home page (mosaic,
+  storefront, semanticlens); `compat.js` installs document-level listeners, so each theme runs
+  in a window of its own.
+- `storefront.search.test.js` — storefront's search page (cases in `helpers/heroFamilySearch.js`,
+  shared with mosaic and semanticlens): a search the server rejects with HTTP 400 clears the
+  previous tiles, status line, pager, facets and related searches; the string `exec_time`; `$&` in
+  the title; the pager as real links; the keyboard model of the home suggest list
+  (`attachSuggest`); and the stylesheet contract of the layout fixes.
 - `mosaic.shell.test.js` — the page shell of mosaic for keyboard and screen-reader
   users: the closed options drawer being `visibility: hidden` (out of the tab order), Escape
   closing it with the focus returning to its opener and opening moving the focus in, the `/`
@@ -113,6 +126,19 @@ The suites:
   `$&` in the title; the pager as real links; the keyboard model of the home suggest list
   (`attachSuggest`); the add-only favorite star of the list view; and the stylesheet contract of
   the layout fixes.
+- `semanticlens.shell.test.js` — the page shell of semanticlens for keyboard and screen-reader
+  users: the closed options drawer being `visibility: hidden` (out of the tab order), Escape
+  closing it with the focus returning to its opener and opening moving the focus in, the `/`
+  shortcut (not while typing, with a modifier, composing, or over the drawer), the tab
+  title of every route, and the accessible name of the header search button. The cases are in
+  `helpers/heroFamilyShell.js`, shared by the three themes with a hero home page (mosaic,
+  storefront, semanticlens); `compat.js` installs document-level listeners, so each theme runs
+  in a window of its own.
+- `semanticlens.search.test.js` — semanticlens' search page (cases in
+  `helpers/heroFamilySearch.js`, shared with mosaic and storefront): the pager as real links, the
+  keyboard model of the home suggest list (`attachSuggest`), the add-only favorite star, and the
+  stylesheet contract of the layout fixes. What a rejected search, the exec time and the title
+  leave on the page is in `semanticlens.results.test.js`.
 - `notification-banners.test.js` — the five notification/error banners whose
   visibility the shared JS owns through the `d-none` class alone
   (`#home-notification`, `#results-notification`, `#home-flash`,
@@ -144,6 +170,17 @@ The suites:
 - `i18n-keys.test.js` — the JSP wording shared with the fess bootstrap theme
   (the permission notice, the forced password change, the view count) is
   present with the same keys in every theme's locale bundles.
+- `filesearch.results.test.js` — filesearch's result page: the status line reading `exec_time` sent
+  as a decimal string, a title that keeps `$&` / `$$` in the query literal, a pager of real links
+  (`aria-current`, "Page N" names, a disabled end that is not a link), and a search the API rejects
+  (HTTP 400) clearing the previous rows, preview, status line, pager, filter panel and related
+  searches under the error banner (the theme's real `index.html`).
+- `filesearch.shell.test.js` — filesearch's tab title on every route (including a client-side move
+  from a search to Help) and its options drawer: closed it is out of the tab order, opening it
+  moves the focus in, Escape closes it with the focus back on the opener.
+- `filesearch.suggest.test.js` — filesearch's home search box suggest list: the
+  ArrowDown/ArrowUp/Enter/Escape model (`aria-selected`, `aria-activedescendant`) and no
+  reaction to the keys of an IME conversion.
 - `search-parity.test.js` — view counts, the permission notice, and the
   `fess:auth:required` signal that lets `app.js` ask for login again — JSP
   parity for the themes that carry them (storefront and codesearch opt out
@@ -186,6 +223,15 @@ The suites:
   `label_options` name (value kept in the URL and the request), and the "Similar Results"
   view is written to the URL as `sdh` (a new history entry; shown again from a URL that
   carries it).
+- `docsearch.results.test.js` — docsearch's result page: the status line reading `exec_time` sent as
+  a decimal string, a title that keeps `$&` / `$$` in the query literal, a pager of real links
+  (`aria-current`, "Page N" names, a disabled end that is not a link), a favorited star that offers
+  no removal and sends nothing on a click, and the stylesheet contract (read back from the parsed
+  `styles.css`): cache metadata values that wrap, and a tertiary text colour with 4.5:1 on every
+  surface in both palettes.
+- `docsearch.titles.test.js` — docsearch's tab title on every route (home, search, Help, Advanced
+  Search, password, cache, chat, errors), including a client-side move from a search to Help (the
+  theme's real `index.html`, `app.js`, `router.js`, `search.js` and English bundle).
 - `codesearch.query.test.js` — codesearch's query box -> Fess query translation (`query.js`):
   qualifier values escaped for the Lucene parser, `path:` as a prefix or an exact path, ranges,
   phrases (`"foo bar"~3`) kept as one term, a leading `--` read as text, the facet and chip

@@ -535,6 +535,7 @@ body.modal-open { overflow: hidden; }
      accessibility tree. The delay lets the slide-out finish before it is hidden. */
   visibility: hidden; transition: right .3s ease, visibility 0s linear .3s;
 }
+#searchOptions .container:focus { outline: none; }
 #searchOptions.show .container { right: 0; visibility: visible; transition: right .3s ease, visibility 0s; }
 #searchOptions h3 { color: #fff; }
 #searchOptions label, #searchOptions legend { color: #b8c4d0; font-size: .85rem; }
@@ -660,6 +661,8 @@ body.modal-open { overflow: hidden; }
 .fs-toolbar { display: flex; align-items: center; justify-content: space-between; gap: .5rem .75rem; flex-wrap: wrap; padding: .35rem .1rem .1rem; }
 .fs-status { margin: 0; font-size: .8125rem; color: var(--fs-text-2); }
 .fs-status b { font-weight: 600; color: var(--fs-text); }
+/* The query is echoed back ("did not match", the status line); an unbroken one must wrap, not widen the page. */
+#results-status, #empty-did-not-match { overflow-wrap: anywhere; }
 .fs-toolbar-actions { display: flex; align-items: center; gap: .4rem; flex-wrap: wrap; }
 .fs-tool-btn {
   display: inline-flex; align-items: center; gap: .35rem; height: 2rem; padding: 0 .65rem; font-size: .8125rem;

@@ -42,6 +42,24 @@ function showView(id) {
   // box. So no per-view brand/advanced toggling is done here.
 }
 
+/**
+ * WCAG 2.4.2: name the page in the tab title. The search route sets its own title (search.js
+ * runSearch); every other view passes the name it shows, in the same "{0} - Fess" shape,
+ * or nothing for the site title.
+ *
+ * @param {string} [name]
+ */
+function setPageTitle(name) {
+  document.title = name ? t("page.search_title", [name]) : t("page.title");
+}
+
+/** Render the error view and title the page with the error it shows ("Page Not Found." ...). */
+function attachErrorView() {
+  errorView.attach();
+  const heading = document.querySelector("#error-view .error-title");
+  setPageTitle(heading ? heading.textContent : "");
+}
+
 /** Toggle the header search form visibility (hides the whole input-group wrapper). */
 function setSearchFormVisible(visible) {
   const wrap = document.getElementById("search-form-wrap") || document.getElementById("search-form");
@@ -365,6 +383,34 @@ function syncHeaderOffset() {
 }
 
 /**
+ * The search-options drawer is a panel over the page, so Escape closes it and the focus goes
+ * back to the control that opened it. Opening it moves the focus into it: the drawer sits ahead
+ * of <main> in the document, so Tab from the options bar would never reach it.
+ */
+function attachOptionsDrawer() {
+  const drawer = document.getElementById("searchOptions");
+  const Collapse = window.bootstrap && window.bootstrap.Collapse;
+  if (!drawer || !Collapse) return;
+  let opener = null;
+  document.addEventListener("click", ev => {
+    const toggle = ev.target.closest('[data-bs-target="#searchOptions"], a[href="#searchOptions"]');
+    if (!toggle) return;
+    // compat.js has already toggled the drawer by the time this runs.
+    opener = toggle;
+    if (drawer.classList.contains("show")) drawer.querySelector(".container").focus({ preventScroll: true });
+  });
+  // Listening in the capture phase and stopping the event keeps the key the drawer's alone, whichever
+  // order the page's other Escape listeners were added in: the preview pane closes on Escape too.
+  document.addEventListener("keydown", ev => {
+    if (ev.key !== "Escape" || ev.defaultPrevented || !drawer.classList.contains("show")) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    Collapse.getOrCreateInstance(drawer, { toggle: false }).hide();
+    if (opener && opener.isConnected) opener.focus();
+  }, true);
+}
+
+/**
  * Below 768px the header nav (sign-in, AI search, help) is a menu behind #headerNavToggle.
  * It closes when a choice is made, on a route change and on Escape (focus goes back to the button).
  */
@@ -522,7 +568,7 @@ function registerRoutes() {
       setChatNavSearchMode(false);
       setSearchFormVisible(true);
       showView("error-view");
-      errorView.attach();
+      attachErrorView();
     }
   );
 
@@ -533,6 +579,7 @@ function registerRoutes() {
       setChatNavSearchMode(false);
       setSearchFormVisible(false);
       showView("home-view");
+      setPageTitle();
       // JSP parity (index.jsp): returning to the search top clears the form. Reset the
       // keyword box, the option drawer (label / language / count / sort / geo) and the
       // in-memory search state so nothing carries over from the previous search (e.g. a
@@ -563,6 +610,7 @@ function registerRoutes() {
       setChatNavSearchMode(false);
       setSearchFormVisible(false);
       showView("profile-view");
+      setPageTitle(t("profile.title"));
       profile.attach();
     }
   );
@@ -575,6 +623,7 @@ function registerRoutes() {
       setChatNavSearchMode(false);
       setSearchFormVisible(false);
       showView("advance-view");
+      setPageTitle(t("advance.title"));
       advance.attach();
     }
   );
@@ -587,6 +636,7 @@ function registerRoutes() {
       setChatNavSearchMode(false);
       setSearchFormVisible(true);
       showView("help-view");
+      setPageTitle(t("help.title"));
       help.attach();
     }
   );
@@ -598,6 +648,8 @@ function registerRoutes() {
       setSearchFormVisible(false);
       setChatNavSearchMode(true);
       showView("chat-view");
+      // labels.chat_title is a whole title already ("KI-Suche - Fess" in most locales).
+      document.title = t("labels.chat_title");
       chat.attachStandalone();
     }
   );
@@ -611,6 +663,7 @@ function registerRoutes() {
       setChatNavSearchMode(false);
       setSearchFormVisible(false);
       showView("cache-view");
+      setPageTitle(t("labels.cache_title"));
       cache.attach();
     }
   );
@@ -623,7 +676,7 @@ function registerRoutes() {
       setChatNavSearchMode(false);
       setSearchFormVisible(true);
       showView("error-view");
-      errorView.attach();
+      attachErrorView();
     }
   );
 
@@ -652,7 +705,7 @@ function attachNotFound() {
   meta.content = "404";
   document.head.prepend(meta);
   try {
-    errorView.attach();
+    attachErrorView();
   } finally {
     meta.remove();
   }
@@ -711,6 +764,7 @@ async function main() {
     }
   });
 
+  attachOptionsDrawer();
   attachHeaderMenu();
 
   // Wire back-to-top button.
