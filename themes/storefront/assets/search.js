@@ -330,11 +330,16 @@ function renderResultsStatus(env) {
     }
   });
   if (env.exec_time != null) {
-    const execSec = typeof env.exec_time === "number"
-      ? env.exec_time.toFixed(2)
+    // The v2 API sends exec_time as a decimal string ("0.06"); a number is accepted too.
+    // Anything that does not parse falls back to query_time (milliseconds).
+    const execTime = typeof env.exec_time === "string" && env.exec_time.trim() !== ""
+      ? Number(env.exec_time)
+      : env.exec_time;
+    const execSec = Number.isFinite(execTime)
+      ? execTime.toFixed(2)
       : (typeof env.query_time === "number" ? (env.query_time / 1000).toFixed(2) : null);
     if (execSec !== null) {
-      statusEl.appendChild(document.createTextNode(" " + t("labels.search_result_time").replace("{0}", execSec)));
+      statusEl.appendChild(document.createTextNode(" " + t("labels.search_result_time", [execSec])));
     }
   }
 }
@@ -581,6 +586,24 @@ function renderResults(env) {
 }
 
 /**
+ * Take the previous search's output off the page, leaving what a fresh load of the same
+ * URL shows when the server rejects the request: no result cards, status line, pager,
+ * facet sidebar or related searches. The error banner is the caller's.
+ */
+function clearResultsView() {
+  ["results", "results-status", "results-popular-words", "pagination", "facet-body", "facet-body-mobile"].forEach(id => {
+    const node = document.getElementById(id);
+    if (node) while (node.firstChild) node.removeChild(node.firstChild);
+  });
+  ["results-popular-words", "subfooter", "empty-state", "results-warning"].forEach(id => {
+    const node = document.getElementById(id);
+    if (node) node.classList.add("d-none");
+  });
+  renderRelatedQueries([]);
+  renderRelatedContent("");
+}
+
+/**
  * Toggle the in-flight search loading indicator (#search-loading).
  * Gives sighted users visible feedback during a /search request; cache and chat
  * already have loading states, search did not.
@@ -643,7 +666,8 @@ async function runSearch() {
   // Record the request time before the call so /go/ URLs embedded in result
   // cards carry the correct rt parameter (mirrors JSP #rt hidden field).
   state.requestedTime = Date.now();
-  document.title = state.q ? t("page.search_title").replace("{0}", state.q) : "Fess";
+  // t() fills {0} from a replacer function, so a `$&` or `$$` in the query stays literal.
+  document.title = state.q ? t("page.search_title", [state.q]) : "Fess";
   // Clear any stale error banner from a previous attempt and show the loading indicator.
   const prevErr = document.getElementById("search-error");
   if (prevErr) prevErr.classList.add("d-none");
@@ -737,6 +761,9 @@ async function runSearch() {
     if (e && e.name === "AbortError") return; // request superseded — newer request owns the UI
     const errBox = document.getElementById("search-error");
     if (e && (e.code === "invalid_request" || e.code === "INVALID_REQUEST" || e.httpStatus === 400)) {
+      // The rejected search has no results of its own; the previous search's would sit
+      // under the banner as if they answered it.
+      clearResultsView();
       if (errBox) { errBox.textContent = e.message || t("error.invalid_request"); errBox.classList.remove("d-none"); }
       else { document.getElementById("results-meta").textContent = e.message || t("error.invalid_request"); }
       return;
@@ -843,10 +870,13 @@ export function disableSubmitBriefly(btn) {
 export function attachSuggest(input, dropdown, opts = {}) {
   if (!input || !dropdown) return;
   let timer = null;
+  let active = -1;
   const clear = () => {
     while (dropdown.firstChild) dropdown.removeChild(dropdown.firstChild);
     dropdown.classList.add("d-none");
     input.setAttribute("aria-expanded", "false");
+    input.removeAttribute("aria-activedescendant");
+    active = -1;
   };
   const choose = (text) => {
     input.value = text;
@@ -882,12 +912,33 @@ export function attachSuggest(input, dropdown, opts = {}) {
       });
       dropdown.classList.remove("d-none");
       input.setAttribute("aria-expanded", "true");
+      input.removeAttribute("aria-activedescendant");
+      active = -1;
     } catch { /* best-effort */ }
   };
   input.addEventListener("input", () => {
     if (timer) clearTimeout(timer);
     const v = input.value.trim();
     timer = setTimeout(() => render(v), 150);
+  });
+  // ArrowDown/ArrowUp walk the list (aria-selected + aria-activedescendant), Enter takes the
+  // highlighted entry and Escape closes the list; without a highlighted entry Enter submits as usual.
+  input.addEventListener("keydown", ev => {
+    // An IME conversion owns these keys until it is confirmed (Safari reports the confirming
+    // Enter with isComposing already false, but still keyCode 229).
+    if (ev.isComposing || ev.keyCode === 229) return;
+    const items = dropdown.querySelectorAll(".list-group-item");
+    if (!items.length || dropdown.classList.contains("d-none")) return;
+    if (ev.key === "Escape") { ev.preventDefault(); clear(); return; }
+    if (ev.key === "Enter" && active >= 0) { ev.preventDefault(); choose(items[active].textContent); return; }
+    if (ev.key !== "ArrowDown" && ev.key !== "ArrowUp") return;
+    ev.preventDefault();
+    active = ev.key === "ArrowDown" ? (active + 1) % items.length : (active <= 0 ? items.length - 1 : active - 1);
+    items.forEach((it, i) => {
+      it.classList.toggle("active", i === active);
+      it.setAttribute("aria-selected", i === active ? "true" : "false");
+    });
+    input.setAttribute("aria-activedescendant", items[active].id);
   });
   input.addEventListener("blur", () => setTimeout(clear, 120));
 }
@@ -2064,7 +2115,22 @@ function renderPagination(env) {
   nav.classList.remove("d-none");
 
   const makeLi = (cls) => el("li", { className: cls });
-  const makeLink = () => el("a", { className: "page-link", attrs: { href: "#" } });
+  // Each link is the URL of its page, so it can be opened in a new tab and read as a link;
+  // a plain click still pages in place. A disabled end (no previous / next page) has no href.
+  const pageHref = (start) => {
+    const params = new URLSearchParams(location.search);
+    if (start > 0) params.set("start", String(start)); else params.delete("start");
+    const qs = params.toString();
+    return location.pathname + (qs ? "?" + qs : "");
+  };
+  const makeLink = (start) => start == null
+    ? el("a", { className: "page-link", attrs: { "aria-disabled": "true" } })
+    : el("a", { className: "page-link", attrs: { href: pageHref(Math.max(0, start)) } });
+  const onPlainClick = (go) => ev => {
+    if (ev.button !== 0 || ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey) return;
+    ev.preventDefault();
+    go();
+  };
 
   // Navigate to a page and scroll back to the top so the new results start in view.
   const goToPage = (start) => {
@@ -2078,16 +2144,13 @@ function renderPagination(env) {
   {
     const li = makeLi("page-item" + (env.prev_page ? "" : " disabled"));
     li.setAttribute("aria-label", t("pagination.prev"));
-    const a = makeLink();
+    const a = makeLink(env.prev_page ? state.start - state.num : null);
     const s1 = el("span", { attrs: { "aria-hidden": "true" } });
     s1.appendChild(document.createTextNode("«"));
     a.appendChild(s1);
     a.appendChild(document.createTextNode(" "));
     a.appendChild(el("span", { className: "visually-hidden", text: t("pagination.prev") }));
-    a.addEventListener("click", ev => {
-      ev.preventDefault();
-      if (env.prev_page) goToPage(state.start - state.num);
-    });
+    a.addEventListener("click", onPlainClick(() => { if (env.prev_page) goToPage(state.start - state.num); }));
     li.appendChild(a);
     ul.appendChild(li);
   }
@@ -2099,9 +2162,11 @@ function renderPagination(env) {
     const pageNum = Number(n);
     const isFar = Math.abs(pageNum - env.page_number) > 2;
     const li = makeLi("page-item" + (pageNum === env.page_number ? " active" : "") + (isFar ? " d-none d-sm-inline-block" : ""));
-    const a = makeLink();
+    const a = makeLink((pageNum - 1) * state.num);
     a.textContent = String(pageNum);
-    a.addEventListener("click", ev => { ev.preventDefault(); goToPage((pageNum - 1) * state.num); });
+    a.setAttribute("aria-label", t("pagination.page", [pageNum]));
+    if (pageNum === env.page_number) a.setAttribute("aria-current", "page");
+    a.addEventListener("click", onPlainClick(() => goToPage((pageNum - 1) * state.num)));
     li.appendChild(a);
     ul.appendChild(li);
   });
@@ -2110,16 +2175,13 @@ function renderPagination(env) {
   {
     const li = makeLi("page-item" + (env.next_page ? "" : " disabled"));
     li.setAttribute("aria-label", t("pagination.next"));
-    const a = makeLink();
+    const a = makeLink(env.next_page ? state.start + state.num : null);
     a.appendChild(el("span", { className: "visually-hidden", text: t("pagination.next") }));
     a.appendChild(document.createTextNode(" "));
     const s2 = el("span", { attrs: { "aria-hidden": "true" } });
     s2.appendChild(document.createTextNode("»"));
     a.appendChild(s2);
-    a.addEventListener("click", ev => {
-      ev.preventDefault();
-      if (env.next_page) goToPage(state.start + state.num);
-    });
+    a.addEventListener("click", onPlainClick(() => { if (env.next_page) goToPage(state.start + state.num); }));
     li.appendChild(a);
     ul.appendChild(li);
   }
