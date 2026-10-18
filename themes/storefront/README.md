@@ -215,4 +215,4 @@ ids, baseline leaks, or behaviour — verify those by hand and by running the th
 
 A theme cannot be previewed from `file://`: it is an SPA on paths relative to the
 `<base href>` Fess inserts (`themes/storefront/…`) calling `/api/v2/*`, so it only runs
-when served by Fess 15.9+.
+when served by Fess 15.10+.
