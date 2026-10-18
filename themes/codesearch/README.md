@@ -25,7 +25,7 @@ vanilla JS and CSS (no Bootstrap, no CDN).
 
 ## Requirements
 
-- Fess **15.9+** (static-theme support)
+- Fess **15.10+**
 
 ## Install
 
@@ -34,7 +34,7 @@ vanilla JS and CSS (no Bootstrap, no CDN).
 1. Package the theme:
    ```bash
    ./scripts/package.sh codesearch
-   # → dist/codesearch-15.9.10.zip
+   # → dist/codesearch-15.10.0.zip
    ```
 2. Open **Admin → Theme** (`/admin/theme/`) and upload the ZIP.
 3. Choose it under **Default Theme** on the same screen and click **Set**.

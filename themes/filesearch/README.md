@@ -7,7 +7,7 @@ look at the file before opening it. It follows the usual conventions of file man
 file-search tools; see [`DESIGN.md`](DESIGN.md) for the reasoning.
 
 It is **self-contained** (no Bootstrap, no web fonts) and talks only to `/api/v2/*`, `go/`
-and `thumbnail/`. Requires Fess 15.9+.
+and `thumbnail/`. Requires Fess 15.10+.
 
 ## The screen
 
@@ -47,7 +47,7 @@ backslash-escaped (`smb://srv/share/` is `url:smb\:\/\/srv\/share\/*`).
 ## Install and activate
 
 ```bash
-./scripts/package.sh filesearch          # → dist/filesearch-15.9.5.zip
+./scripts/package.sh filesearch          # → dist/filesearch-15.10.0.zip
 ```
 
 Upload the ZIP at **Admin → Theme** (`/admin/theme/`) and set it as the default theme, or
