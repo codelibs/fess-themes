@@ -433,5 +433,6 @@
   "fs.recent_clear": "Limpiar",
   "fs.empty_scope": "Aquí no hay documentos que coincidan.",
   "fs.scope_too_long": "La ruta de esta carpeta es demasiado larga para buscar en ella, así que se muestra la carpeta superior más cercana.",
-  "fs.tree_partial": "Esta carpeta es grande, por lo que es posible que algunas subcarpetas no aparezcan en la lista."
+  "fs.tree_partial": "Esta carpeta es grande, por lo que es posible que algunas subcarpetas no aparezcan en la lista.",
+  "aria.close": "Cerrar"
 }

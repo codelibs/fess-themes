@@ -94,6 +94,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 img { max-width: 100%; height: auto; }
 
+/* The help page wraps its tables in this (bootstrap.min.css is not loaded here). */
+.table-responsive { overflow-x: auto; }
+
 code, kbd, samp, pre, .mono { font-family: var(--mono); }
 
 h1, h2, h3, h4 { font-weight: 600; line-height: 1.25; margin: 0 0 .5em; }
@@ -514,6 +517,8 @@ mark, .match {
 }
 .result-card .favorite-btn:hover,
 .result-card .favorite-btn.is-on { color: var(--match); }
+/* a favorite cannot be removed (the API only adds): nothing to click */
+.result-card .favorite-btn[aria-disabled="true"] { cursor: default; }
 .result-card .favorite-count { font-family: var(--mono); font-size: 11px; }
 
 /* Line-gutter code block — the snippet body. */

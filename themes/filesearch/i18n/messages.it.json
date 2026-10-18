@@ -433,5 +433,6 @@
   "fs.recent_clear": "Cancella",
   "fs.empty_scope": "Nessun documento corrispondente qui.",
   "fs.scope_too_long": "Il percorso di questa cartella è troppo lungo per cercare al suo interno, quindi viene mostrata la cartella superiore più vicina.",
-  "fs.tree_partial": "Questa cartella è grande, quindi alcune sottocartelle potrebbero non essere elencate."
+  "fs.tree_partial": "Questa cartella è grande, quindi alcune sottocartelle potrebbero non essere elencate.",
+  "aria.close": "Chiudi"
 }

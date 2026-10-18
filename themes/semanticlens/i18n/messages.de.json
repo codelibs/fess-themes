@@ -376,5 +376,6 @@
   "composition.mostly_semantic": "Überwiegend bedeutungsbasiert",
   "composition.mostly_keyword": "Überwiegend Schlüsselwortübereinstimmungen",
   "sidebar.caption_semantic": "Die meisten Ergebnisse basieren auf Bedeutung. Filter gelten sowohl für Schlüsselwort- als auch für Bedeutungstreffer.",
-  "sidebar.caption_mixed": "Filter gelten sowohl für Schlüsselwort- als auch für Bedeutungstreffer."
+  "sidebar.caption_mixed": "Filter gelten sowohl für Schlüsselwort- als auch für Bedeutungstreffer.",
+  "aria.close": "Schließen"
 }

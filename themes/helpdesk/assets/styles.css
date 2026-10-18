@@ -23,6 +23,7 @@
   --hd-secondary: #7C3AED;        /* purple — syntax/version accents */
   --hd-secondary-subtle: #F5F3FF;
   --hd-success: #16A34A;
+  --hd-success-text: #166534;     /* result-URL green: 7.1:1 on white (--hd-success is 3.3:1) */
   --hd-success-subtle: #F0FDF4;
   --hd-warning: #CA8A04;
   --hd-warning-subtle: #FFF7ED;
@@ -327,6 +328,8 @@ button { font-family: inherit; }
 
 .cursor-pointer { cursor: pointer; }
 .clearfix::after { content: ""; display: block; clear: both; }
+/* Help-page tables are wrapped in .table-responsive; bootstrap.min.css is not loaded here. */
+.table-responsive { overflow-x: auto; }
 
 /* visually-hidden / skip-link */
 .visually-hidden,
@@ -704,7 +707,7 @@ body.modal-open { overflow: hidden; }
 .result-card:hover { box-shadow: var(--hd-shadow-medium); border-color: var(--hd-zinc-200); }
 .result-card-body { flex: 1; min-width: 0; }
 .result-card h2 { font-size: 1.1rem; margin-bottom: .25rem; line-height: 1.3; }
-.result-card .result-url { color: var(--bs-success); font-size: .85rem; word-break: break-all; }
+.result-card .result-url { color: var(--hd-success-text); font-size: .85rem; word-break: break-all; }
 .result-card .result-info-meta { font-size: .8rem; color: var(--bs-tertiary-color); margin-top: .15rem; }
 .result-card .result-snippet { color: var(--bs-secondary-color); font-size: .95rem; margin-top: .25rem; }
 .result-card .result-meta { font-size: .8rem; color: var(--bs-tertiary-color); margin-top: .5rem; display: flex; gap: 1rem; flex-wrap: wrap; }
@@ -848,7 +851,7 @@ body.modal-open { overflow: hidden; }
 .result-site-row { display: inline-flex; align-items: center; gap: .25rem; }
 .favorite-count { font-size: .75rem; color: var(--bs-tertiary-color); margin-left: .2rem; vertical-align: middle; }
 .brand-logo { height: 24px; }
-cite.result-site-path { color: var(--bs-success); font-size: .85rem; font-style: normal; word-break: break-all; display: block; }
+cite.result-site-path { color: var(--hd-success-text); font-size: .85rem; font-style: normal; word-break: break-all; display: block; }
 .result-more { font-size: .8rem; color: var(--bs-tertiary-color); }
 #current-filters { margin: 0; padding: 0; }
 
@@ -1002,7 +1005,7 @@ footer[role="contentinfo"] {
 #result .title a { color: var(--hd-primary); }
 #result .title a:visited { color: var(--hd-secondary); }
 #result .body { display: flex; align-items: flex-start; gap: 1rem; }
-#result .site cite { color: var(--bs-success); font-style: normal; }
+#result .site cite { color: var(--hd-success-text); font-style: normal; }
 #result .more { display: none; }
 #result .info { font-size: 80%; color: var(--bs-tertiary-color); }
 /* The copy control is a <button> so it is focusable and keyboard-operable;

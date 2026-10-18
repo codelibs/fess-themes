@@ -25,6 +25,7 @@ describe.each(themes)("format.js [%s]", (theme) => {
     formatDate,
     isSafeHref,
     sanitizeHtml,
+    sanitizeAdminHtml,
     renderHighlightedSnippet,
     renderSnippetText,
   } = mods[theme];
@@ -47,13 +48,28 @@ describe.each(themes)("format.js [%s]", (theme) => {
 
   describe("formatFileSize", () => {
     it.each([
-      [0, "0 B"],
-      [1023, "1023 B"],
-      [1024, "1.0 KB"],
+      [0, "0 bytes"],
+      [1, "1 byte"],
+      [1023, "1,023 bytes"],
+      [1024, "1.0 kB"],
       [1048576, "1.0 MB"],
       [1073741824, "1.0 GB"],
     ])("formats %d bytes as %s", (bytes, expected) => {
       expect(formatFileSize(bytes)).toBe(expected);
+    });
+
+    it.each([
+      ["ja", 578, "578 バイト"],
+      ["ru", 578, "578 байт"],
+      ["tr", 578, "578 bayt"],
+      ["de", 1536, "1,5 kB"],
+      ["pl", 578, "578 bajtów"],
+    ])("localises the unit and number for %s: %d → %s", (locale, bytes, expected) => {
+      expect(formatFileSize(bytes, locale)).toBe(expected);
+    });
+
+    it("falls back to English for an invalid locale tag", () => {
+      expect(formatFileSize(578, "not a tag!")).toBe("578 bytes");
     });
 
     it("returns empty string for invalid or negative input", () => {
@@ -258,6 +274,58 @@ describe.each(themes)("format.js [%s]", (theme) => {
     it("returns empty string for empty input", () => {
       expect(renderSnippetText("")).toBe("");
       expect(renderSnippetText(null)).toBe("");
+    });
+  });
+
+  const cleanAdmin = (html) => serializeFragment(sanitizeAdminHtml(html));
+
+  describe("sanitizeAdminHtml: markup an administrator writes survives", () => {
+    it("keeps images with an http(s), relative or data:image source", () => {
+      const out = cleanAdmin(
+        '<img src="https://example.com/a.png" alt="A" width="10" height="20">' +
+          '<img src="/images/b.png" alt="B"><img src="data:image/png;base64,AAAA" alt="C">'
+      );
+      expect(out).toContain('src="https://example.com/a.png"');
+      expect(out).toContain('width="10"');
+      expect(out).toContain('src="/images/b.png"');
+      expect(out).toContain('src="data:image/png;base64,AAAA"');
+    });
+
+    it("keeps class, style and inline formatting that sanitizeHtml drops", () => {
+      const html = '<div class="card" style="margin: 0"><b>bold</b> <i>it</i> <u>u</u> <small>s</small></div>';
+      expect(cleanAdmin(html)).toBe(html);
+      expect(clean(html)).toBe("<div>bold it u s</div>");
+    });
+
+    it("keeps the administrator's link target and adds noopener to a new tab", () => {
+      const out = cleanAdmin('<a href="https://example.com/" target="_blank">x</a><a href="/help">y</a>');
+      expect(out).toContain('target="_blank"');
+      expect(out).toContain('rel="noopener noreferrer"');
+      expect(out).toContain('<a href="/help">y</a>');
+    });
+  });
+
+  describe("sanitizeAdminHtml: script still cannot run", () => {
+    it("drops script and iframe elements with their content", () => {
+      const out = cleanAdmin('<p>a<script>alert(1)</script><iframe src="https://example.com"></iframe>b</p>');
+      expect(out).toBe("<p>ab</p>");
+    });
+
+    it("strips event handlers and unsafe URLs", () => {
+      const out = cleanAdmin(
+        '<img src="javascript:alert(1)" onerror="alert(2)" alt="x"><a href="javascript:alert(3)" onclick="alert(4)">y</a>' +
+          '<img src="data:text/html;base64,AAAA" alt="z">'
+      );
+      expect(out).not.toContain("javascript:");
+      expect(out).not.toContain("onerror");
+      expect(out).not.toContain("onclick");
+      expect(out).not.toContain("data:text/html");
+      expect(out).toContain('alt="x"');
+    });
+
+    it("does not keep id or form controls, which could collide with the page", () => {
+      const out = cleanAdmin('<div id="search-form"><form action="/x"><input name="q"><button>go</button></form></div>');
+      expect(out).toBe("<div>go</div>");
     });
   });
 });

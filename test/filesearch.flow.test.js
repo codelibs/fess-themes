@@ -282,7 +282,7 @@ describe("what Fess actually returns", () => {
     })] });
     const row = rows()[0];
     expect(row.querySelector(".fs-c-loc").textContent).toBe("/data/files/Sales");
-    expect(row.querySelector(".fs-c-size").textContent).toBe("2.5 KB");
+    expect(row.querySelector(".fs-c-size").textContent).toBe("2.5 kB");
     row.querySelector('.fs-act[title="fs.copy_path"]').click();
     await settle();
     expect(writeText).toHaveBeenCalledWith("/data/files/Sales/Q 1 report.xlsx");
@@ -636,7 +636,7 @@ describe("rows and their actions", () => {
     expect(row.querySelector(".fs-name").innerHTML).toContain("<strong>hit</strong>");
     expect(row.querySelector(".fs-name").textContent).toBe("x hit & y");
     expect(row.querySelector(".fs-c-loc").textContent).toBe("\\\\srv\\share\\dir a");
-    expect(row.querySelector(".fs-c-size").textContent).toBe("1.0 KB");
+    expect(row.querySelector(".fs-c-size").textContent).toBe("1.0 kB");
     expect(row.querySelector(".fs-ico-pdf")).not.toBeNull();
     expect(row.querySelector(".fs-c-type").textContent).toBe("fs.kind_pdf");
   });

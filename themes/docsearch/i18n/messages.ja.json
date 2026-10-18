@@ -383,5 +383,6 @@
   "facet.selected_filters": "選択中のフィルター",
   "facet.clear_all": "すべてクリア",
   "facet.remove_filter": "フィルターを解除",
-  "home.tagline": "ドキュメントを全文検索"
+  "home.tagline": "ドキュメントを全文検索",
+  "aria.close": "閉じる"
 }

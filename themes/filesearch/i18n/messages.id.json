@@ -433,5 +433,6 @@
   "fs.recent_clear": "Hapus",
   "fs.empty_scope": "Tidak ada dokumen yang cocok di sini.",
   "fs.scope_too_long": "Jalur folder ini terlalu panjang untuk dicari di dalamnya, sehingga folder induk terdekat yang ditampilkan.",
-  "fs.tree_partial": "Folder ini besar, sehingga beberapa subfolder mungkin tidak ditampilkan dalam daftar."
+  "fs.tree_partial": "Folder ini besar, sehingga beberapa subfolder mungkin tidak ditampilkan dalam daftar.",
+  "aria.close": "Tutup"
 }

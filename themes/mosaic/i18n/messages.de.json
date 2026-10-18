@@ -371,5 +371,6 @@
   "sidebar.caption_visual": "Die meisten Ergebnisse sind visuell zugeordnet. Filter grenzen alle davon ein, einschließlich visueller Treffer.",
   "sidebar.caption_mixed": "Filter grenzen alle Ergebnisse ein — sowohl Schlüsselwort- als auch visuelle Treffer.",
   "gallery.grid": "Rasteransicht",
-  "gallery.list": "Listenansicht"
+  "gallery.list": "Listenansicht",
+  "aria.close": "Schließen"
 }

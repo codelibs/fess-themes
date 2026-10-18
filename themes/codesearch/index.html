@@ -2,7 +2,7 @@
 <html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-src blob:; child-src blob:; base-uri 'self'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: http: https:; connect-src 'self'; frame-src blob:; child-src blob:; base-uri 'self'">
   <meta name="referrer" content="strict-origin-when-cross-origin">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Fess Code Search</title>
@@ -179,7 +179,16 @@
   <button id="back-to-top" class="back-to-top is-hidden" type="button"
           aria-label="Back to top" data-i18n-aria-label="footer.back_to_top">↑</button>
 
-  <!-- Login modal (auth.js toggles .show). -->
+  <!-- Login modal (auth.js toggles .show).
+       Both steps live in ONE form. A browser's password manager takes a login made with
+       fetch as successful when the form it was typed in disappears, and only then checks
+       the password against leaked-password lists. Switching to the new-password step inside
+       the same form keeps that form on screen, so a default password that has to be changed
+       is not reported as weak before the user can change it. Closing the modal after the
+       change lets the browser offer to save the new password.
+       The password inputs are kept in <template>s and put into the form by auth.js only
+       while their step is shown: a page with no password field is not a login page to a
+       password manager, so it does not offer saved credentials in the search boxes. -->
   <div class="modal" id="login-modal" tabindex="-1" aria-labelledby="login-modal-title" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -188,37 +197,39 @@
         </div>
         <div class="modal-body">
           <form id="login-form">
-            <div class="notification d-none" id="login-notification" role="status" aria-live="polite"></div>
-            <div class="alert alert-danger d-none" id="login-error" role="alert"></div>
-            <p>
-              <label for="login-username" data-i18n="auth.username">Username</label><br>
-              <input class="btn login-modal-body-input" id="login-username" name="username" autocomplete="username" required>
-            </p>
-            <p>
-              <label for="login-password" data-i18n="auth.password">Password</label><br>
-              <input class="btn login-modal-body-input" id="login-password" name="password" type="password" autocomplete="current-password" required>
-            </p>
-            <p>
-              <button type="submit" class="btn btn-primary" data-i18n="auth.login">Login</button>
-            </p>
-          </form>
-          <!-- New-password form, shown instead of the login form when the password just used
-               must be changed (parity login/newpassword.jsp). auth.js switches between them;
-               the footer's Cancel serves both. -->
-          <form id="password-change-form" class="d-none">
-            <p data-i18n="auth.password_change_required">You need to update your password</p>
-            <div class="alert alert-danger d-none" id="password-change-error" role="alert"></div>
-            <p>
-              <label for="password-change-new" data-i18n="profile.new_password">New password</label><br>
-              <input class="btn login-modal-body-input" id="password-change-new" name="new_password" type="password" autocomplete="new-password" required>
-            </p>
-            <p>
-              <label for="password-change-confirm" data-i18n="profile.confirm_password">Confirm new password</label><br>
-              <input class="btn login-modal-body-input" id="password-change-confirm" name="confirm_password" type="password" autocomplete="new-password" required>
-            </p>
-            <p>
-              <button type="submit" class="btn btn-primary" data-i18n="profile.update">Update</button>
-            </p>
+            <div id="login-step">
+              <div class="notification d-none" id="login-notification" role="status" aria-live="polite"></div>
+              <div class="alert alert-danger d-none" id="login-error" role="alert"></div>
+              <p>
+                <label for="login-username" data-i18n="auth.username">Username</label><br>
+                <input class="btn login-modal-body-input" id="login-username" name="username" autocomplete="username" required>
+              </p>
+              <p>
+                <label for="login-password" data-i18n="auth.password">Password</label><br>
+                <template class="password-field"><input class="btn login-modal-body-input" id="login-password" name="password" type="password" autocomplete="current-password" required></template>
+              </p>
+              <p>
+                <button type="submit" class="btn btn-primary" data-i18n="auth.login">Login</button>
+              </p>
+            </div>
+            <!-- New-password step, shown instead of the login step when the password just used
+                 must be changed (parity login/newpassword.jsp). auth.js switches between them;
+                 the footer's Cancel serves both. -->
+            <div class="d-none" id="password-change-step">
+              <p data-i18n="auth.password_change_required">You need to update your password</p>
+              <div class="alert alert-danger d-none" id="password-change-error" role="alert"></div>
+              <p>
+                <label for="password-change-new" data-i18n="profile.new_password">New password</label><br>
+                <template class="password-field"><input class="btn login-modal-body-input" id="password-change-new" name="new_password" type="password" autocomplete="new-password" required></template>
+              </p>
+              <p>
+                <label for="password-change-confirm" data-i18n="profile.confirm_password">Confirm new password</label><br>
+                <template class="password-field"><input class="btn login-modal-body-input" id="password-change-confirm" name="confirm_password" type="password" autocomplete="new-password" required></template>
+              </p>
+              <p>
+                <button type="submit" class="btn btn-primary" id="password-change-submit" data-i18n="profile.update">Update</button>
+              </p>
+            </div>
           </form>
         </div>
         <div class="modal-footer">

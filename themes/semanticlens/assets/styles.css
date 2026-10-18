@@ -314,6 +314,10 @@ button { font-family: inherit; }
 .text-white { color: #fff !important; }
 .text-dark { color: var(--df-stone-900) !important; }
 .text-body { color: var(--bs-body-color) !important; }
+
+/* Help-page tables are wrapped in .table-responsive so a wide table scrolls by itself
+   (bootstrap.min.css is not loaded by this theme). */
+.table-responsive { overflow-x: auto; }
 .small, small { font-size: .8125rem; }
 .fw-semibold { font-weight: 600 !important; }
 .fw-bold { font-weight: 700 !important; }

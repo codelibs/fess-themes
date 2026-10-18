@@ -433,5 +433,6 @@
   "fs.recent_clear": "Effacer",
   "fs.empty_scope": "Aucun document correspondant ici.",
   "fs.scope_too_long": "Le chemin de ce dossier est trop long pour y effectuer une recherche ; le dossier parent le plus proche est donc affiché.",
-  "fs.tree_partial": "Ce dossier est volumineux : certains sous-dossiers peuvent ne pas figurer dans la liste."
+  "fs.tree_partial": "Ce dossier est volumineux : certains sous-dossiers peuvent ne pas figurer dans la liste.",
+  "aria.close": "Fermer"
 }

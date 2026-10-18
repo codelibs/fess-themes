@@ -2,7 +2,7 @@
 import * as api from "./api.js";
 import * as i18n from "./i18n.js";
 import { t } from "./i18n.js";
-import { sanitizeHtml } from "./format.js";
+import { sanitizeAdminHtml } from "./format.js";
 import * as auth from "./auth.js";
 import * as search from "./search.js";
 import * as chat from "./chat.js";
@@ -46,8 +46,16 @@ function showView(id) {
       Promise.resolve().then(() => target.focus({ preventScroll: true }));
     } else {
       el.setAttribute("hidden", "");
+      // The profile view is rebuilt on every visit. Drop its password form when leaving it,
+      // so no password field stays in the page for a password manager to treat it as a
+      // login page and offer saved credentials in the search boxes.
+      if (vid === "profile-view") el.replaceChildren();
     }
   }
+  // One h1 per view: the home view's logo is its h1 (JSP parity: index.jsp h1.mainLogo);
+  // every other view uses the visually-hidden page heading.
+  const pageHeading = document.getElementById("page-heading");
+  if (pageHeading) pageHeading.hidden = id === "home-view";
   // JSP parity: home (index.jsp) shows an empty navbar-brand; other views show the logo.
   setBrandVisible(id !== "home-view");
   // Start the decorative hero canvas + placeholder typewriter only while the
@@ -157,8 +165,8 @@ function renderWarnings() {
  * Render notification banners in the #home-notification, #results-notification,
  * and #advance-notification slots from api config notifications.
  *
- * Notification HTML is sanitized through the whitelist sanitizer from format.js
- * before being appended — no raw innerHTML on live DOM nodes.
+ * Notification HTML is written by an administrator and is sanitized through
+ * sanitizeAdminHtml from format.js before being appended — no raw innerHTML on live DOM nodes.
  * Slots with empty or absent notification values are hidden with d-none.
  *
  * Called once after api.init() so getConfig() is populated.
@@ -178,7 +186,7 @@ function renderNotifications() {
       return;
     }
     el.classList.remove("d-none");
-    el.appendChild(sanitizeHtml(html));
+    el.appendChild(sanitizeAdminHtml(html));
   }
 
   applyNotification("home-notification", notifications.search_top || "");
@@ -249,9 +257,6 @@ function attachHomeView() {
         const labelSel = document.getElementById("labelSearchOption");
         if (labelSel) Array.from(labelSel.selectedOptions).map(o => o.value).filter(Boolean).forEach(v => params.append("fields.label", v));
         router.navigate("search?" + params.toString());
-        // JSP parity: disable the submit button for 3s after navigation has been
-        // triggered, to prevent rapid double-submits.
-        search.disableSubmitBriefly(document.querySelector("#home-search-form button[type=submit]"));
       }
     });
   }

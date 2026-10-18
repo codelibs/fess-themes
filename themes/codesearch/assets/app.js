@@ -1,7 +1,7 @@
 import * as api from "./api.js";
 import * as i18n from "./i18n.js";
 import { t } from "./i18n.js";
-import { sanitizeHtml } from "./format.js";
+import { sanitizeAdminHtml } from "./format.js";
 import * as auth from "./auth.js";
 import * as search from "./search.js";
 import * as chat from "./chat.js";
@@ -29,6 +29,10 @@ function showView(id) {
       Promise.resolve().then(() => target.focus({ preventScroll: true }));
     } else {
       el.setAttribute("hidden", "");
+      // The profile view is rebuilt on every visit. Drop its password form when leaving it,
+      // so no password field stays in the page for a password manager to treat it as a
+      // login page and offer saved credentials in the search boxes.
+      if (vid === "profile-view") el.replaceChildren();
     }
   }
   // JSP parity: home (index.jsp) shows an empty navbar-brand; other views show the logo.
@@ -129,8 +133,8 @@ function renderWarnings() {
  * Render notification banners in the #home-notification, #results-notification,
  * and #advance-notification slots from api config notifications.
  *
- * Notification HTML is sanitized through the whitelist sanitizer from format.js
- * before being appended — no raw innerHTML on live DOM nodes.
+ * Notification HTML is written by an administrator and is sanitized through
+ * sanitizeAdminHtml from format.js before being appended — no raw innerHTML on live DOM nodes.
  * Slots with empty or absent notification values are hidden with d-none.
  *
  * Called once after api.init() so getConfig() is populated.
@@ -150,7 +154,7 @@ function renderNotifications() {
       return;
     }
     el.classList.remove("d-none");
-    el.appendChild(sanitizeHtml(html));
+    el.appendChild(sanitizeAdminHtml(html));
   }
 
   applyNotification("home-notification", notifications.search_top || "");
@@ -220,9 +224,6 @@ function attachHomeView() {
         const langSel = document.getElementById("langSearchOption");
         if (langSel) Array.from(langSel.selectedOptions).map(o => o.value).filter(Boolean).forEach(v => base.append("lang", v));
         search.submitQuery(rawQ, base);
-        // JSP parity: disable the submit button for 3s after navigation has been
-        // triggered, to prevent rapid double-submits.
-        search.disableSubmitBriefly(document.querySelector("#home-search-form button[type=submit]"));
       }
     });
   }

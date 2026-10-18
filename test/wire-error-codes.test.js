@@ -65,6 +65,8 @@ describe.each(themes)("%s: auth.js branches on the v2 wire codes", (theme) => {
 
     post.mockRejectedValueOnce({ code: "rate_limited" });
     document.getElementById("login-username").value = "alice";
+    // The password input waits in a <template> until the modal opens (auth.js mounts it on show.bs.modal).
+    document.getElementById("login-modal").dispatchEvent(new Event("show.bs.modal"));
     document.getElementById("login-password").value = "pw";
     submit("login-form");
     await settle();

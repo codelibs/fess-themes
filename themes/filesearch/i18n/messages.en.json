@@ -433,5 +433,6 @@
   "fs.recent_clear": "Clear",
   "fs.empty_scope": "There are no matching documents here.",
   "fs.scope_too_long": "This folder's path is too long to search inside, so its nearest parent folder is shown.",
-  "fs.tree_partial": "This folder is large, so some of its subfolders may not be listed."
+  "fs.tree_partial": "This folder is large, so some of its subfolders may not be listed.",
+  "aria.close": "Close"
 }
