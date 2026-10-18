@@ -433,5 +433,6 @@
   "fs.recent_clear": "Wissen",
   "fs.empty_scope": "Hier zijn geen overeenkomende documenten.",
   "fs.scope_too_long": "Het pad van deze map is te lang om erin te zoeken, dus de dichtstbijzijnde bovenliggende map wordt getoond.",
-  "fs.tree_partial": "Deze map is groot, daarom worden mogelijk niet alle submappen weergegeven."
+  "fs.tree_partial": "Deze map is groot, daarom worden mogelijk niet alle submappen weergegeven.",
+  "aria.close": "Sluiten"
 }

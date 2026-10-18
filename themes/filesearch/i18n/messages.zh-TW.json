@@ -433,5 +433,6 @@
   "fs.recent_clear": "清除",
   "fs.empty_scope": "此處沒有符合的文件。",
   "fs.scope_too_long": "此資料夾的路徑過長，無法在其中搜尋，因此顯示最近的上層資料夾。",
-  "fs.tree_partial": "此資料夾較大，部分子資料夾可能未列在清單中。"
+  "fs.tree_partial": "此資料夾較大，部分子資料夾可能未列在清單中。",
+  "aria.close": "關閉"
 }

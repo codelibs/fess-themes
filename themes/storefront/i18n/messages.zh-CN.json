@@ -365,5 +365,6 @@
   "product.rating_label": "5 分中的 {rating} 分",
   "product.sort_price_asc": "价格从低到高",
   "product.sort_price_desc": "价格从高到低",
-  "product.sort_rating_desc": "评分从高到低"
+  "product.sort_rating_desc": "评分从高到低",
+  "aria.close": "关闭"
 }

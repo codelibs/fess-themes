@@ -433,5 +433,6 @@
   "fs.recent_clear": "Temizle",
   "fs.empty_scope": "Burada eşleşen belge yok.",
   "fs.scope_too_long": "Bu klasörün yolu içinde arama yapmak için çok uzun olduğundan en yakın üst klasör gösteriliyor.",
-  "fs.tree_partial": "Bu klasör büyük olduğundan bazı alt klasörler listelenmemiş olabilir."
+  "fs.tree_partial": "Bu klasör büyük olduğundan bazı alt klasörler listelenmemiş olabilir.",
+  "aria.close": "Kapat"
 }

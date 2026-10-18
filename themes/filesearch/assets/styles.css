@@ -290,6 +290,8 @@ legend { display: none; }
 .text-start { text-align: left !important; }
 .text-uppercase { text-transform: uppercase !important; }
 .text-truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* The help page wraps its tables in this (bootstrap.min.css is not loaded here). */
+.table-responsive { overflow-x: auto; }
 .text-decoration-none { text-decoration: none !important; }
 .text-muted { color: var(--fs-text-3) !important; }
 .text-danger { color: var(--fs-error) !important; }

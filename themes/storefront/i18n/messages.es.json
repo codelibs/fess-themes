@@ -365,5 +365,6 @@
   "product.rating_label": "{rating} de 5",
   "product.sort_price_asc": "Precio: de menor a mayor",
   "product.sort_price_desc": "Precio: de mayor a menor",
-  "product.sort_rating_desc": "Valoración: mejor primero"
+  "product.sort_rating_desc": "Valoración: mejor primero",
+  "aria.close": "Cerrar"
 }

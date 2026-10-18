@@ -433,5 +433,6 @@
   "fs.recent_clear": "Wyczyść",
   "fs.empty_scope": "Brak pasujących dokumentów w tym miejscu.",
   "fs.scope_too_long": "Ścieżka tego folderu jest zbyt długa, aby w nim wyszukiwać, dlatego wyświetlany jest najbliższy folder nadrzędny.",
-  "fs.tree_partial": "Ten folder jest duży, więc niektóre podfoldery mogą nie być wyświetlone na liście."
+  "fs.tree_partial": "Ten folder jest duży, więc niektóre podfoldery mogą nie być wyświetlone na liście.",
+  "aria.close": "Zamknij"
 }

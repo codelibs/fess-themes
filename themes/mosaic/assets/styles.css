@@ -340,6 +340,8 @@ button { font-family: inherit; }
 
 .cursor-pointer { cursor: pointer; }
 .clearfix::after { content: ""; display: block; clear: both; }
+/* Help-page tables are wrapped in .table-responsive; bootstrap.min.css is not loaded here. */
+.table-responsive { overflow-x: auto; }
 
 /* visually-hidden / skip-link */
 .visually-hidden,

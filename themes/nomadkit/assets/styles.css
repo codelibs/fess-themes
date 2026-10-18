@@ -811,6 +811,8 @@ body.modal-open { overflow: hidden; }
 .help-section { margin-bottom: 2rem; }
 .help-section h2 { border-bottom: 1px solid var(--bs-border-color); padding-bottom: .5rem; }
 .help-section code { background: var(--df-stone-100); padding: .125rem .25rem; border-radius: var(--df-radius-sm); }
+/* The help page wraps each table in .table-responsive (bootstrap.min.css is not loaded here). */
+.table-responsive { overflow-x: auto; }
 
 /* ---- Advanced search ---- */
 .advance-form .form-label { font-weight: 500; }

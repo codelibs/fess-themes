@@ -352,5 +352,6 @@
   "labels.facet_filetype_scala": "Scala",
   "labels.facet_filetype_shell": "シェルスクリプト",
   "labels.facet_filetype_vb": "Visual Basic",
-  "labels.facet_label_reset": "リセット"
+  "labels.facet_label_reset": "リセット",
+  "aria.close": "閉じる"
 }

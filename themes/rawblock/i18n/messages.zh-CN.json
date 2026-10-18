@@ -347,5 +347,6 @@
   "labels.facet_filetype_scala": "Scala",
   "labels.facet_filetype_shell": "Shell脚本",
   "labels.facet_filetype_vb": "Visual Basic",
-  "labels.facet_label_reset": "重置"
+  "labels.facet_label_reset": "重置",
+  "aria.close": "关闭"
 }

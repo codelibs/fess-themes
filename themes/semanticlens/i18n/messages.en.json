@@ -376,5 +376,6 @@
   "composition.mostly_semantic": "Mostly meaning-matched",
   "composition.mostly_keyword": "Mostly keyword matches",
   "sidebar.caption_semantic": "Most results are meaning-matched. Filters apply to both keyword and meaning matches.",
-  "sidebar.caption_mixed": "Filters apply to both keyword and meaning matches."
+  "sidebar.caption_mixed": "Filters apply to both keyword and meaning matches.",
+  "aria.close": "Close"
 }

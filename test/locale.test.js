@@ -52,6 +52,14 @@ describe("i18n.pickLocale", () => {
     ["", "de-DE", "de"],
     [undefined, "de-DE", "de"],
     ["xx", "ko-KR", "ko"],
+    ["zh-Hant", "en-US", "zh-TW"],
+    ["zh-HK", "en-US", "zh-TW"],
+    ["zh-Hant-HK", "en-US", "zh-TW"],
+    ["zh-MO", "en-US", "zh-TW"],
+    ["zh-Hans", "en-US", "zh-CN"],
+    ["zh-SG", "en-US", "zh-CN"],
+    ["zh", "en-US", "zh-CN"],
+    ["zh_TW", "en-US", "zh-TW"],
   ])("preferred %s with navigator.language %s → %s", async (preferred, lang, expected) => {
     setLanguage(lang);
     const i18n = await import(I18N);
@@ -66,5 +74,26 @@ describe("i18n.pickLocale", () => {
     await i18n.init("ko");
     expect(i18n.getLocale()).toBe("ko");
     expect(fetchMock.mock.calls[0][0]).toMatch(/\/themes\/docuforge\/i18n\/messages\.ko\.json$/);
+  });
+});
+
+describe("i18n.languageLabel", () => {
+  it("names languages in a browser language that has no theme bundle", async () => {
+    vi.resetModules();
+    stubFetch({ "labels.lang_ja": "Japanese" });
+    setLanguage("sr-Latn");
+    const m = await import(I18N);
+    await m.init();
+    expect(m.getLocale()).toBe("en");
+    expect(m.languageLabel("ja")).toBe("japanski");
+  });
+
+  it("uses the bundle names when the browser language has a bundle", async () => {
+    vi.resetModules();
+    stubFetch({ "labels.lang_ja": "Japonés" });
+    setLanguage("es-MX");
+    const m = await import(I18N);
+    await m.init();
+    expect(m.languageLabel("ja")).toBe("Japonés");
   });
 });

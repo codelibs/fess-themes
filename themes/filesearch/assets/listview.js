@@ -13,7 +13,7 @@
 // format.js; the digest is raw text and is escaped here. Keyboard decisions live in
 // keynav.js.
 
-import { t } from "./i18n.js";
+import { t, getLocale } from "./i18n.js";
 import { escapeHtml, formatFileSize, formatDate, renderHighlightedSnippet, renderSnippetText } from "./format.js";
 import { el, clear, reveal } from "./dom.js";
 import { fileKind, fileIcon, uiIcon } from "./icons.js";
@@ -123,7 +123,7 @@ export function buildRow(d, idx0, ctx) {
 
   // ── modified / size / type ──
   row.appendChild(cell("fs-c-mod")).textContent = formatDate(d.last_modified || d.timestamp);
-  row.appendChild(cell("fs-c-size")).textContent = formatFileSize(d.content_length);
+  row.appendChild(cell("fs-c-size")).textContent = formatFileSize(d.content_length, getLocale());
   row.appendChild(cell("fs-c-type")).textContent = t("fs.kind_" + kind);
 
   // ── actions ──

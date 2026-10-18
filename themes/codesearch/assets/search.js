@@ -20,7 +20,7 @@
 // so the must-haves (match-highlight, gutter, monospace, XSS safety) ship alone.
 
 import * as api from "./api.js";
-import { t } from "./i18n.js";
+import { t, getLocale } from "./i18n.js";
 import { escapeHtml, formatFileSize, formatDate, renderHighlightedSnippet } from "./format.js";
 import { navigate } from "./router.js";
 import { parseQuery, toFessQuery, qualifierToFess, qualifierText, addQualifier, removeQualifier, QUALIFIER_MAP } from "./query.js";
@@ -308,7 +308,7 @@ function buildResultCard(d, queryId, order) {
   }
 
   // ★ favorite control. Display gated on features.user_favorite (parity with the
-  // reference theme); adding requires login (toggleFavorite handles the 401 gate).
+  // reference theme); adding requires login (addFavorite handles the 401 gate).
   const features = (api.getConfig() || {}).features || {};
   if (features.user_favorite) {
     const favBtn = el("button", {
@@ -402,7 +402,7 @@ function buildGenericCard(li, d, queryId, order) {
   const footer = el("div", { className: "result-foot mono" });
   const parts = [];
   if (d.url) parts.push(d.url);
-  const sizeStr = formatFileSize(d.content_length);
+  const sizeStr = formatFileSize(d.content_length, getLocale());
   if (sizeStr) parts.push(sizeStr);
   const dateStr = formatDate(d.last_modified || d.created);
   if (dateStr) parts.push(dateStr);
@@ -418,9 +418,16 @@ function buildGenericCard(li, d, queryId, order) {
 // Favorites (best-effort; reuse the reference theme endpoint contract)
 // ---------------------------------------------------------------------------
 
+/**
+ * The star's state. /api/v2 can only add a favorite (POST /documents/{id}/favorite answers a
+ * repeat as an idempotent success, and there is no way to remove one), so a favorited star says
+ * it is a favorite and offers nothing: it is not a toggle that a second click could undo.
+ */
 function setFavoriteUi(btn, on, count) {
   btn.setAttribute("aria-pressed", on ? "true" : "false");
-  btn.setAttribute("aria-label", on ? t("result.favorite_remove") : t("result.favorite_add"));
+  btn.setAttribute("aria-label", on ? t("result.favorite_added") : t("result.favorite_add"));
+  // aria-disabled, not disabled: a button that disables itself under the keyboard drops the focus.
+  if (on) btn.setAttribute("aria-disabled", "true"); else btn.removeAttribute("aria-disabled");
   btn.classList.toggle("is-on", !!on);
   const icon = btn.querySelector(".star");
   if (icon) icon.textContent = on ? "★" : "☆";
@@ -437,7 +444,8 @@ function setFavoriteUi(btn, on, count) {
   }
 }
 
-async function toggleFavorite(docId, btn, queryId) {
+async function addFavorite(docId, btn, queryId) {
+  if (btn.getAttribute("aria-pressed") === "true") return;
   try {
     const env = await api.post("/documents/" + encodeURIComponent(docId) + "/favorite", { query_id: queryId || "" });
     setFavoriteUi(btn, !!env.favorite, env.count || 0);
@@ -505,7 +513,7 @@ function renderResults(env) {
     const btn = li.querySelector(".favorite-btn");
     const docId = li.dataset.docId;
     if (btn && docId) {
-      btn.addEventListener("click", () => toggleFavorite(docId, btn, li.dataset.queryId || ""));
+      btn.addEventListener("click", () => addFavorite(docId, btn, li.dataset.queryId || ""));
     }
   });
   const favEnabled = !!((api.getConfig() || {}).features || {}).user_favorite && api.isAuthenticated();
@@ -1028,11 +1036,16 @@ export function runFromUrl() {
  * @param {URLSearchParams} [base] - existing params to carry forward (num/sort/lang)
  */
 export function submitQuery(rawInput, base) {
+  navigate("search" + buildSearchQuery(rawInput, base));
+}
+
+/** The query string (with its leading "?") that submitQuery navigates to. */
+function buildSearchQuery(rawInput, base) {
   const fessQuery = toFessQuery(parseQuery(rawInput || ""));
   const params = base ? new URLSearchParams(base) : new URLSearchParams(location.search);
   if (fessQuery) params.set("q", fessQuery); else params.delete("q");
   params.delete("start"); // new query → first page
-  navigate("search?" + params.toString());
+  return "?" + params.toString();
 }
 
 /**
@@ -1071,7 +1084,10 @@ export function attach() {
     bar.addEventListener("submit", ev => {
       ev.preventDefault();
       if (suggest) suggest.cancel();
-      submitQuery(input.value);
+      // A double submit of the same search within 3 s runs once.
+      const query = buildSearchQuery(input.value);
+      if (isRepeatedSubmit(query)) return;
+      navigate("search" + query);
     });
   }
 
@@ -1111,13 +1127,28 @@ export function clearSearchState() {
   renderActiveChips();
 }
 
+/** How long after a header search the same search submitted again counts as a double submit. */
+const REPEAT_SUBMIT_MS = 3000;
+let lastSubmitAt = 0;
+
 /**
- * Disable a submit button for 3s to guard against double-submits (parity helper).
+ * Double-submit guard of the header search form (a double click, a held Enter): true when `query`
+ * is exactly the query string of the page that is shown and a header search ran less than 3 s ago,
+ * so submitting again would only push the same entry onto the history and repeat the request.
+ * Any other submit (another query or option, or the same one once the page has moved on) is let through.
+ *
+ * The JSP page disabled the submit button for 3 s (BUTTON_DISABLE_DURATION). Here the page does not
+ * reload, and a disabled default button makes the browser skip the implicit submission, so Enter in the
+ * query box did nothing for 3 s after every search, whatever was typed. The button stays enabled.
+ *
+ * @param {string} query - the query string of the search about to run, with its leading "?"
+ * @returns {boolean}
  */
-export function disableSubmitBriefly(btn) {
-  if (!btn) return;
-  btn.disabled = true;
-  setTimeout(() => { btn.disabled = false; }, 3000);
+export function isRepeatedSubmit(query) {
+  const now = Date.now();
+  if (now - lastSubmitAt < REPEAT_SUBMIT_MS && location.search === query) return true;
+  lastSubmitAt = now;
+  return false;
 }
 
 /**

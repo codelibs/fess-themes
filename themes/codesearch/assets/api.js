@@ -55,6 +55,16 @@ function qs(params) {
 }
 
 /**
+ * The URL of /api/v2{path} with the given query parameters, for links the browser follows itself
+ * (e.g. a download), relative to the <base href> like every other request.
+ * @param {string} path
+ * @param {object} [params] - query parameters
+ */
+export function url(path, params) {
+  return BASE + path + qs(params);
+}
+
+/**
  * GET /api/v2{path}
  * @param {string} path
  * @param {object} [params] - query parameters
@@ -89,6 +99,53 @@ export async function post(path, body) {
         "X-Fess-CSRF-Token": csrfToken || ""
       },
       body: JSON.stringify(body || {})
+    });
+  } catch (e) {
+    throw new NetworkError(e);
+  }
+  return unwrap(resp);
+}
+
+/**
+ * PUT /api/v2{path} with a JSON body, with the same CSRF header, credentials and envelope
+ * handling as post().
+ * @param {string} path
+ * @param {object} body
+ */
+export async function put(path, body) {
+  let resp;
+  try {
+    resp = await fetch(BASE + path, {
+      method: "PUT",
+      credentials: "same-origin",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "X-Fess-CSRF-Token": csrfToken || ""
+      },
+      body: JSON.stringify(body || {})
+    });
+  } catch (e) {
+    throw new NetworkError(e);
+  }
+  return unwrap(resp);
+}
+
+/**
+ * DELETE /api/v2{path}, with the same CSRF header, credentials and envelope handling as post().
+ * Named del because delete is a reserved word.
+ * @param {string} path
+ */
+export async function del(path) {
+  let resp;
+  try {
+    resp = await fetch(BASE + path, {
+      method: "DELETE",
+      credentials: "same-origin",
+      headers: {
+        "Accept": "application/json",
+        "X-Fess-CSRF-Token": csrfToken || ""
+      }
     });
   } catch (e) {
     throw new NetworkError(e);

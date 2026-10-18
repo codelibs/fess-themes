@@ -352,5 +352,6 @@
   "labels.facet_filetype_scala": "Scala",
   "labels.facet_filetype_shell": "Shell-Skript",
   "labels.facet_filetype_vb": "Visual Basic",
-  "labels.facet_label_reset": "Zurücksetzen"
+  "labels.facet_label_reset": "Zurücksetzen",
+  "aria.close": "Schließen"
 }

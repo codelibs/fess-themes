@@ -365,5 +365,6 @@
   "product.rating_label": "5점 만점에 {rating}점",
   "product.sort_price_asc": "가격 낮은순",
   "product.sort_price_desc": "가격 높은순",
-  "product.sort_rating_desc": "평점 높은순"
+  "product.sort_rating_desc": "평점 높은순",
+  "aria.close": "닫기"
 }

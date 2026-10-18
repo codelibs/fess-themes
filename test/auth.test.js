@@ -601,20 +601,23 @@ describe("isSessionGone", () => {
 });
 
 describe("attach — forced password change", () => {
+  // Mirrors index.html: both steps in one form, the password inputs kept in templates.
   const FIXTURE = `
     <ul id="auth-controls"></ul>
     <div id="login-modal">
       <form id="login-form">
-        <button type="button" id="login-cancel" data-bs-dismiss="modal"></button>
-        <input id="login-username" value="admin">
-        <input id="login-password" value="admin">
-        <div id="login-error" class="d-none"></div>
-      </form>
-      <form id="password-change-form" class="d-none">
-        <div id="password-change-error" class="d-none"></div>
-        <input id="password-change-new">
-        <input id="password-change-confirm">
-        <button type="submit"></button>
+        <div id="login-step">
+          <button type="button" id="login-cancel" data-bs-dismiss="modal"></button>
+          <input id="login-username" value="admin">
+          <template class="password-field"><input id="login-password" type="password" required></template>
+          <div id="login-error" class="d-none"></div>
+        </div>
+        <div id="password-change-step" class="d-none">
+          <div id="password-change-error" class="d-none"></div>
+          <template class="password-field"><input id="password-change-new" type="password" required></template>
+          <template class="password-field"><input id="password-change-confirm" type="password" required></template>
+          <button type="submit" id="password-change-submit"></button>
+        </div>
       </form>
     </div>`;
   const ADMIN = { name: "admin", editable: true };
@@ -637,17 +640,43 @@ describe("attach — forced password change", () => {
     document.body.innerHTML = FIXTURE;
     document.addEventListener("fess:auth:login", onLogin);
     await attach();
+    document.getElementById("login-modal").dispatchEvent(new Event("show.bs.modal"));
+    document.getElementById("login-password").value = "admin";
   });
   afterEach(() => document.removeEventListener("fess:auth:login", onLogin));
 
-  it("switches to the new-password form after a login whose password must change", async () => {
+  it("puts no password field in the page until the modal opens, and takes it out when the modal closes", async () => {
+    document.body.innerHTML = FIXTURE;
+    await attach();
+    const modal = document.getElementById("login-modal");
+    const passwordFields = () => [...document.querySelectorAll('input[type="password"]')].map((el) => el.id);
+    expect(passwordFields()).toEqual([]);
+    modal.dispatchEvent(new Event("show.bs.modal"));
+    // Only the login step's field: the new-password inputs wait for their step.
+    expect(passwordFields()).toEqual(["login-password"]);
+    modal.dispatchEvent(new Event("show.bs.modal"));
+    expect(passwordFields()).toEqual(["login-password"]);
+    modal.dispatchEvent(new Event("hidden.bs.modal"));
+    expect(passwordFields()).toEqual([]);
+  });
+
+  it("switches to the new-password step in the same form after a login whose password must change", async () => {
     api.post.mockResolvedValueOnce({ user: ADMIN, csrf_token: "A", password_change_required: true });
+    expect(document.getElementById("password-change-new")).toBeNull();
     submit("login-form");
     await flush();
-    expect(isShown("password-change-form")).toBe(true);
-    expect(isShown("login-form")).toBe(false);
+    expect(isShown("password-change-step")).toBe(true);
+    expect(isShown("login-step")).toBe(false);
+    // The form the password was typed in stays on screen, so a password manager does not take
+    // the login as finished and report the default password as weak.
+    expect(isShown("login-form")).toBe(true);
+    expect(document.getElementById("password-change-new").closest("form").id).toBe("login-form");
+    // The current password stays, for a password manager to pair it with the new one.
+    expect(document.getElementById("login-password").value).toBe("admin");
     expect(hide).not.toHaveBeenCalled();
-    expect(logins).toBe(1);
+    // The page is not told about the login yet: reloading its config and re-running the route
+    // would make a password manager take the login as finished and report the default password.
+    expect(logins).toBe(0);
     expect(getCurrentUser()).toEqual(ADMIN);
   });
 
@@ -655,8 +684,9 @@ describe("attach — forced password change", () => {
     api.post.mockResolvedValueOnce({ user: { name: "ldap", editable: false }, csrf_token: "A", password_change_required: true });
     submit("login-form");
     await flush();
-    expect(isShown("password-change-form")).toBe(false);
+    expect(isShown("password-change-step")).toBe(false);
     expect(hide).toHaveBeenCalled();
+    expect(logins).toBe(1);
   });
 
   it("changes the password with the one just entered, then logs in with the new one", async () => {
@@ -668,7 +698,7 @@ describe("attach — forced password change", () => {
     submit("login-form");
     await flush();
     setNewPassword("N3w-password!");
-    submit("password-change-form");
+    submit("login-form");
     await flush();
 
     expect(api.post).toHaveBeenNthCalledWith(2, "/auth/password", {
@@ -680,7 +710,8 @@ describe("attach — forced password change", () => {
     expect(api.post).toHaveBeenNthCalledWith(3, "/auth/login", { username: "admin", password: "N3w-password!" });
     expect(api.setCsrfToken).toHaveBeenLastCalledWith("B");
     expect(hide).toHaveBeenCalled();
-    expect(logins).toBe(2);
+    // Announced once, by the login with the new password.
+    expect(logins).toBe(1);
   });
 
   it("closes the modal when the change does not end the session", async () => {
@@ -690,10 +721,12 @@ describe("attach — forced password change", () => {
     submit("login-form");
     await flush();
     setNewPassword("N3w-password!");
-    submit("password-change-form");
+    submit("login-form");
     await flush();
     expect(api.post).toHaveBeenCalledTimes(2);
     expect(hide).toHaveBeenCalled();
+    // The held login is announced once the change is done.
+    expect(logins).toBe(1);
   });
 
   it("does not send the new password again while the change is in flight", async () => {
@@ -704,11 +737,11 @@ describe("attach — forced password change", () => {
     submit("login-form");
     await flush();
     setNewPassword("N3w-password!");
-    const button = document.querySelector('#password-change-form button[type="submit"]');
+    const button = document.getElementById("password-change-submit");
 
-    submit("password-change-form");
+    submit("login-form");
     expect(button.disabled).toBe(true);
-    submit("password-change-form");
+    submit("login-form");
     await flush();
     expect(api.post.mock.calls.filter((c) => c[0] === "/auth/password")).toHaveLength(1);
 
@@ -723,7 +756,7 @@ describe("attach — forced password change", () => {
     submit("login-form");
     await flush();
     setNewPassword("one-password", "another-password");
-    submit("password-change-form");
+    submit("login-form");
     await flush();
     expect(api.post).toHaveBeenCalledTimes(1);
     expect(document.getElementById("password-change-error").textContent).toBe("profile.error_mismatch");
@@ -737,10 +770,10 @@ describe("attach — forced password change", () => {
     submit("login-form");
     await flush();
     setNewPassword("admin");
-    submit("password-change-form");
+    submit("login-form");
     await flush();
     expect(document.getElementById("password-change-error").textContent).toBe("profile.error_password_blacklisted");
-    expect(isShown("password-change-form")).toBe(true);
+    expect(isShown("password-change-step")).toBe(true);
   });
 
   it("returns to the login form when the login with the new password fails", async () => {
@@ -756,21 +789,23 @@ describe("attach — forced password change", () => {
       submit("login-form");
       await flush();
       setNewPassword("N3w-password!");
-      submit("password-change-form");
+      submit("login-form");
       await flush();
     } finally {
       document.removeEventListener("fess:auth:logout", onLogout);
     }
-    expect(isShown("login-form")).toBe(true);
-    expect(isShown("password-change-form")).toBe(false);
+    expect(isShown("login-step")).toBe(true);
+    expect(isShown("password-change-step")).toBe(false);
     expect(document.getElementById("login-username").value).toBe("admin");
-    // Neither the old nor the new password stays in the forms.
+    // Neither the old nor the new password stays in the form.
     expect(document.getElementById("login-password").value).toBe("");
-    expect(document.getElementById("password-change-new").value).toBe("");
-    expect(document.getElementById("password-change-confirm").value).toBe("");
+    expect(document.getElementById("password-change-new")).toBeNull();
+    expect(document.getElementById("password-change-confirm")).toBeNull();
     expect(document.getElementById("login-error").textContent).toBe("auth.error_rate_limited");
     expect(api.setAuthenticated).toHaveBeenLastCalledWith(false);
     expect(loggedOut).toBe(true);
+    // The first login was never announced and no login followed it.
+    expect(logins).toBe(0);
   });
 
   it("re-locks the modal when the re-login fails on a login-required site", async () => {
@@ -783,7 +818,7 @@ describe("attach — forced password change", () => {
     submit("login-form");
     await flush();
     setNewPassword("N3w-password!");
-    submit("password-change-form");
+    submit("login-form");
     await flush();
 
     expect(document.getElementById("login-cancel").classList.contains("d-none")).toBe(true);
@@ -796,13 +831,16 @@ describe("attach — forced password change", () => {
     api.post.mockResolvedValueOnce({ user: ADMIN, csrf_token: "A", password_change_required: true });
     submit("login-form");
     await flush();
+    expect(logins).toBe(0);
     document.getElementById("login-modal").dispatchEvent(new Event("hidden.bs.modal"));
-    expect(isShown("login-form")).toBe(true);
-    expect(isShown("password-change-form")).toBe(false);
-    setNewPassword("N3w-password!");
-    submit("password-change-form");
-    await flush();
-    expect(api.post).toHaveBeenCalledTimes(1);
+    // Leaving the step without a change announces the held login, once.
+    expect(logins).toBe(1);
+    expect(isShown("login-step")).toBe(true);
+    expect(isShown("password-change-step")).toBe(false);
+    expect(document.querySelectorAll('input[type="password"]')).toHaveLength(0);
+    document.getElementById("login-modal").dispatchEvent(new Event("show.bs.modal"));
+    expect(document.getElementById("login-password").value).toBe("");
+    expect(document.getElementById("password-change-new")).toBeNull();
   });
 });
 

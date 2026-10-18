@@ -347,5 +347,6 @@
   "labels.facet_filetype_scala": "Scala",
   "labels.facet_filetype_shell": "셸 스크립트",
   "labels.facet_filetype_vb": "Visual Basic",
-  "labels.facet_label_reset": "리셋"
+  "labels.facet_label_reset": "리셋",
+  "aria.close": "닫기"
 }

@@ -29,7 +29,7 @@
   --ds-text:#0F172A; --ds-text-muted:#475569; --ds-text-faint:#5B6B82;   /* faint is text too (footer, breadcrumbs, hints): 4.5:1 or more on --ds-bg, --ds-surface-2 and --ds-accent-subtle */
   --ds-border:#E2E8F0; --ds-border-strong:#CBD5E1;
   --ds-mark-bg:#FEF08A; --ds-mark-text:#422006;
-  --ds-success:#16A34A; --ds-warning:#CA8A04; --ds-error:#DC2626; --ds-info:#4F46E5;
+  --ds-success:#16A34A; --ds-success-text:#166534; --ds-warning:#CA8A04; --ds-error:#DC2626; --ds-info:#4F46E5;
   --ds-success-subtle:#F0FDF4; --ds-warning-subtle:#FFF7ED; --ds-error-subtle:#FEF2F2; --ds-info-subtle:#EEF2FF;
   --ds-font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --ds-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
@@ -48,6 +48,7 @@
   --ds-accent:#818CF8; --ds-accent-hover:#A5B4FC; --ds-accent-subtle:#1E1B4B;
   --ds-mark-bg:#854D0E; --ds-mark-text:#FEF9C3; --ds-shadow-lg:0 16px 48px rgba(0,0,0,.6);
   --ds-neutral-fill:#6B7280;
+  --ds-success-text:#4ADE80;
   --ds-success-subtle:#052e16; --ds-warning-subtle:#431407; --ds-error-subtle:#450a0a; --ds-info-subtle:#1E1B4B;
 }
 html,body{ background:var(--ds-bg); color:var(--ds-text); font-family:var(--ds-font-body); }
@@ -333,6 +334,8 @@ button { font-family: inherit; }
 .text-white { color: #fff !important; }
 .text-dark { color: var(--df-zinc-900) !important; }
 .text-body { color: var(--bs-body-color) !important; }
+/* The help page wraps its tables in this (bootstrap.min.css is not loaded here). */
+.table-responsive { overflow-x: auto; }
 .small, small { font-size: .8125rem; }
 .fw-semibold { font-weight: 600 !important; }
 .fw-bold { font-weight: 700 !important; }
@@ -730,7 +733,7 @@ body.modal-open { overflow: hidden; }
 .result-card:hover { box-shadow: var(--df-shadow-medium); border-color: var(--df-zinc-200); }
 .result-card-body { flex: 1; min-width: 0; }
 .result-card h2 { font-size: 1.1rem; margin-bottom: .25rem; line-height: 1.3; }
-.result-card .result-url { color: var(--bs-success); font-size: .85rem; word-break: break-all; }
+.result-card .result-url { color: var(--ds-success-text); font-size: .85rem; word-break: break-all; }
 .result-card .result-info-meta { font-size: .8rem; color: var(--bs-tertiary-color); margin-top: .15rem; }
 .result-card .result-snippet { color: var(--bs-secondary-color); font-size: .95rem; margin-top: .25rem; }
 .result-card .result-meta { font-size: .8rem; color: var(--bs-tertiary-color); margin-top: .5rem; display: flex; gap: 1rem; flex-wrap: wrap; }
@@ -855,7 +858,7 @@ body.modal-open { overflow: hidden; }
 .result-site-row { display: inline-flex; align-items: center; gap: .25rem; }
 .favorite-count { font-size: .75rem; color: var(--bs-tertiary-color); margin-left: .2rem; vertical-align: middle; }
 .brand-logo { height: 24px; }
-cite.result-site-path { color: var(--bs-success); font-size: .85rem; font-style: normal; word-break: break-all; display: block; }
+cite.result-site-path { color: var(--ds-success-text); font-size: .85rem; font-style: normal; word-break: break-all; display: block; }
 .result-more { font-size: .8rem; color: var(--bs-tertiary-color); }
 #current-filters { margin: 0; padding: 0; }
 
@@ -971,7 +974,7 @@ footer[role="contentinfo"] {
 #result .title a { color: var(--df-primary); }
 #result .title a:visited { color: var(--df-secondary); }
 #result .body { display: flex; align-items: flex-start; gap: 1rem; }
-#result .site cite { color: var(--bs-success); font-style: normal; }
+#result .site cite { color: var(--ds-success-text); font-style: normal; }
 #result .more { display: none; }
 #result .info { font-size: 80%; color: var(--bs-tertiary-color); }
 /* The copy control is a <button> so it is focusable and keyboard-operable;
@@ -1193,7 +1196,7 @@ footer[role="contentinfo"] {
 #result ol li:hover { box-shadow: var(--ds-shadow-md); border-color: var(--ds-border-strong); }
 #result .title a { color: var(--ds-accent); font-weight: 600; }
 #result .title a:visited { color: var(--ds-text-muted); }
-#result .site cite { color: var(--ds-success); }
+#result .site cite { color: var(--ds-success-text); }
 #result .info { color: var(--ds-text-faint); }
 #result mark, #result .highlight { background: var(--ds-mark-bg); color: var(--ds-mark-text); padding: 0 .15em; border-radius: 2px; }
 

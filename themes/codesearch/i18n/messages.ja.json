@@ -363,5 +363,6 @@
   "facet.language": "言語",
   "facet.organization": "組織",
   "facet.path": "パス / ファイル名",
-  "chip.remove_filter": "{field}フィルターを解除"
+  "chip.remove_filter": "{field}フィルターを解除",
+  "result.favorite_added": "お気に入りに追加済み"
 }

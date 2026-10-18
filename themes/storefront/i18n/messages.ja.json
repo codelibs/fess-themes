@@ -365,5 +365,6 @@
   "product.rating_label": "5つ星のうち{rating}",
   "product.sort_price_asc": "価格の安い順",
   "product.sort_price_desc": "価格の高い順",
-  "product.sort_rating_desc": "評価の高い順"
+  "product.sort_rating_desc": "評価の高い順",
+  "aria.close": "閉じる"
 }

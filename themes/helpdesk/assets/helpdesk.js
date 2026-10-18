@@ -139,7 +139,7 @@ export function plainTitle(d) {
  *
  * related_contents is admin-authored RAW HTML from /admin/relatedcontent/ and is
  * NOT escaped by core — callers MUST pass each entry through
- * format.js sanitizeHtml() before it reaches the live DOM.
+ * format.js sanitizeAdminHtml() before it reaches the live DOM.
  *
  * @param {object|null} env - the unwrapped /api/v2/search envelope
  * @returns {string[]}

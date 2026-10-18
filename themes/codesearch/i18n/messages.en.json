@@ -363,5 +363,6 @@
   "facet.language": "Language",
   "facet.organization": "Organization",
   "facet.path": "Path / Filename",
-  "chip.remove_filter": "Remove {field} filter"
+  "chip.remove_filter": "Remove {field} filter",
+  "result.favorite_added": "Added to favorites"
 }

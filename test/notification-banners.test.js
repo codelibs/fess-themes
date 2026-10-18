@@ -104,6 +104,8 @@ describe.each(themes)("%s: login modal banners", (theme) => {
     // The catch branch of the real submit handler, driven end to end.
     post.mockRejectedValueOnce({ code: "INVALID_CREDENTIALS", httpStatus: 401 });
     document.getElementById("login-username").value = "alice";
+    // The password input waits in a <template> until the modal opens (auth.js mounts it on show.bs.modal).
+    document.getElementById("login-modal").dispatchEvent(new Event("show.bs.modal"));
     document.getElementById("login-password").value = "wrong";
     document
       .getElementById("login-form")

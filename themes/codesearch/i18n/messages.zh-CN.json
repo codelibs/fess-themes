@@ -363,5 +363,6 @@
   "facet.language": "语言",
   "facet.organization": "组织",
   "facet.path": "路径 / 文件名",
-  "chip.remove_filter": "移除{field}筛选条件"
+  "chip.remove_filter": "移除{field}筛选条件",
+  "result.favorite_added": "已添加到收藏"
 }

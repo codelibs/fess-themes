@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import * as api from "./api.js";
-import { t, languageLabel } from "./i18n.js";
-import { formatFileSize, formatDate, sanitizeHtml } from "./format.js";
+import { t, languageLabel, getLocale } from "./i18n.js";
+import { formatFileSize, formatDate, sanitizeAdminHtml } from "./format.js";
 import { navigate } from "./router.js";
 import { answerHtml, titleHtml, cacheHref, bestBets, plainTitle } from "./helpdesk.js";
 
@@ -365,7 +365,7 @@ function buildResultCard(d, queryId, order) {
     info.appendChild(sp);
   };
 
-  const sizeStr = formatFileSize(d.content_length);
+  const sizeStr = formatFileSize(d.content_length, getLocale());
   if (sizeStr) {
     appendNbspSpacer();
     info.appendChild(document.createTextNode(sizeStr + " "));
@@ -966,19 +966,28 @@ function hideSuggest() {
   suggestIndex = -1;
 }
 
+/** How long after a header search the same search submitted again counts as a double submit. */
+const REPEAT_SUBMIT_MS = 3000;
+let lastSubmitAt = 0;
+
 /**
- * Disable a submit button briefly to guard against double-submits, then
- * re-enable it. Mirrors the JSP behaviour (BUTTON_DISABLE_DURATION=3000ms).
- * The SPA navigates client-side, so re-enabling on a timer is appropriate.
- * Call this AFTER the search/navigation has been triggered — it only touches
- * the button and never blocks or delays the actual search.
+ * Double-submit guard of the header search form (a double click, a held Enter): true when `query`
+ * is exactly the query string of the page that is shown and a header search ran less than 3 s ago,
+ * so submitting again would only push the same entry onto the history and repeat the request.
+ * Any other submit (another query or option, or the same one once the page has moved on) is let through.
  *
- * @param {HTMLButtonElement|null} btn - the submit button to disable
+ * The JSP page disabled the submit button for 3 s (BUTTON_DISABLE_DURATION). Here the page does not
+ * reload, and a disabled default button makes the browser skip the implicit submission, so Enter in the
+ * query box did nothing for 3 s after every search, whatever was typed. The button stays enabled.
+ *
+ * @param {string} query - the query string of the search about to run, with its leading "?"
+ * @returns {boolean}
  */
-export function disableSubmitBriefly(btn) {
-  if (!btn) return;
-  btn.disabled = true;
-  setTimeout(() => { btn.disabled = false; }, 3000);
+export function isRepeatedSubmit(query) {
+  const now = Date.now();
+  if (now - lastSubmitAt < REPEAT_SUBMIT_MS && location.search === query) return true;
+  lastSubmitAt = now;
+  return false;
 }
 
 /**
@@ -1529,10 +1538,10 @@ export function attach() {
         const labelSel = document.getElementById("labelSearchOption");
         if (labelSel && labelsPicked) Array.from(labelSel.selectedOptions).map(o => o.value).filter(Boolean).forEach(v => params.append("fields.label", v));
       }
-      navigate("search?" + params.toString());
-      // JSP parity: disable the submit button for 3s after the search has been
-      // triggered, to prevent rapid double-submits.
-      disableSubmitBriefly(document.getElementById("searchButton"));
+      // JSP parity: a double submit of the same search within 3 s runs once.
+      const query = "?" + params.toString();
+      if (isRepeatedSubmit(query)) return;
+      navigate("search" + query);
     });
   }
   const labelSelect = document.getElementById("labelSearchOption");
@@ -2131,7 +2140,7 @@ function renderRelatedQueries(queries) {
  * SECURITY: these snippets are admin-authored raw HTML and are NOT escaped by
  * core (RelatedContentHelper encodes the user's *query* before substituting it
  * into the template, but the template body itself is trusted through). Each one
- * goes through sanitizeHtml(), which parses into an inert <template> and walks
+ * goes through sanitizeAdminHtml(), which parses into an inert <template> and walks
  * an allow-list, returning a DocumentFragment.
  *
  * @param {object} env - the unwrapped /api/v2/search envelope
@@ -2144,12 +2153,12 @@ function renderBestBet(env) {
   while (body.firstChild) body.removeChild(body.firstChild);
 
   for (const html of bestBets(env)) {
-    body.appendChild(sanitizeHtml(html)); // DocumentFragment
+    body.appendChild(sanitizeAdminHtml(html)); // DocumentFragment
   }
   // Un-hide only if something SURVIVED sanitization. We test for meaningful
   // content (non-whitespace text or at least one element) rather than node
   // count, since sanitizeNode keeps whitespace-only text nodes. An admin
-  // pasting a disallowed tag (e.g. <img>) with a trailing newline would leave
+  // pasting a disallowed tag (e.g. <script>) with a trailing newline would leave
   // a lone "\n" node, rendering a visible, empty card — the exact case we want to
   // prevent. The check here (after sanitizing, not before) avoids the old problem.
   const survived = body.textContent.trim() !== "" || body.querySelector("*") !== null;

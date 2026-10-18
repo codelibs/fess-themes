@@ -363,5 +363,6 @@
   "facet.language": "언어",
   "facet.organization": "조직",
   "facet.path": "경로 / 파일 이름",
-  "chip.remove_filter": "{field} 필터 제거"
+  "chip.remove_filter": "{field} 필터 제거",
+  "result.favorite_added": "즐겨찾기에 추가됨"
 }

@@ -433,5 +433,6 @@
   "fs.recent_clear": "Löschen",
   "fs.empty_scope": "Hier gibt es keine passenden Dokumente.",
   "fs.scope_too_long": "Der Pfad dieses Ordners ist zu lang, um darin zu suchen. Stattdessen wird der nächstgelegene übergeordnete Ordner angezeigt.",
-  "fs.tree_partial": "Dieser Ordner ist groß, daher werden möglicherweise nicht alle Unterordner aufgeführt."
+  "fs.tree_partial": "Dieser Ordner ist groß, daher werden möglicherweise nicht alle Unterordner aufgeführt.",
+  "aria.close": "Schließen"
 }

@@ -12,7 +12,7 @@
 // textContent, and an image is an <img> on the same-origin go/ URL.
 
 import * as api from "./api.js";
-import { t } from "./i18n.js";
+import { t, getLocale } from "./i18n.js";
 import { formatFileSize, formatDate } from "./format.js";
 import { el, clear } from "./dom.js";
 import { fileKind, fileIcon, uiIcon } from "./icons.js";
@@ -134,7 +134,7 @@ export function createPreview({ workspace, root }) {
     const kind = fileKind(doc);
     add(t("fs.meta_path"), displayPath(doc.url || doc.url_link));
     add(t("fs.meta_modified"), formatDate(doc.last_modified || doc.timestamp));
-    add(t("fs.meta_size"), formatFileSize(doc.content_length));
+    add(t("fs.meta_size"), formatFileSize(doc.content_length, getLocale()));
     add(t("fs.meta_type"), t("fs.kind_" + kind) + (doc.mimetype ? " (" + doc.mimetype + ")" : ""));
     add(t("fs.meta_indexed"), formatDate(doc.created));
     if (ctx.features && ctx.features.search_log_enabled && Number(doc.click_count) > 0) {

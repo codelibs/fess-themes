@@ -433,5 +433,6 @@
   "fs.recent_clear": "Limpar",
   "fs.empty_scope": "Não há documentos correspondentes aqui.",
   "fs.scope_too_long": "O caminho desta pasta é longo demais para pesquisar dentro dela, então a pasta pai mais próxima é exibida.",
-  "fs.tree_partial": "Esta pasta é grande, então algumas subpastas podem não aparecer na lista."
+  "fs.tree_partial": "Esta pasta é grande, então algumas subpastas podem não aparecer na lista.",
+  "aria.close": "Fechar"
 }
