@@ -384,5 +384,15 @@
   "facet.clear_all": "Clear all",
   "facet.remove_filter": "Remove filter",
   "home.tagline": "Search the documentation",
-  "aria.close": "Close"
+  "aria.close": "Close",
+  "aria.site_search": "Site search",
+  "aria.search_query": "Search query",
+  "aria.search_suggestions": "Search suggestions",
+  "aria.results_per_page": "Results per page",
+  "aria.sort_order": "Sort order",
+  "aria.language_filter": "Language filter",
+  "aria.label_filter": "Label filter",
+  "aria.home_search": "Home search",
+  "aria.pagination": "Pagination",
+  "aria.search_results": "Search results"
 }

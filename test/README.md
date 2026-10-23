@@ -219,6 +219,9 @@ The suites:
 - `docsearch.layout.test.js` — docsearch's small-screen and long-query polish: the
   stylesheet declarations that carry it (read back from the parsed `styles.css`; jsdom
   has no layout), and a failed search hiding the previous search's "did not match" panel.
+- `docsearch.i18n.test.js` — docsearch's bundles are translated and not only present: a list of
+  sentence-length keys that must differ from English in the 14 translated locales, `{placeholders}`
+  intact in every value, and every key `index.html` names present in all 16 bundles.
 - `docsearch.filters.test.js` — docsearch's active-filter chip names a label by its
   `label_options` name (value kept in the URL and the request), and the "Similar Results"
   view is written to the URL as `sdh` (a new history entry; shown again from a URL that

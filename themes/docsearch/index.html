@@ -38,7 +38,7 @@
       <div id="content" class="container">
         <a class="navbar-brand d-inline-flex" href="./" id="brand-link" data-spa><img src="themes/docsearch/assets/logo-head.png" alt="" data-i18n-alt="labels.header_brand_name" class="align-items-center"></a>
         <div class="d-flex col-md-6 col-sm-8 col-7 me-auto p-0" role="search" id="search-form-wrap">
-          <form class="input-group" id="search-form" role="search" aria-label="Site search">
+          <form class="input-group" id="search-form" role="search" aria-label="Site search" data-i18n-aria-label="aria.site_search">
             <input
                 id="query"
                 class="form-control"
@@ -46,7 +46,7 @@
                 name="q"
                 maxlength="1000"
                 autocomplete="off"
-                aria-label="Search query"
+                aria-label="Search query" data-i18n-aria-label="aria.search_query"
                 data-i18n-placeholder="search.placeholder"
                 role="combobox"
                 aria-expanded="false"
@@ -55,7 +55,7 @@
                 aria-haspopup="listbox">
             <button type="submit" name="search" id="searchButton" class="btn btn-primary" aria-label="Search" data-i18n-aria-label="search.button"><i class="fa fa-search" aria-hidden="true"></i></button>
             <button type="button" class="btn btn-light" id="searchOptionsButton" data-bs-toggle="collapse" data-bs-target="#searchOptions" aria-expanded="false" aria-controls="searchOptions"><i class="fa fa-cog" aria-hidden="true"></i> <span class="visually-hidden" data-i18n="search.options">Options</span></button>
-            <ul class="list-group position-absolute top-100 start-0 end-0 mt-1 d-none shadow-sm" id="suggest-dropdown" role="listbox" aria-label="Search suggestions"></ul>
+            <ul class="list-group position-absolute top-100 start-0 end-0 mt-1 d-none shadow-sm" id="suggest-dropdown" role="listbox" aria-label="Search suggestions" data-i18n-aria-label="aria.search_suggestions"></ul>
           </form>
           <button type="button" id="palette-trigger" class="ds-palette-trigger"
                   aria-haspopup="dialog" aria-controls="palette" data-i18n-aria-label="palette.open">
@@ -101,22 +101,22 @@
         <fieldset class="mb-3">
           <legend data-i18n="search.num">Display Count</legend>
           <label for="numSearchOption" data-i18n="search.num">Display Count</label>
-          <select name="num" id="numSearchOption" class="form-control" aria-label="Results per page"></select>
+          <select name="num" id="numSearchOption" class="form-control" aria-label="Results per page" data-i18n-aria-label="aria.results_per_page"></select>
         </fieldset>
         <fieldset class="mb-3">
           <legend data-i18n="search.sort">Sort</legend>
           <label for="sortSearchOption" data-i18n="search.sort">Sort</label>
-          <select name="sort" id="sortSearchOption" class="form-control" aria-label="Sort order"></select>
+          <select name="sort" id="sortSearchOption" class="form-control" aria-label="Sort order" data-i18n-aria-label="aria.sort_order"></select>
         </fieldset>
         <fieldset class="mb-3">
           <legend data-i18n="search.lang">Preferred Language</legend>
           <label for="langSearchOption" data-i18n="search.lang">Preferred Language</label>
-          <select name="lang" multiple="multiple" id="langSearchOption" class="form-control" aria-label="Language filter"></select>
+          <select name="lang" multiple="multiple" id="langSearchOption" class="form-control" aria-label="Language filter" data-i18n-aria-label="aria.language_filter"></select>
         </fieldset>
         <fieldset class="mb-3" id="labelSearchOptionFieldset">
           <legend data-i18n="search.labels">Label</legend>
           <label for="labelSearchOption" data-i18n="search.labels">Label</label>
-          <select name="fields.label" multiple="multiple" id="labelSearchOption" class="form-control" aria-label="Label filter"></select>
+          <select name="fields.label" multiple="multiple" id="labelSearchOption" class="form-control" aria-label="Label filter" data-i18n-aria-label="aria.label_filter"></select>
         </fieldset>
         <!-- Geo-location filter (theme extra, migrated from the former results-view
              #search-options panel). Wired by search.js via #geo-lat / #geo-lon /
@@ -151,7 +151,7 @@
        =================================================================== -->
   <main id="page-root" role="main">
     <section id="home-view" hidden>
-      <form id="home-search-form" class="container" role="search" aria-label="Home search">
+      <form id="home-search-form" class="container" role="search" aria-label="Home search" data-i18n-aria-label="aria.home_search">
         <div class="row">
           <div class="col text-center searchFormBox">
             <h1 class="mainLogo">
@@ -172,9 +172,9 @@
                          name="q" maxlength="1000" autocomplete="off"
                          data-i18n-placeholder="search.placeholder"
                          role="combobox" aria-expanded="false" aria-controls="home-suggest-dropdown"
-                         aria-autocomplete="list" aria-haspopup="listbox" aria-label="Search query">
+                         aria-autocomplete="list" aria-haspopup="listbox" aria-label="Search query" data-i18n-aria-label="aria.search_query">
                   <ul class="list-group suggest-dropdown position-absolute top-100 start-0 end-0 mt-1 d-none shadow-sm"
-                      id="home-suggest-dropdown" role="listbox" aria-label="Search suggestions"></ul>
+                      id="home-suggest-dropdown" role="listbox" aria-label="Search suggestions" data-i18n-aria-label="aria.search_suggestions"></ul>
                 </div>
               </div>
               <!-- Popular words (parity index.jsp:140-156). -->
@@ -252,13 +252,14 @@
         <!-- Optional results-view widgets (theme extras; kept hidden unless used). -->
         <div id="similar-doc-banner" class="alert alert-info d-none align-items-center mb-2" role="status" aria-live="polite"></div>
         <ul id="current-filters" class="list-inline mb-2 d-none"></ul>
-        <div class="d-none mb-2" id="related-queries" aria-live="polite" aria-label="Related searches"></div>
+        <div class="d-none mb-2" id="related-queries" aria-live="polite" aria-label="Related searches" data-i18n-aria-label="search.related_queries"></div>
         <div class="d-none mb-2" id="related-content" aria-live="polite"></div>
-        <div class="d-none mb-2" id="active-chips" aria-live="polite" aria-atomic="true" aria-label="Active filters"></div>
+        <div class="d-none mb-2" id="active-chips" aria-live="polite" aria-atomic="true" aria-label="Active filters" data-i18n-aria-label="facet.active_filters"></div>
         <div id="results-warning" class="alert alert-warning d-none mb-2" role="status" aria-live="polite"></div>
 
         <!-- Results grid (parity searchResults.jsp div#result.row).
              DocSearch: facet aside is the LEFT sidebar, results to its right. -->
+        <h2 id="results-heading" class="visually-hidden" tabindex="-1" data-i18n="aria.search_results">Search results</h2>
         <div id="result" class="row">
           <input type="hidden" id="queryId" value="">
           <input type="hidden" id="rt" value="">
@@ -268,7 +269,7 @@
 
         <!-- Pagination (parity searchResults.jsp div.row > nav#subfooter). -->
         <div class="row">
-          <nav id="subfooter" class="mx-auto d-none" aria-label="Pagination">
+          <nav id="subfooter" class="mx-auto d-none" aria-label="Pagination" data-i18n-aria-label="aria.pagination">
             <ul class="pagination justify-content-center" id="pagination"></ul>
           </nav>
         </div>
@@ -284,7 +285,7 @@
           <div id="popular-words"></div>
         </div>
 
-        <aside class="col-lg-3 d-none" id="chat-column" role="complementary" aria-label="Chat"></aside>
+        <aside class="col-lg-3 d-none" id="chat-column" role="complementary" aria-label="Chat" data-i18n-aria-label="nav.chat"></aside>
         <!-- results-meta retained as a hidden status sink for error paths. -->
         <div id="results-meta" class="visually-hidden" aria-live="polite"></div>
       </div>
@@ -397,7 +398,7 @@
         <span class="ds-palette-search-icon" aria-hidden="true">🔍</span>
         <input id="palette-input" class="ds-palette-input" type="text" role="combobox"
                aria-expanded="false" aria-controls="palette-listbox" aria-autocomplete="list"
-               autocomplete="off" spellcheck="false" data-i18n-placeholder="palette.placeholder" />
+               autocomplete="off" spellcheck="false" aria-label="Search" data-i18n-aria-label="palette.placeholder" data-i18n-placeholder="palette.placeholder" />
         <button type="button" class="ds-palette-close" data-palette-dismiss
                 data-i18n-aria-label="palette.close_hint">Esc</button>
       </div>
