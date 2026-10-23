@@ -47,7 +47,7 @@ backslash-escaped (`smb://srv/share/` is `url:smb\:\/\/srv\/share\/*`).
 ## Install and activate
 
 ```bash
-./scripts/package.sh filesearch          # → dist/filesearch-15.9.5.zip
+./scripts/package.sh filesearch          # → dist/filesearch-15.9.6.zip
 ```
 
 Upload the ZIP at **Admin → Theme** (`/admin/theme/`) and set it as the default theme, or

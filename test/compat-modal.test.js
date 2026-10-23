@@ -57,6 +57,26 @@ describe.each(themes)("%s: compat.js Modal events", (theme) => {
     expect(modal.classList.contains("show")).toBe(false);
   });
 
+  it("fires show.bs.modal before it opens and shown.bs.modal once it is open", () => {
+    const { modal, instance } = bootClosed(theme);
+    const order = [];
+    modal.addEventListener("show.bs.modal", (ev) => order.push(["show", ev.cancelable, modal.classList.contains("show")]));
+    modal.addEventListener("shown.bs.modal", () => order.push(["shown", modal.classList.contains("show")]));
+    instance.show();
+    expect(order).toEqual([["show", true, false], ["shown", true]]);
+  });
+
+  it("stays closed when show.bs.modal is prevented", () => {
+    const { window, modal, instance } = bootClosed(theme);
+    let shown = 0;
+    modal.addEventListener("show.bs.modal", (ev) => ev.preventDefault());
+    modal.addEventListener("shown.bs.modal", () => { shown += 1; });
+    instance.show();
+    expect(modal.classList.contains("show")).toBe(false);
+    expect(window.document.querySelector(".modal-backdrop")).toBeNull();
+    expect(shown).toBe(0);
+  });
+
   it("stays open when hide.bs.modal is prevented, from every way of closing it", () => {
     const { window, modal, instance } = bootCompat(theme);
     let hidden = 0;

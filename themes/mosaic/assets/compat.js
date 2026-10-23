@@ -84,6 +84,9 @@
   Modal.prototype.show = function (relatedTarget) {
     var el = this._el;
     if (!el || el.classList.contains("show")) return;
+    // Bootstrap parity: show.bs.modal is cancelable and fires before the dialog opens (auth.js puts the
+    // login password field into the form on it), shown.bs.modal once it is open.
+    if (!el.dispatchEvent(new CustomEvent("show.bs.modal", { bubbles: true, cancelable: true }))) return;
     var self = this;
     // Remember what opened the dialog so closing it can hand the focus back, as Bootstrap
     // does: the trigger that was clicked (Safari does not focus a link or button on click)
@@ -103,6 +106,7 @@
     var focusable = el.querySelector(
       "input:not([type=hidden]):not([disabled]), select, textarea, button:not([disabled]), [href], [tabindex]:not([tabindex='-1'])");
     if (focusable) { try { focusable.focus(); } catch (e) { /* ignore */ } }
+    el.dispatchEvent(new CustomEvent("shown.bs.modal", { bubbles: true }));
   };
   Modal.prototype.hide = function () {
     var el = this._el;
