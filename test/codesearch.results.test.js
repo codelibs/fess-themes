@@ -306,3 +306,44 @@ describe("codesearch: the pager", () => {
     expect(links().at(-1).getAttribute("href")).toContain("start=");
   });
 });
+
+describe("codesearch: a code result card", () => {
+  const codeDoc = (extra = {}) => ({
+    doc_id: "c1", title: "x", content_title: "x", url: "https://example.test/o/r/blob/main/a b.md",
+    url_link: "https://example.test/o/r/blob/main/a b.md", site: "example.test/o/r", mimetype: "text/plain",
+    filetype: "txt", last_modified: "2023-01-02T00:00:00Z", content_length: 10, has_cache: "true",
+    organization: "o", repository: "r", path: "dir/a b#c%d.md", repository_url: "https://example.test/o/r",
+    content_description: "L1:first", digest: "x", ...extra,
+  });
+  async function cardFor(doc) {
+    const flow = await loadEnglishFlow();
+    installDispatch(flow.get, { search: makeSearchEnv([doc]) });
+    mountBody(SEARCH_FIXTURE);
+    flow.mod._state.q = "coffee";
+    await flow.mod.runSearch();
+    await settle();
+    return document.querySelector(".result-card");
+  }
+
+  it("links to the file with every path segment percent-encoded", async () => {
+    const card = await cardFor(codeDoc());
+    expect(card.querySelector("a.open-repo").getAttribute("href")).toBe("https://example.test/o/r/blob/HEAD/dir/a%20b%23c%25d.md");
+  });
+
+  it("keeps the directory separators and plain names as they are", async () => {
+    const card = await cardFor(codeDoc({ path: "src/main/Suggester.java" }));
+    expect(card.querySelector("a.open-repo").getAttribute("href")).toBe("https://example.test/o/r/blob/HEAD/src/main/Suggester.java");
+  });
+
+  it("shows a fragment joined with ... to the previous row on a row of its own, with its line number", async () => {
+    const card = await cardFor(codeDoc({ content_description: "L3:alpha <strong>x</strong>...L42:beta" }));
+    const rows = [...card.querySelectorAll(".code-row")].map((r) => [r.querySelector(".code-gutter").textContent, r.querySelector(".code-text").textContent]);
+    expect(rows).toEqual([["3", "alpha x"], ["42", "beta"]]);
+  });
+
+  it("leaves a ... that is not followed by a line number in the code text", async () => {
+    const card = await cardFor(codeDoc({ content_description: "L3:alpha...beta" }));
+    const rows = [...card.querySelectorAll(".code-row")].map((r) => [r.querySelector(".code-gutter").textContent, r.querySelector(".code-text").textContent]);
+    expect(rows).toEqual([["3", "alpha...beta"]]);
+  });
+});

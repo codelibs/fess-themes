@@ -161,7 +161,9 @@ function isCodeDoc(d) {
 function openInRepoHref(d) {
   const repo = d.repository_url ? String(d.repository_url).replace(/\/+$/, "") : "";
   if (repo && d.path) {
-    const path = String(d.path).replace(/^\/+/, "");
+    // Encode each segment: a file name with "#", "?" or "%" would otherwise end the path
+    // (or be read as an escape) when the browser follows the link.
+    const path = String(d.path).replace(/^\/+/, "").split("/").map(encodeURIComponent).join("/");
     return safeHref(repo + "/blob/HEAD/" + path);
   }
   if (repo) return safeHref(repo);
@@ -214,7 +216,9 @@ function buildCodeBlock(raw) {
   // Server fragments are usually joined by <br> or newlines; normalise <br> to \n
   // so each physical line becomes one gutter row. Case-insensitive, tolerant of
   // <br>, <br/>, <br />.
-  const lines = text.replace(/<br\s*\/?>/gi, "\n").split("\n");
+  // The server joins its fragments with "..."; a fragment that starts on a line of its own
+  // ("...L42:code") would otherwise land inside the previous row with its marker as code text.
+  const lines = text.replace(/<br\s*\/?>/gi, "\n").replace(/\.\.\.(?=L\d+:)/g, "\n").split("\n");
   for (const line of lines) {
     if (line === "" && lines.length > 1) {
       // Skip stray empty fragments only when there is other content.
