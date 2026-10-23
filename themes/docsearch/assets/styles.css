@@ -30,6 +30,8 @@
   --ds-border:#E2E8F0; --ds-border-strong:#CBD5E1;
   --ds-mark-bg:#FEF08A; --ds-mark-text:#422006;
   --ds-success:#16A34A; --ds-success-text:#166534; --ds-warning:#CA8A04; --ds-error:#DC2626; --ds-info:#4F46E5;
+  --ds-info-text:#1E40AF; --ds-warning-text:#854D0E; --ds-error-text:#991B1B;   /* alert text: 4.5:1 on the matching -subtle fill, redefined for the dark palette */
+  --ds-on-accent:#FFFFFF;                                                       /* text on an accent fill (badges): 4.5:1 on --ds-accent */
   --ds-success-subtle:#F0FDF4; --ds-warning-subtle:#FFF7ED; --ds-error-subtle:#FEF2F2; --ds-info-subtle:#EEF2FF;
   --ds-font-body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --ds-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
@@ -37,6 +39,7 @@
   --ds-shadow-sm:0 1px 2px rgba(15,23,42,.06); --ds-shadow-md:0 4px 16px rgba(15,23,42,.08);
   --ds-shadow-lg:0 16px 48px rgba(15,23,42,.18);
   --ds-header-h:56px; --ds-sidebar-w:280px; --ds-content-max:68ch;
+  color-scheme:light;
   --ds-neutral-fill:#64748B;      /* the secondary badge: white text on it, so it stays mid-tone in both palettes */
   /* fixed dark top-bar — intentionally NOT theme-inverting (slim docs header) */
   --ds-header-bg:#0F172A; --ds-header-border:#1E293B; --ds-header-text:#E2E8F0; --ds-header-text-muted:#94A3B8;
@@ -48,7 +51,9 @@
   --ds-accent:#818CF8; --ds-accent-hover:#A5B4FC; --ds-accent-subtle:#1E1B4B;
   --ds-mark-bg:#854D0E; --ds-mark-text:#FEF9C3; --ds-shadow-lg:0 16px 48px rgba(0,0,0,.6);
   --ds-neutral-fill:#6B7280;
-  --ds-success-text:#4ADE80;
+  --ds-success-text:#4ADE80; --ds-info-text:#A5B4FC; --ds-warning-text:#FDE68A; --ds-error-text:#FCA5A5;
+  --ds-on-accent:#0B1120;
+  color-scheme:dark;
   --ds-success-subtle:#052e16; --ds-warning-subtle:#431407; --ds-error-subtle:#450a0a; --ds-info-subtle:#1E1B4B;
 }
 html,body{ background:var(--ds-bg); color:var(--ds-text); font-family:var(--ds-font-body); }
@@ -344,14 +349,14 @@ button { font-family: inherit; }
 .rounded-pill { border-radius: var(--df-radius-pill) !important; }
 .shadow-sm { box-shadow: var(--df-shadow-subtle) !important; }
 
-.bg-primary { background-color: var(--df-primary) !important; color: #fff; }
+.bg-primary { background-color: var(--df-primary) !important; color: var(--ds-on-accent); }
 .bg-secondary { background-color: var(--ds-neutral-fill) !important; color: #fff; }
 .bg-success { background-color: var(--df-success) !important; color: #fff; }
 .bg-danger { background-color: var(--df-error) !important; color: #fff; }
 .bg-warning { background-color: var(--df-warning) !important; color: #fff; }
 .bg-info { background-color: var(--df-info) !important; color: #fff; }
 .bg-light { background-color: var(--df-zinc-100) !important; color: var(--df-zinc-800); }
-.text-bg-primary { background-color: var(--df-primary) !important; color: #fff !important; }
+.text-bg-primary { background-color: var(--df-primary) !important; color: var(--ds-on-accent) !important; }
 .text-bg-secondary { background-color: var(--ds-neutral-fill) !important; color: #fff !important; }
 
 .cursor-pointer { cursor: pointer; }
@@ -543,10 +548,10 @@ textarea.form-control { min-height: 2.5rem; }
   border-radius: var(--df-radius-lg);
   font-size: .9375rem;
 }
-.alert-info    { background: var(--df-info-subtle);    border-color: var(--df-info);    color: #1E40AF; }
-.alert-success { background: var(--df-success-subtle); border-color: var(--df-success); color: #166534; }
-.alert-warning { background: var(--df-warning-subtle); border-color: var(--df-warning); color: #854D0E; }
-.alert-danger  { background: var(--df-error-subtle);   border-color: var(--df-error);   color: #991B1B; }
+.alert-info    { background: var(--df-info-subtle);    border-color: var(--df-info);    color: var(--ds-info-text); }
+.alert-success { background: var(--df-success-subtle); border-color: var(--df-success); color: var(--ds-success-text); }
+.alert-warning { background: var(--df-warning-subtle); border-color: var(--df-warning); color: var(--ds-warning-text); }
+.alert-danger  { background: var(--df-error-subtle);   border-color: var(--df-error);   color: var(--ds-error-text); }
 
 /* ---- Lists ---- */
 .list-unstyled { list-style: none; padding-left: 0; margin: 0; }
@@ -968,12 +973,18 @@ footer[role="contentinfo"] {
 }
 
 /* ---- Search results (JSP-parity DOM produced by search.js) ---- */
-#result .title { font-size: 1.125rem; line-height: 1.4; }
+/* icon and title link share one row; the link keeps the single-line ellipsis (a flex container blockifies
+   its children, so .text-truncate on the h3 no longer reaches the link) */
+#result .title { font-size: 1.125rem; line-height: 1.4; display: flex; align-items: center; gap: .5rem; }
+#result .title a { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #result ol li { margin: 1.25em 0; }
 #result ol li:first-child { margin-top: 0; }
 #result .title a { color: var(--df-primary); }
 #result .title a:visited { color: var(--df-secondary); }
 #result .body { display: flex; align-items: flex-start; gap: 1rem; }
+/* a long unbroken run (URL, identifier, minified code) wraps instead of widening the whole list */
+#result .description { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+#results { min-width: 0; }
 #result .site cite { color: var(--ds-success-text); font-style: normal; }
 #result .more { display: none; }
 #result .info { font-size: 80%; color: var(--bs-tertiary-color); }
@@ -981,7 +992,7 @@ footer[role="contentinfo"] {
    strip the UA's button chrome so it still reads as a bare icon. The glyph
    inside keeps .url-copy/.url-copied, so the colour rules below still apply.
    The focus ring comes from the global :focus-visible rule. */
-#result .url-copy-btn { background: none; border: 0; padding: 0; margin: 0; font: inherit; line-height: 1; vertical-align: middle; color: inherit; cursor: pointer; }
+#result .url-copy-btn { background: none; border: 0; padding: 0; margin: 0; font: inherit; line-height: 1; vertical-align: middle; color: inherit; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; min-width: 24px; min-height: 24px; }
 #result .url-copy { color: var(--df-primary); }
 #result .url-copied { color: var(--df-success); }
 #result .favorited { display: none; }
@@ -990,7 +1001,9 @@ footer[role="contentinfo"] {
 @media (max-width: 575.98px) {
   #result .info { display: none; }
   #result .more { display: block; }
+  #result .more .btn { min-height: 24px; padding-left: 0; }
   #result .description { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #result li.is-expanded .description { overflow: visible; text-overflow: clip; white-space: normal; }
 }
 
 /* ---- Focus management (showView focuses each view root) ---- */
@@ -1173,13 +1186,14 @@ footer[role="contentinfo"] {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  min-width: 0;
   gap: .15rem;
   margin-top: .15rem;
   font-size: .8rem;
   color: var(--ds-text-faint);
   line-height: 1.3;
 }
-.ds-crumb { color: var(--ds-text-faint); text-decoration: none; }
+.ds-crumb { color: var(--ds-text-faint); text-decoration: none; min-width: 0; overflow-wrap: anywhere; }
 .ds-crumb:hover { color: var(--ds-text-muted); }
 .ds-crumb-sep { color: var(--ds-text-faint); opacity: .6; margin: 0 .1rem; }
 .ds-crumb-sep::before { content: "›"; }
@@ -1649,3 +1663,25 @@ footer[role="contentinfo"] {
 /* Chat progress / phase strip */
 .chat-progress-wrap { background: var(--ds-surface-2); border-top: 1px solid var(--ds-border); }
 .chat-progress-message { color: var(--ds-text-muted); }
+
+/* ---- Print: always the light palette on paper, and only the results themselves ----
+   The dark tokens would print light grey text on the white sheet (backgrounds are not printed by default);
+   the facets, option chips, filter chips, pager and drawer are controls, not content. */
+@media print {
+  :root, [data-theme="dark"] {
+    color-scheme: light;
+    --ds-accent:#4F46E5; --ds-accent-hover:#4338CA; --ds-accent-subtle:#EEF2FF;
+    --ds-bg:#FFFFFF; --ds-surface:#FFFFFF; --ds-surface-2:#F8FAFC;
+    --ds-text:#0F172A; --ds-text-muted:#475569; --ds-text-faint:#5B6B82;
+    --ds-border:#E2E8F0; --ds-border-strong:#CBD5E1;
+    --ds-mark-bg:#FEF08A; --ds-mark-text:#422006;
+    --ds-success-text:#166534; --ds-info-text:#1E40AF; --ds-warning-text:#854D0E; --ds-error-text:#991B1B;
+    --ds-on-accent:#FFFFFF; --ds-neutral-fill:#64748B;
+    --ds-success-subtle:#F0FDF4; --ds-warning-subtle:#FFF7ED; --ds-error-subtle:#FEF2F2; --ds-info-subtle:#EEF2FF;
+    --ds-shadow-lg:0 16px 48px rgba(15,23,42,.18);
+  }
+  #facet-body, #facet-body-mobile, #facet-toggle-wrap, #options-bar, #current-filters, #active-chips,
+  #subfooter, #searchOptions, #back-to-top { display: none !important; }
+  #results { flex: 0 0 100%; max-width: 100%; }
+  #result ol li { box-shadow: none; break-inside: avoid; }
+}

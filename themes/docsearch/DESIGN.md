@@ -63,6 +63,9 @@ Font license: both families are released under the **SIL Open Font License 1.1 (
 | `--ds-sidebar-w` | `280px` | Sidebar width |
 | `--ds-content-max` | `68ch` | Max reading width |
 | `--ds-neutral-fill` | `#64748B` | Fill of the neutral (`bg-secondary`) badge; it carries white text |
+| `--ds-info-text` / `--ds-warning-text` / `--ds-error-text` | `#1E40AF` / `#854D0E` / `#991B1B` | Text of `.alert-info` / `-warning` / `-danger` (and `--ds-success-text` for `-success`); 4.5:1 or more on the matching `-subtle` fill, redefined for the dark palette |
+| `--ds-on-accent` | `#FFFFFF` | Text on an accent fill (`.text-bg-primary`, `.bg-primary`); 4.5:1 or more on `--ds-accent` |
+| `color-scheme` | `light` | Native controls and scrollbars follow the palette (`dark` in the dark palette) |
 
 ### Dark mode (`[data-theme="dark"]`)
 
@@ -85,6 +88,14 @@ Overrides only the tokens that differ. Everything else inherits from `:root`.
 | `--ds-mark-text` | `#FEF9C3` |
 | `--ds-shadow-lg` | `0 16px 48px rgba(0,0,0,.6)` |
 | `--ds-neutral-fill` | `#6B7280` |
+| `--ds-success-text` | `#4ADE80` |
+| `--ds-info-text` | `#A5B4FC` |
+| `--ds-warning-text` | `#FDE68A` |
+| `--ds-error-text` | `#FCA5A5` |
+| `--ds-on-accent` | `#0B1120` |
+| `color-scheme` | `dark` |
+
+The print sheet (`@media print`) puts the light values of all of these back, whatever the screen palette, and drops the facets, option chips, filter chips, pager and options drawer.
 
 ### Bootstrap bridge (`--bs-*`)
 

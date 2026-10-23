@@ -219,6 +219,10 @@ The suites:
 - `docsearch.layout.test.js` — docsearch's small-screen and long-query polish: the
   stylesheet declarations that carry it (read back from the parsed `styles.css`; jsdom
   has no layout), and a failed search hiding the previous search's "did not match" panel.
+- `docsearch.styles.test.js` — docsearch's contrast, overflow, card layout and print, read back from the
+  parsed `styles.css` (jsdom has no layout): alert and accent-fill text colours with 4.5:1 in both
+  palettes, `color-scheme`, long unbroken text that wraps, the type icon sharing the title's row, a
+  24px copy-URL target, and the print palette with what it hides.
 - `docsearch.i18n.test.js` — docsearch's bundles are translated and not only present: a list of
   sentence-length keys that must differ from English in the 14 translated locales, `{placeholders}`
   intact in every value, and every key `index.html` names present in all 16 bundles.
