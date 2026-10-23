@@ -5,6 +5,11 @@ import { escapeHtml, formatFileSize, formatDate, renderHighlightedSnippet, rende
 import { navigate } from "./router.js";
 import { contentTypeIcon, deriveBreadcrumb } from "./docsearch.js";
 
+/** Smooth scrolling unless the visitor asked for reduced motion (jsdom has no matchMedia). */
+function scrollBehavior() {
+  return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+}
+
 /** Guard: prevent duplicate event-listener registration on hot-reload. */
 let attached = false;
 
@@ -304,12 +309,18 @@ function buildResultCard(d, queryId, order) {
   site.appendChild(el("cite", { text: d.site_path || d.site || d.url || "" }));
   li.appendChild(site);
 
-  // --- div.more > a (hidden on desktop via #result .more{display:none}) ---
+  // --- div.more > button (hidden on desktop via #result .more{display:none}) ---
+  // On a phone the snippet is cut to one line; the button shows the whole of it.
   const more = el("div", { className: "more" });
-  more.appendChild(el("a", {
+  const moreBtn = el("button", {
+    className: "btn btn-link btn-sm",
     text: t("labels.search_result_more"),
-    attrs: { href: "#result" + idx0, "aria-label": t("labels.search_result_more") + " - " + plainTitle(d) }
-  }));
+    attrs: { type: "button", "aria-expanded": "false", "aria-label": t("labels.search_result_more") + " - " + plainTitle(d) }
+  });
+  moreBtn.addEventListener("click", () => {
+    moreBtn.setAttribute("aria-expanded", li.classList.toggle("is-expanded") ? "true" : "false");
+  });
+  more.appendChild(moreBtn);
   li.appendChild(more);
 
   // --- div.info > date + (size) + (cache) + (similar) + (favorite) ---
@@ -472,7 +483,7 @@ function renderSimilarDocBanner() {
   banner.appendChild(el("span", { text: t("labels.similar_doc_result_status") }));
   const closeBtn = el("button", {
     className: "btn-close ms-2",
-    attrs: { type: "button", "aria-label": t("labels.similar_doc_result_status") }
+    attrs: { type: "button", "aria-label": t("aria.close") }
   });
   closeBtn.addEventListener("click", () => {
     state.sdh = "";
@@ -560,10 +571,17 @@ function renderOptionsBar() {
   const makeItem = (labelText, valueText) => {
     const li = el("li", { className: "list-inline-item" });
     li.appendChild(document.createTextNode(labelText + " "));
+    // Each chip is named by its setting as well as its value ("Language: All"): the values alone
+    // ("All", "All") do not say which setting they belong to. compat.js keeps aria-expanded in step.
+    const drawer = document.getElementById("searchOptions");
     const a = el("a", {
       className: "badge text-bg-primary text-decoration-none",
       text: valueText,
-      attrs: { href: "#searchOptions", "data-bs-toggle": "collapse" }
+      attrs: {
+        href: "#searchOptions", "data-bs-toggle": "collapse", "aria-controls": "searchOptions",
+        "aria-expanded": drawer && drawer.classList.contains("show") ? "true" : "false",
+        "aria-label": labelText + ": " + valueText
+      }
     });
     li.appendChild(a);
     return li;
@@ -633,7 +651,9 @@ function renderResults(env) {
       dnm.textContent = t("search.did_not_match", [state.q || ""]);
     }
     empty.classList.remove("d-none");
-    meta.textContent = "";
+    // #empty-state is revealed rather than added to the page, which a screen reader does not announce;
+    // #results-meta is the visually hidden live region, so the same sentence goes there.
+    meta.textContent = t("search.did_not_match", [state.q || ""]);
     const statusEl = document.getElementById("results-status");
     if (statusEl) statusEl.textContent = "";
     // ZERO-RESULT: do NOT clear related queries/content here — loadRelated() (called
@@ -1662,6 +1682,7 @@ function buildFacetGroup(title, entries, fieldKey) {
     const active = (state.facets[fieldKey] || []).includes(entry.value);
     const li = el("li", { className: "list-group-item" + (active ? " active" : "") });
     const a = el("a", { attrs: { href: "#" } });
+    if (active) a.setAttribute("aria-current", "true");
     a.appendChild(document.createTextNode(entry.labelText + " "));
     if (entry.count != null) {
       a.appendChild(el("span", { className: "badge rounded-pill text-bg-secondary float-end", text: String(entry.count) }));
@@ -1731,6 +1752,7 @@ function renderFacetQueryViews(body, env) {
       const active = (state.facetQueries || []).includes(qy.value);
       const li = el("li", { className: "list-group-item" + (active ? " active" : "") });
       const a = el("a", { attrs: { href: "#" } });
+      if (active) a.setAttribute("aria-current", "true");
       const label = qy.label_key && qy.label_key.startsWith("labels.") ? t(qy.label_key) : (qy.label_key || qy.value);
       a.appendChild(document.createTextNode(label + " "));
       if (withCounts) {
@@ -2193,8 +2215,14 @@ function renderPagination(env) {
   const goToPage = (start) => {
     state.start = Math.max(0, start);
     syncUrlParams(true);
-    runSearch();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    const done = runSearch();
+    window.scrollTo({ top: 0, behavior: scrollBehavior() });
+    // The pager the click came from is re-rendered, which drops keyboard focus to <body>: put it on the
+    // results heading once the new page is in, so the next Tab starts at the results.
+    done.then(() => {
+      const heading = document.getElementById("results-heading");
+      if (heading) heading.focus({ preventScroll: true });
+    });
   };
 
   // Prev

@@ -443,7 +443,8 @@ function attachBackToTop() {
     btn.classList.toggle("is-hidden", window.scrollY <= 200);
   });
   btn.addEventListener("click", () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
   });
 }
 

@@ -223,6 +223,11 @@ The suites:
   parsed `styles.css` (jsdom has no layout): alert and accent-fill text colours with 4.5:1 in both
   palettes, `color-scheme`, long unbroken text that wraps, the type icon sharing the title's row, a
   24px copy-URL target, and the print palette with what it hides.
+- `docsearch.a11y.test.js` — docsearch's keyboard and screen-reader behaviour, on the theme's real
+  `index.html`, `search.js` and `app.js`: a search without hits announced in the live region, focus on
+  the results heading after paging, `prefers-reduced-motion` honoured by the pager and back-to-top,
+  named option chips, `aria-current` on the selected facet, "Close" on the similar-results banner, the
+  phone's "more" button, and every static `aria-label` carrying a `data-i18n-aria-label`.
 - `docsearch.i18n.test.js` — docsearch's bundles are translated and not only present: a list of
   sentence-length keys that must differ from English in the 14 translated locales, `{placeholders}`
   intact in every value, and every key `index.html` names present in all 16 bundles.
