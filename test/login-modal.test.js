@@ -60,6 +60,16 @@ describe("docuforge: login modal lock (compat.js + auth.js)", () => {
     return document.getElementById("login-modal");
   }
 
+  it("puts the login password field into the form when the dialog opens, and takes it out when it closes", async () => {
+    const modal = await openLoginModal({ features: {} });
+    // index.html keeps the field in a <template>; without it nobody can sign in.
+    expect(modal.querySelectorAll('input[type="password"]#login-password')).toHaveLength(1);
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    expect(modal.classList.contains("show")).toBe(false);
+    expect(modal.querySelector('input[type="password"]')).toBeNull();
+  });
+
   it("stays open on Escape, the backdrop and hide() while login is required", async () => {
     const modal = await openLoginModal({ login_required: true, features: {} });
     expect(modal.classList.contains("show")).toBe(true);
