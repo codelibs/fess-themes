@@ -75,6 +75,16 @@
     return document.querySelector(selector + ".show") != null;
   }
 
+  // True unless the element, or an ancestor inside the dialog, is not rendered (display: none).
+  function isDisplayed(node, root) {
+    for (var n = node; n && n !== root.parentNode; n = n.parentNode) {
+      if (n.nodeType !== 1) continue;
+      var cs = window.getComputedStyle(n);
+      if (cs.display === "none" || cs.visibility === "hidden") return false;
+    }
+    return true;
+  }
+
   /* -------------------------------------------------------------------- Modal */
   function Modal(el) {
     this._el = el;
@@ -102,10 +112,20 @@
     el.setAttribute("aria-modal", "true");
     document.body.classList.add("modal-open");
     this._backdrop = makeBackdrop("modal-backdrop fade", function () { self.hide(); });
-    // Focus the first focusable control inside the dialog.
-    var focusable = el.querySelector(
+    // Focus the first focusable control inside the dialog that is displayed. When login is required the
+    // close button is hidden (d-none) and comes first in the markup: focusing it does nothing, and the
+    // focus would stay on the page behind the dialog. Without a displayed control the dialog itself takes it.
+    var candidates = el.querySelectorAll(
       "input:not([type=hidden]):not([disabled]), select, textarea, button:not([disabled]), [href], [tabindex]:not([tabindex='-1'])");
-    if (focusable) { try { focusable.focus(); } catch (e) { /* ignore */ } }
+    var focusable = null;
+    for (var i = 0; i < candidates.length && !focusable; i++) {
+      if (isDisplayed(candidates[i], el)) focusable = candidates[i];
+    }
+    if (!focusable) {
+      if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "-1");
+      focusable = el;
+    }
+    try { focusable.focus(); } catch (e) { /* ignore */ }
     el.dispatchEvent(new CustomEvent("shown.bs.modal", { bubbles: true }));
   };
   Modal.prototype.hide = function () {
@@ -360,7 +380,33 @@
   }, false);
 
   // ESC closes the topmost transient layer (dropdown → offcanvas → modal).
+  // Keep Tab and Shift+Tab inside the open dialog, as Bootstrap's Modal does: without it the focus leaves the
+  // dialog for the page behind it (a keyboard user then works on a page the backdrop hides).
+  function trapTab(ev) {
+    var m = document.querySelector(".modal.show");
+    if (!m) return;
+    var all = m.querySelectorAll(
+      "a[href], button:not([disabled]), input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])");
+    var list = [];
+    for (var i = 0; i < all.length; i++) {
+      if (isDisplayed(all[i], m)) list.push(all[i]);
+    }
+    if (!list.length) { ev.preventDefault(); m.focus(); return; }
+    var first = list[0], last = list[list.length - 1], active = document.activeElement;
+    if (!m.contains(active) || active === m) {
+      ev.preventDefault();
+      (ev.shiftKey ? last : first).focus();
+    } else if (ev.shiftKey && active === first) {
+      ev.preventDefault();
+      last.focus();
+    } else if (!ev.shiftKey && active === last) {
+      ev.preventDefault();
+      first.focus();
+    }
+  }
+
   document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Tab" || ev.keyCode === 9) { trapTab(ev); return; }
     if (ev.key !== "Escape" && ev.keyCode !== 27) return;
     if (document.querySelector(".dropdown-menu.show")) { closeAllDropdowns(); return; }
     var oc = document.querySelector(".offcanvas.show");

@@ -407,8 +407,8 @@ button { font-family: inherit; }
 .btn:disabled, .btn.disabled { opacity: .4; pointer-events: none; cursor: default; }
 .btn-sm { padding: 6px 14px; font-size: .8125rem; }
 
-.btn-primary { background: var(--df-primary); color: #fff; border-color: var(--df-primary); }
-.btn-primary:hover { background: var(--df-primary-hover); border-color: var(--df-primary-hover); color: #fff; }
+.btn-primary { background: var(--df-primary); color: var(--ds-on-accent); border-color: var(--df-primary); }
+.btn-primary:hover { background: var(--df-primary-hover); border-color: var(--df-primary-hover); color: var(--ds-on-accent); }
 
 .btn-secondary { background: var(--df-surface); color: var(--df-primary); border-color: var(--df-primary); }
 .btn-secondary:hover { background: var(--df-primary-subtle); color: var(--df-primary-hover); }

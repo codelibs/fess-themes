@@ -106,6 +106,15 @@ describe("docsearch: stylesheet contract", () => {
       expect(declared(".text-bg-primary", "color")).toContain("var(--ds-on-accent)");
       expect(declared(".bg-primary", "color")).toContain("var(--ds-on-accent)");
     });
+
+    it("is what .btn-primary uses, at rest and on hover (white on the dark accent was 2.98:1)", () => {
+      expect(declared(".btn-primary", "color")).toContain("var(--ds-on-accent)");
+      expect(declared(".btn-primary:hover", "color")).toContain("var(--ds-on-accent)");
+    });
+
+    it.each(PALETTES)("keeps the hover fill of a primary button at 4.5:1 with that text in the %s palette", (_name, p) => {
+      expect(ratio(p["--ds-on-accent"], p["--ds-accent-hover"])).toBeGreaterThanOrEqual(4.5);
+    });
   });
 
   it("tells native controls which palette is active", () => {

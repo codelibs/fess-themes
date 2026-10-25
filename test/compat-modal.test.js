@@ -170,3 +170,85 @@ describe.each(themes)("%s: compat.js Modal events", (theme) => {
     });
   });
 });
+
+// The login prompt hides the close button while login is required. That button comes first in the markup:
+// focusing it does nothing, so the focus used to stay on the page behind the dialog.
+describe.each(themes)("%s: compat.js Modal initial focus", (theme) => {
+  function bootWith(body) {
+    const dom = new JSDOM(`<!DOCTYPE html><html><body><div class="modal" id="m" style="display: none">${body}</div></body></html>`, { runScripts: "outside-only" });
+    const { window } = dom;
+    window.matchMedia = () => ({ matches: true });
+    window.eval(readFileSync(modulePath(theme, "compat.js"), "utf8"));
+    const modal = window.document.getElementById("m");
+    window.bootstrap.Modal.getOrCreateInstance(modal).show();
+    return { window, modal };
+  }
+
+  it("skips a hidden close button and focuses the first displayed control", () => {
+    const { window } = bootWith('<button type="button" id="close" style="display: none">x</button><input id="user"><input id="pass">');
+    expect(window.document.activeElement.id).toBe("user");
+  });
+
+  it("skips a control inside a hidden container", () => {
+    const { window } = bootWith('<div style="display: none"><input id="hidden"></div><input id="user">');
+    expect(window.document.activeElement.id).toBe("user");
+  });
+
+  it("focuses the dialog itself when no control is displayed", () => {
+    const { window, modal } = bootWith('<button type="button" id="close" style="display: none">x</button>');
+    expect(window.document.activeElement).toBe(modal);
+  });
+});
+
+// Tab and Shift+Tab stay inside the open dialog (the focus used to leave it for the page behind the backdrop).
+describe.each(themes)("%s: compat.js Modal focus trap", (theme) => {
+  function boot() {
+    const dom = new JSDOM(`<!DOCTYPE html><html><body>
+      <button id="behind">behind</button>
+      <div class="modal" id="m" style="display: none">
+        <button type="button" id="close" style="display: none">x</button>
+        <input id="first"><input id="second"><button type="button" id="last">ok</button>
+      </div><a href="#" id="after">after</a></body></html>`, { runScripts: "outside-only" });
+    const { window } = dom;
+    window.matchMedia = () => ({ matches: true });
+    window.eval(readFileSync(modulePath(theme, "compat.js"), "utf8"));
+    window.bootstrap.Modal.getOrCreateInstance(window.document.getElementById("m")).show();
+    return window;
+  }
+  const tab = (window, shift = false) => {
+    const ev = new window.KeyboardEvent("keydown", { key: "Tab", shiftKey: shift, bubbles: true, cancelable: true });
+    window.document.dispatchEvent(ev);
+    return ev;
+  };
+
+  it("wraps from the last displayed control to the first", () => {
+    const window = boot();
+    window.document.getElementById("last").focus();
+    const ev = tab(window);
+    expect(ev.defaultPrevented).toBe(true);
+    expect(window.document.activeElement.id).toBe("first");
+  });
+
+  it("wraps from the first displayed control to the last with Shift+Tab", () => {
+    const window = boot();
+    expect(window.document.activeElement.id).toBe("first");
+    const ev = tab(window, true);
+    expect(ev.defaultPrevented).toBe(true);
+    expect(window.document.activeElement.id).toBe("last");
+  });
+
+  it("brings a focus that is outside the dialog back in", () => {
+    const window = boot();
+    window.document.getElementById("behind").focus();
+    tab(window);
+    expect(window.document.activeElement.id).toBe("first");
+  });
+
+  it("leaves Tab alone between two controls of the dialog and when no dialog is open", () => {
+    const window = boot();
+    expect(tab(window).defaultPrevented).toBe(false);
+    window.bootstrap.Modal.getOrCreateInstance(window.document.getElementById("m")).hide();
+    window.document.getElementById("behind").focus();
+    expect(tab(window).defaultPrevented).toBe(false);
+  });
+});
