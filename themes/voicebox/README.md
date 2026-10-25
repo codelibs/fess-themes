@@ -1,6 +1,6 @@
-# VoiceBox — Fess Magazine-Style Static Theme
+# VoiceBox — Fess Magazine-Style Theme
 
-VoiceBox is a **self-contained** Fess static theme that ships **no Bootstrap**.
+VoiceBox is a **self-contained** Fess theme that ships **no Bootstrap**.
 It applies the *VoiceBox design system* (see [`DESIGN.md`](DESIGN.md) in this
 theme) to deliver a bold, editorial search experience: a stark black masthead,
 a persistent left **facet sidebar**, massive Archivo Black headlines, and a
@@ -105,7 +105,7 @@ full utility/component layer. Key choices from `DESIGN.md`:
 ## API endpoints consumed
 
 All under `/api/v2` — identical to the reference theme. See `api.js` (the
-single source of truth) and the Fess static-theme API reference doc.
+single source of truth) and the Fess theme API reference doc.
 
 ## Requirements
 

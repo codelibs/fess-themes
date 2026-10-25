@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // What the preview pane may show for a hit, and the loaders behind it. The rules come
-// from what a static theme can do under the page's CSP (no inline script, `blob:` allowed
+// from what a theme can do under the page's CSP (no inline script, `blob:` allowed
 // for frames but not for images, same-origin fetch only):
 //
 //   cache   the crawler's stored copy, via /api/v2/cache, in a sandboxed frame

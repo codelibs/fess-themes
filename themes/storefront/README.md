@@ -1,6 +1,6 @@
-# Storefront — Fess Static Theme (EC / Product Search)
+# Storefront — Fess Theme (EC / Product Search)
 
-Storefront is a **self-contained** Fess static theme for **product search**: each result is
+Storefront is a **self-contained** Fess theme for **product search**: each result is
 a card with a photo, price, rating and stock — and deliberately **no text snippet**. Facet
 counts are drawn as proportional bars, so a price band shows how many products fall in it at
 a glance.

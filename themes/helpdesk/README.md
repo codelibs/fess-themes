@@ -1,6 +1,6 @@
-# HelpDesk — Fess FAQ / Support-Site Static Theme
+# HelpDesk — Fess FAQ / Support-Site Theme
 
-HelpDesk is a **self-contained** Fess static theme that ships **no Bootstrap**,
+HelpDesk is a **self-contained** Fess theme that ships **no Bootstrap**,
 built for FAQ and support-site search. Its defining feature is that a search
 result **is** the answer: clicking a result expands its excerpt **inline**,
 in place, with no page navigation — no accordion animation delay, no round
@@ -279,7 +279,7 @@ verbatim, why Google Fonts are not used, why the facet sidebar is kept).
 
 All under `/api/v2` — identical to the reference theme, plus `/labels` for
 the home-view category tiles. See `api.js` (the single source of truth) and
-the Fess static-theme API reference doc.
+the Fess theme API reference doc.
 
 ## CSP
 

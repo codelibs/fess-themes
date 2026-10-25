@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 //
-// verify-bundles.mjs — checks the locale-bundle contract of every static theme.
+// verify-bundles.mjs — checks the locale-bundle contract of every theme.
 //
 //   node scripts/verify-bundles.mjs            # every theme under themes/
 //   node scripts/verify-bundles.mjs helpdesk   # one theme

@@ -1,6 +1,6 @@
 # codesearch Theme — UX Rationale
 
-This document captures the design decisions behind the `codesearch` static theme.
+This document captures the design decisions behind the `codesearch` theme.
 The full specification is at
 `docs/superpowers/specs/2026-06-27-codesearch-static-theme-design.md`.
 

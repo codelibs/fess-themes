@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Regression lock for the static-theme file: link fix. Each theme's search.js
+// Regression lock for the theme file: link fix. Each theme's search.js
 // gates result links (buildGoUrl and/or safeHref) by URL scheme. The original
 // allowlist admitted only http/https/ftp/ftps, so file:/smb: (file-system and
 // SMB crawl results) collapsed to "#" and Fess's /go/ File Proxy was never
@@ -18,7 +18,7 @@ import { themes, readModuleSource } from "./helpers/themes.js";
 // scheme gate must admit these in addition to the web schemes.
 const FS_SCHEMES = ["file:", "smb:", "smb1:", "storage:", "s3:", "gcs:"];
 
-describe("static-theme file: link fix", () => {
+describe("theme file: link fix", () => {
   it("covers all 11 themes", () => {
     expect(themes.length).toBe(11);
   });

@@ -1,6 +1,6 @@
-# DocSearch — Fess Documentation-Search Static Theme
+# DocSearch — Fess Documentation-Search Theme
 
-DocSearch is a **self-contained** Fess static theme built for documentation-search
+DocSearch is a **self-contained** Fess theme built for documentation-search
 use cases. It ships **no Bootstrap** and applies the *DocSearch design language*
 (indigo/slate palette, self-hosted Inter + JetBrains Mono, FOUC-safe light/dark
 mode) to deliver a developer-grade search experience: a ⌘K / Ctrl+K command
@@ -149,7 +149,7 @@ English for those strings.
 ## API endpoints consumed
 
 All under `/api/v2` — identical to the reference theme. See `api.js` (the
-single source of truth) and the Fess static-theme API reference doc.
+single source of truth) and the Fess theme API reference doc.
 
 ## CSP
 

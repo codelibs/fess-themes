@@ -1,6 +1,6 @@
-# RawBlock — Fess Brutalist Static Theme
+# RawBlock — Fess Brutalist Theme
 
-RawBlock is a **self-contained** Fess static theme that ships **no Bootstrap**.
+RawBlock is a **self-contained** Fess theme that ships **no Bootstrap**.
 It applies the *RawBlock design system* (see [`DESIGN.md`](DESIGN.md) in this
 theme) to deliver a raw, brutalist search experience: an unapologetic
 black-on-white interface with thick borders, sharp corners, no shadows, and
@@ -104,7 +104,7 @@ full utility/component layer. Key choices from `DESIGN.md`:
 ## API endpoints consumed
 
 All under `/api/v2` — identical to the reference theme. See `api.js` (the
-single source of truth) and the Fess static-theme API reference doc.
+single source of truth) and the Fess theme API reference doc.
 
 ## CSP
 

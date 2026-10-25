@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# package.sh — bundle a Fess static theme into an uploadable ZIP.
+# package.sh — bundle a Fess theme into an uploadable ZIP.
 #
 # Usage:
 #   ./scripts/package.sh <theme-name> [<theme-name> ...]
