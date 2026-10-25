@@ -170,3 +170,32 @@ describe.each(themes)("%s: compat.js Modal events", (theme) => {
     });
   });
 });
+
+// The login prompt hides the close button while login is required. That button comes first in the markup:
+// focusing it does nothing, so the focus used to stay on the page behind the dialog.
+describe.each(themes)("%s: compat.js Modal initial focus", (theme) => {
+  function bootWith(body) {
+    const dom = new JSDOM(`<!DOCTYPE html><html><body><div class="modal" id="m" style="display: none">${body}</div></body></html>`, { runScripts: "outside-only" });
+    const { window } = dom;
+    window.matchMedia = () => ({ matches: true });
+    window.eval(readFileSync(modulePath(theme, "compat.js"), "utf8"));
+    const modal = window.document.getElementById("m");
+    window.bootstrap.Modal.getOrCreateInstance(modal).show();
+    return { window, modal };
+  }
+
+  it("skips a hidden close button and focuses the first displayed control", () => {
+    const { window } = bootWith('<button type="button" id="close" style="display: none">x</button><input id="user"><input id="pass">');
+    expect(window.document.activeElement.id).toBe("user");
+  });
+
+  it("skips a control inside a hidden container", () => {
+    const { window } = bootWith('<div style="display: none"><input id="hidden"></div><input id="user">');
+    expect(window.document.activeElement.id).toBe("user");
+  });
+
+  it("focuses the dialog itself when no control is displayed", () => {
+    const { window, modal } = bootWith('<button type="button" id="close" style="display: none">x</button>');
+    expect(window.document.activeElement).toBe(modal);
+  });
+});

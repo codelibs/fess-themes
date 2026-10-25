@@ -75,6 +75,16 @@
     return document.querySelector(selector + ".show") != null;
   }
 
+  // True unless the element, or an ancestor inside the dialog, is not rendered (display: none).
+  function isDisplayed(node, root) {
+    for (var n = node; n && n !== root.parentNode; n = n.parentNode) {
+      if (n.nodeType !== 1) continue;
+      var cs = window.getComputedStyle(n);
+      if (cs.display === "none" || cs.visibility === "hidden") return false;
+    }
+    return true;
+  }
+
   /* -------------------------------------------------------------------- Modal */
   function Modal(el) {
     this._el = el;
@@ -102,10 +112,20 @@
     el.setAttribute("aria-modal", "true");
     document.body.classList.add("modal-open");
     this._backdrop = makeBackdrop("modal-backdrop fade", function () { self.hide(); });
-    // Focus the first focusable control inside the dialog.
-    var focusable = el.querySelector(
+    // Focus the first focusable control inside the dialog that is displayed. When login is required the
+    // close button is hidden (d-none) and comes first in the markup: focusing it does nothing, and the
+    // focus would stay on the page behind the dialog. Without a displayed control the dialog itself takes it.
+    var candidates = el.querySelectorAll(
       "input:not([type=hidden]):not([disabled]), select, textarea, button:not([disabled]), [href], [tabindex]:not([tabindex='-1'])");
-    if (focusable) { try { focusable.focus(); } catch (e) { /* ignore */ } }
+    var focusable = null;
+    for (var i = 0; i < candidates.length && !focusable; i++) {
+      if (isDisplayed(candidates[i], el)) focusable = candidates[i];
+    }
+    if (!focusable) {
+      if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "-1");
+      focusable = el;
+    }
+    try { focusable.focus(); } catch (e) { /* ignore */ }
     el.dispatchEvent(new CustomEvent("shown.bs.modal", { bubbles: true }));
   };
   Modal.prototype.hide = function () {
