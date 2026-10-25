@@ -380,7 +380,33 @@
   }, false);
 
   // ESC closes the topmost transient layer (dropdown → offcanvas → modal).
+  // Keep Tab and Shift+Tab inside the open dialog, as Bootstrap's Modal does: without it the focus leaves the
+  // dialog for the page behind it (a keyboard user then works on a page the backdrop hides).
+  function trapTab(ev) {
+    var m = document.querySelector(".modal.show");
+    if (!m) return;
+    var all = m.querySelectorAll(
+      "a[href], button:not([disabled]), input:not([type=hidden]):not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])");
+    var list = [];
+    for (var i = 0; i < all.length; i++) {
+      if (isDisplayed(all[i], m)) list.push(all[i]);
+    }
+    if (!list.length) { ev.preventDefault(); m.focus(); return; }
+    var first = list[0], last = list[list.length - 1], active = document.activeElement;
+    if (!m.contains(active) || active === m) {
+      ev.preventDefault();
+      (ev.shiftKey ? last : first).focus();
+    } else if (ev.shiftKey && active === first) {
+      ev.preventDefault();
+      last.focus();
+    } else if (!ev.shiftKey && active === last) {
+      ev.preventDefault();
+      first.focus();
+    }
+  }
+
   document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Tab" || ev.keyCode === 9) { trapTab(ev); return; }
     if (ev.key !== "Escape" && ev.keyCode !== 27) return;
     if (document.querySelector(".dropdown-menu.show")) { closeAllDropdowns(); return; }
     var oc = document.querySelector(".offcanvas.show");
