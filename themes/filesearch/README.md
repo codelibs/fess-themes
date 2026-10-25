@@ -1,4 +1,4 @@
-# File Search — Fess Static Theme for Searching Files and Folders
+# File Search — Fess Theme for Searching Files and Folders
 
 File Search is a general-purpose file search UI for Fess. It is built for the case where
 people look for documents on file servers, shared folders and drives, and want to find

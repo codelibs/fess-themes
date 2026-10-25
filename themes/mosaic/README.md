@@ -1,6 +1,6 @@
-# Mosaic — Fess Static Theme (Multimodal Gallery Search)
+# Mosaic — Fess Theme (Multimodal Gallery Search)
 
-Mosaic is a **self-contained**, thumbnail-first Fess static theme built for **multimodal search**: text→image (CLIP-style) visual matching blended with keyword/BM25 full-text search over a mixed document/image corpus. Results are presented as a photo-gallery grid rather than a plain link list, with a full-size lightbox viewer for previewing hits in place.
+Mosaic is a **self-contained**, thumbnail-first Fess theme built for **multimodal search**: text→image (CLIP-style) visual matching blended with keyword/BM25 full-text search over a mixed document/image corpus. Results are presented as a photo-gallery grid rather than a plain link list, with a full-size lightbox viewer for previewing hits in place.
 
 Mosaic is designed for stacks such as `docker-multimodalsearch` (Fess + a multimodal search plugin + a CLIP embedding server), but it degrades gracefully to a perfectly usable general-purpose search theme on a stock Fess deployment with no multimodal configuration at all.
 

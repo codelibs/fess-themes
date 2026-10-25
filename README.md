@@ -1,6 +1,6 @@
 # fess-themes
 
-A collection of [Fess](https://fess.codelibs.org/) **static themes**, each generated
+A collection of [Fess](https://fess.codelibs.org/) **themes**, each generated
 from a design specification. Every theme is a self-contained vanilla-JS SPA that
 talks to the Fess `/api/v2/*` endpoints and is installable by uploading a ZIP via
 the Fess admin UI (`/admin/theme/`).
@@ -12,7 +12,7 @@ theme can be reviewed, re-skinned, or used as a starting point for a new one.
 
 | Theme | Description |
 |---|---|
-| [`codesearch`](themes/codesearch/) | Source-code-search-optimised static theme — dark-first IDE aesthetic, inline qualifier syntax (`repo:` / `org:` / `path:` / `file:` / `lang:`), per-file code cards with line-number gutters, query-refining facet rail, grounded Ask-AI panel. Requires Fess 15.10+ and `query.additional.api.response.fields`. Ships its [`DESIGN.md`](themes/codesearch/DESIGN.md). |
+| [`codesearch`](themes/codesearch/) | Source-code-search-optimised theme — dark-first IDE aesthetic, inline qualifier syntax (`repo:` / `org:` / `path:` / `file:` / `lang:`), per-file code cards with line-number gutters, query-refining facet rail, grounded Ask-AI panel. Requires Fess 15.10+ and `query.additional.api.response.fields`. Ships its [`DESIGN.md`](themes/codesearch/DESIGN.md). |
 | [`docuforge`](themes/docuforge/) | Documentation-style theme on the DocuForge design system — blue/purple/gray palette, persistent facet sidebar, docs-grade typography, **no Bootstrap**. Ships its [`DESIGN.md`](themes/docuforge/DESIGN.md) spec. |
 | [`helpdesk`](themes/helpdesk/) | FAQ / support site. Answers expand inline in an accordion — no navigation. Featured answers, category tiles, optional AI escalation. Ships its [`DESIGN.md`](themes/helpdesk/DESIGN.md) spec. |
 | [`filesearch`](themes/filesearch/) | General-purpose file search UI in the shape of a file manager — a folder tree with per-folder counts, a location bar with breadcrumb and copy-path, details / list / tile views with sortable columns, file-type / modified / size filters, and a preview pane (PDF, text, image, cached copy); the folder, filters and sort live in the address bar. Self-contained (**no Bootstrap**), light and dark, keyboard-first. Requires Fess 15.10+; `query.additional.sort.fields=filetype,url` enables the Type and Location sorts — see its [`README.md`](themes/filesearch/README.md). Ships its [`DESIGN.md`](themes/filesearch/DESIGN.md). |
@@ -108,7 +108,7 @@ bump. A change without a bump is never distributed — see [`CLAUDE.md`](CLAUDE.
 
 ## Requirements
 
-- Fess `15.10+` (see each theme's `theme.yml#minFessVersion`; static-theme support itself starts at 15.9).
+- Fess `15.10+` (see each theme's `theme.yml#minFessVersion`; theme support itself starts at 15.9).
 
 ## License
 

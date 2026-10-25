@@ -1,6 +1,6 @@
-# SemanticLens — Fess Static Theme (Hybrid Search)
+# SemanticLens — Fess Theme (Hybrid Search)
 
-SemanticLens is a **self-contained** Fess static theme derived from the NomadKit theme. It applies an *indigo-violet* brand palette and adds **per-result searcher badges** (keyword / semantic / hybrid) plus a **Search Composition band above results** — surfacing how each document was retrieved when the Fess deployment exposes the `searcher` provenance field.
+SemanticLens is a **self-contained** Fess theme derived from the NomadKit theme. It applies an *indigo-violet* brand palette and adds **per-result searcher badges** (keyword / semantic / hybrid) plus a **Search Composition band above results** — surfacing how each document was retrieved when the Fess deployment exposes the `searcher` provenance field.
 
 Activate it by setting `theme.default=semanticlens` in the admin UI (`/admin/theme/`) or by binding it to a virtual host.
 

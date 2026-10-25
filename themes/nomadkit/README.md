@@ -1,6 +1,6 @@
-# NomadKit — Fess Static Theme (Digital-Nomad Design System)
+# NomadKit — Fess Theme (Digital-Nomad Design System)
 
-NomadKit is a **self-contained** Fess static theme that ships **no Bootstrap**.
+NomadKit is a **self-contained** Fess theme that ships **no Bootstrap**.
 It applies the *NomadKit design system* (see [`DESIGN.md`](DESIGN.md) in this
 theme) — a free-spirited, light-packed look built on warm **sand** tones
 balanced by **ocean** and **forest** accents — to deliver a clean search
@@ -111,7 +111,7 @@ full utility/component layer. Key choices from `DESIGN.md`:
 ## API endpoints consumed
 
 All under `/api/v2` — identical to the reference theme. See `api.js` (the
-single source of truth) and the Fess static-theme API reference doc.
+single source of truth) and the Fess theme API reference doc.
 
 ## CSP
 

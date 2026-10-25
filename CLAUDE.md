@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A collection of static themes for Fess. Each `themes/<name>/` is a self-contained SPA
+A collection of themes for Fess. Each `themes/<name>/` is a self-contained SPA
 (`index.html` + `assets/` + `i18n/` + `help/`) declared by a `theme.yml` manifest
 (`apiVersion: fess.codelibs.org/v1`, `kind: StaticTheme`) and talks to the server over
 `/api/v2/*`. There is no build step: the files under `themes/<name>/` are the shipped
@@ -159,7 +159,7 @@ Every theme carries its own copy of the same core modules. Eight of them — `ro
 unchanged from the fess bootstrap theme and are **byte-identical** across all 11 themes,
 enforced by `test/parity.test.js` (see below). `format.js` and `markdown.js` are also fully
 byte-identical, including line 2: their line-2 comment was neutralized to a theme-agnostic
-string (`// ... for the Fess static theme SPA.`), so a plain `md5` confirms all 11 copies
+string (`// ... for the Fess theme SPA.`), so a plain `md5` confirms all 11 copies
 (and the `bootstrap` 12th copy). The rest of the shared modules (`advance.js`, `chat.js`)
 still carry a per-theme module comment on line 2 — they are not byte-identical, so a plain
 `md5` reports a difference for every theme and tells you nothing there; strip line 2 before

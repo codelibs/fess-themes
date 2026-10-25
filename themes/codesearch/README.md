@@ -1,6 +1,6 @@
-# codesearch — Source-Code-Search Static Theme
+# codesearch — Source-Code-Search Theme
 
-A Fess **static theme** optimised for source-code search (GitHub Code Search /
+A Fess **theme** optimised for source-code search (GitHub Code Search /
 Sourcegraph class). It replaces the legacy JSP-based `fess-theme-codesearch`
 Bootstrap plugin and targets the `docker-codesearch` deployment. Built with
 vanilla JS and CSS (no Bootstrap, no CDN).

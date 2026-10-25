@@ -1,6 +1,6 @@
-# DocuForge — Fess Documentation-Style Static Theme
+# DocuForge — Fess Documentation-Style Theme
 
-DocuForge is a **self-contained** Fess static theme that ships **no Bootstrap**.
+DocuForge is a **self-contained** Fess theme that ships **no Bootstrap**.
 It applies the *DocuForge design system* (see [`DESIGN.md`](DESIGN.md) in this
 theme) to deliver a docs-grade search experience: a slim dark top-bar, a
 persistent left **facet sidebar**, generous typography, and the
@@ -100,7 +100,7 @@ full utility/component layer. Key choices from `DESIGN.md`:
 ## API endpoints consumed
 
 All under `/api/v2` — identical to the reference theme. See `api.js` (the
-single source of truth) and the Fess static-theme API reference doc.
+single source of truth) and the Fess theme API reference doc.
 
 ## CSP
 
