@@ -14,8 +14,16 @@ import * as api from "./api.js";
 import { scopeClause, withBrowseAll } from "./scope.js";
 import { foldUrls } from "./tree.js";
 
-/** The most values one facet returns (query.facet.fields.size.max). */
+/** The most sources one request lists (the server clamps it to query.facet.fields.size.max). */
 export const FACET_SIZE = 1000;
+
+/**
+ * The most URLs one folder request asks for. Fess clamps it to query.facet.fields.size.max
+ * (default 1000), so the default is unchanged and an administrator who raises that setting
+ * gets a tree that sees that many documents per folder. 65535 is OpenSearch's default
+ * search.max_buckets, the most a terms aggregation may ask for.
+ */
+export const CHILDREN_FACET_SIZE = 65535;
 
 function facetResult(env, name) {
   const entry = ((env && env.facet_field) || []).find(f => f && f.name === name);
@@ -39,7 +47,7 @@ export function childrenParams(base, scope) {
     ...base,
     ex_q: [...(base.ex_q || []), scopeClause(scope)],
     start: 0, num: 1,
-    "facet.field": ["url"], "facet.size": FACET_SIZE,
+    "facet.field": ["url"], "facet.size": CHILDREN_FACET_SIZE,
   };
   delete params.sort;
   return params;
