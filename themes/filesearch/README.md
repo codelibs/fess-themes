@@ -47,7 +47,7 @@ backslash-escaped (`smb://srv/share/` is `url:smb\:\/\/srv\/share\/*`).
 ## Install and activate
 
 ```bash
-./scripts/package.sh filesearch          # → dist/filesearch-15.9.6.zip
+./scripts/package.sh filesearch          # → dist/filesearch-15.9.7.zip
 ```
 
 Upload the ZIP at **Admin → Theme** (`/admin/theme/`) and set it as the default theme, or
@@ -71,7 +71,7 @@ None is required to start; these make it better. Mind the channel each one lives
 | `response.inline.mimetypes` (default `application/pdf,text/plain`) | `fess_config.properties` | Files of these types open in the browser; every other type downloads. |
 | `user.favorite=true` | system property | Shows the favourite star on each row. |
 | Path mapping | admin **Crawler → Path Mapping** | If your files are also served over http(s), mapping `file:`/`smb:` URLs to them makes **Open original** open the file natively. |
-| `query.facet.fields.size.max` (default `1000`) | `fess_config.properties` | The most URLs one tree request can see; see below. |
+| `query.facet.fields.size.max` (default `1000`) | `fess_config.properties` | The most URLs one tree request can see. Raise it (up to `65535`) when a folder holds more than 1000 files and sub-folders go missing from the tree; see below. |
 | `paging.search.page.size` (default `10`) | `fess_config.properties` | Rows per page when the visitor has not chosen; a file list is easier to scan with 50 (the Options drawer lets each visitor choose too). |
 
 No facet field has to be added: the theme uses `host`, `url`, `filetype` and `label`,
@@ -85,12 +85,14 @@ which Fess allows by default.
   are always opened through `go/`.
 - **Folder counts are approximate for large folders.** Fess has no folder hierarchy to ask
   for. The tree is built from facets: the sources from the `host` facet, a folder's
-  sub-folders from a `url` facet over that folder (at most `query.facet.fields.size.max`
-  URLs). When the facet saw every document the counts are exact; otherwise each count is a
+  sub-folders from a `url` facet over that folder (the theme asks for 65535 URLs; Fess caps
+  that at `query.facet.fields.size.max`, `1000` by default). When the facet saw every document the counts are exact; otherwise each count is a
   lower bound and is drawn as `≥123`. The facet returns the first 1000 URLs in order, so in a
   folder larger than that **whole sub-folders can be missing**, not just counted short; the tree
-  says so under it ("some of its subfolders may not be listed"). Searching with a keyword, or
-  opening the sub-folders you do see, narrows it. The tree's data comes from one small module
+  says so under it ("some of its subfolders may not be listed"). Raising `query.facet.fields.size.max`
+  (in `fess_config.properties`, then restart Fess) lets the tree see that many documents per
+  folder, at the price of a larger response for every folder you open. Searching with a
+  keyword, or opening the sub-folders you do see, narrows it. The tree's data comes from one small module
   (`assets/treesource.js`), so a server-side hierarchical facet can replace it later.
 - **The folder is part of `ex_q`**, and the API refuses an `ex_q` value longer than 1000
   characters (HTTP 400). A `file:` path is stored percent-encoded, so each Japanese letter costs

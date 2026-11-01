@@ -8,7 +8,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 vi.mock("../themes/filesearch/assets/api.js", () => ({ get: vi.fn() }));
 
 import * as api from "../themes/filesearch/assets/api.js";
-import { rootsParams, childrenParams, loadRoots, loadChildren, FACET_SIZE } from "../themes/filesearch/assets/treesource.js";
+import { rootsParams, childrenParams, loadRoots, loadChildren, FACET_SIZE, CHILDREN_FACET_SIZE } from "../themes/filesearch/assets/treesource.js";
 import { scopeClause } from "../themes/filesearch/assets/scope.js";
 
 // braces: a returned mock would be run by vitest as the teardown function
@@ -36,8 +36,12 @@ describe("request shapes", () => {
   it("children: the url facet inside the node, on top of the current filters", () => {
     const scope = { type: "url", prefix: "smb://srv/share/" };
     const p = childrenParams({ q: "", ex_q: ["label:x"], "fields.label": ["a"] }, scope);
-    expect(p).toMatchObject({ q: "", "fields.label": ["a"], start: 0, num: 1, "facet.field": ["url"], "facet.size": FACET_SIZE });
+    expect(p).toMatchObject({ q: "", "fields.label": ["a"], start: 0, num: 1, "facet.field": ["url"], "facet.size": CHILDREN_FACET_SIZE });
     expect(p.ex_q).toEqual(["label:x", scopeClause(scope)]);
+  });
+
+  it("children ask for more URLs than the default server cap, so a raised cap is honoured", () => {
+    expect(CHILDREN_FACET_SIZE).toBeGreaterThan(FACET_SIZE);
   });
 
   it("children of a source are scoped by its host", () => {
