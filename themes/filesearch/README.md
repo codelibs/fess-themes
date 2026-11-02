@@ -20,8 +20,10 @@ help) the results screen has three regions:
 | **Location bar + toolbar + list** (middle) | The breadcrumb of the current folder (click any part to go up to it; a Windows-style `\\server\share\dir` path for smb, `/home/user/dir` for local paths; a copy-path button), the result count, **Filters** (file type, modified date, size, label), the sort control, and a view switch: **Details** (name, location, modified, size, type), **List** and **Tiles**. In Details view the column headings sort. |
 | **Preview pane** (right) | The selected file's path, dates, size and type, the actions (open the original, copy path, show in folder, cached copy) and a content preview where one is possible. It collapses; below 900px it becomes a sheet over the list, and the folder tree becomes a drawer. |
 
-The home page (no keyword, no folder) is the search box plus the same tree of sources and
-the recent searches. Recent searches are kept in the browser (`localStorage`).
+The home page (no keyword, no folder) is the search box plus a tree of sources and
+the recent searches. Its tree is for picking where to search, so it shows no counts and finds
+a folder's sub-folders one at a time instead of counting documents: a folder with 100,000
+files lists completely (one request per sub-folder, at most 300 per folder). Recent searches are kept in the browser (`localStorage`).
 
 Keyboard: `/` focuses the search box; `↑ ↓ Home End PgUp PgDn` move through the list;
 `Enter` opens the original; `Space` shows or hides the preview; `←` from the list goes to
@@ -47,7 +49,7 @@ backslash-escaped (`smb://srv/share/` is `url:smb\:\/\/srv\/share\/*`).
 ## Install and activate
 
 ```bash
-./scripts/package.sh filesearch          # → dist/filesearch-15.9.7.zip
+./scripts/package.sh filesearch          # → dist/filesearch-15.9.8.zip
 ```
 
 Upload the ZIP at **Admin → Theme** (`/admin/theme/`) and set it as the default theme, or
@@ -92,7 +94,8 @@ which Fess allows by default.
   says so under it ("some of its subfolders may not be listed"). Raising `query.facet.fields.size.max`
   (in `fess_config.properties`, then restart Fess) lets the tree see that many documents per
   folder, at the price of a larger response for every folder you open. Searching with a
-  keyword, or opening the sub-folders you do see, narrows it. The tree's data comes from one small module
+  keyword, or opening the sub-folders you do see, narrows it. This applies to the tree beside
+  the results; the home page tree does not depend on the setting (see above). The tree's data comes from one small module
   (`assets/treesource.js`), so a server-side hierarchical facet can replace it later.
 - **The folder is part of `ex_q`**, and the API refuses an `ex_q` value longer than 1000
   characters (HTTP 400). A `file:` path is stored percent-encoded, so each Japanese letter costs
