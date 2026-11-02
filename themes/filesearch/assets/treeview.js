@@ -28,9 +28,12 @@ let seq = 0;
  *   getBase: () => object,                 the current search's parameters, without folder or paging
  *   onSelect: (scope:object) => void,
  *   onFocusList?: () => void,
+ *   browse?: boolean,                      pick-a-folder mode (the home view): no counts, and a folder's
+ *                                          sub-folders are found without counting its documents, so a
+ *                                          folder of any size lists completely
  * }} opts
  */
-export function createTreeView({ root, status, warning, source = defaultSource, getBase, onSelect, onFocusList }) {
+export function createTreeView({ root, status, warning, source = defaultSource, getBase, onSelect, onFocusList, browse = false }) {
   const tree = createTree();
   const idPrefix = "fs-tn" + (++seq) + "-";
   let selected = null;           // the scope of the result list
@@ -96,7 +99,7 @@ export function createTreeView({ root, status, warning, source = defaultSource, 
       const label = el("span", { className: "fs-node-label", text: node.label });
       item.appendChild(label);
       if (node.showScheme && node.scheme) item.appendChild(el("span", { className: "fs-node-scheme", text: node.scheme }));
-      const count = countLabel(node);
+      const count = browse ? "" : countLabel(node);
       if (count) {
         const c = el("span", { className: "fs-node-count" + (node.approx ? " is-approx" : ""), text: count });
         if (node.approx) c.title = t("fs.tree_count_approx", { n: Number(node.count).toLocaleString() });
@@ -132,7 +135,7 @@ export function createTreeView({ root, status, warning, source = defaultSource, 
       node.loading = true;
       render();
       try {
-        const out = await source.loadChildren(getBase(), node.scope, { signal: abort ? abort.signal : undefined });
+        const out = await source.loadChildren(getBase(), node.scope, { signal: abort ? abort.signal : undefined, browse });
         setWarning(out.permissionState);
         applyFold(tree, node, out.fold);
         if (selected) ensurePath(tree, selected, { expand: false });
@@ -229,7 +232,7 @@ export function createTreeView({ root, status, warning, source = defaultSource, 
     for (const node of open) {
       if (signal.aborted) return;
       try {
-        const out = await source.loadChildren(getBase(), node.scope, { signal });
+        const out = await source.loadChildren(getBase(), node.scope, { signal, browse });
         if (signal.aborted) return;
         applyFold(tree, node, out.fold);
       } catch (e) {
