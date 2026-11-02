@@ -911,6 +911,7 @@ export function renderHomeBrowse() {
       ui.homeTree = createTreeView({
         root, status: $("home-tree-status"), warning: $("home-tree-warning"),
         getBase: () => ({ q: "" }),
+        browse: true,
         onSelect: scope => navigate("search?ex_q=" + encodeURIComponent(scopeClause(scope))),
       });
     }

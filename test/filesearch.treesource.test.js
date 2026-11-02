@@ -8,7 +8,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 vi.mock("../themes/filesearch/assets/api.js", () => ({ get: vi.fn() }));
 
 import * as api from "../themes/filesearch/assets/api.js";
-import { rootsParams, childrenParams, loadRoots, loadChildren, FACET_SIZE, CHILDREN_FACET_SIZE } from "../themes/filesearch/assets/treesource.js";
+import { rootsParams, childrenParams, loadRoots, loadChildren, FACET_SIZE, CHILDREN_FACET_SIZE, MAX_PROBES, afterFolder, urlFromClause, probeParams } from "../themes/filesearch/assets/treesource.js";
 import { scopeClause } from "../themes/filesearch/assets/scope.js";
 
 // braces: a returned mock would be run by vitest as the teardown function
@@ -122,5 +122,86 @@ describe("loadChildren", () => {
     const out = await loadChildren({ q: "" }, { type: "host", host: "srv" });
     expect(out.available).toBe(false);
     expect(out.fold.children).toEqual([]);
+  });
+});
+
+describe("browse mode: folders found without counting documents", () => {
+  const scope = { type: "url", prefix: "smb://srv/share/" };
+  const answer = (urls, extra = {}) => ({
+    facet_field: [{ name: "url", result: urls.map(value => ({ value, count: 1 })) }],
+    record_count_relation: "EQUAL_TO", ...extra,
+  });
+
+  it("afterFolder is above every url of the folder and below the next sibling", () => {
+    expect(afterFolder("smb://srv/share/a/")).toBe("smb://srv/share/a0");
+    expect("smb://srv/share/a/zzz" < afterFolder("smb://srv/share/a/")).toBe(true);
+    expect(afterFolder("smb://srv/share/a/") <= "smb://srv/share/a0/x").toBe(true);
+  });
+
+  it("quotes the range bound so spaces and quotes survive", () => {
+    expect(urlFromClause('smb://srv/a b/"c"\\', true)).toBe('url:["smb://srv/a b/\\"c\\"\\\\" TO *]');
+    expect(urlFromClause("x", false)).toBe('url:{"x" TO *]');
+  });
+
+  it("probes in url order on top of the folder scope and the current filters", () => {
+    const p = probeParams({ q: "", ex_q: ["label:x"] }, scope, { value: "smb://srv/share/b0", inclusive: true }, 1);
+    expect(p).toMatchObject({ "facet.field": ["url"], "facet.size": 1, "facet.sort": "term.asc", num: 1 });
+    expect(p.ex_q).toEqual(["label:x", scopeClause(scope), 'url:["smb://srv/share/b0" TO *]']);
+  });
+
+  it("one request is enough when the first answer holds the whole folder; no counts are kept", async () => {
+    api.get.mockResolvedValue(answer(["smb://srv/share/a/x.txt", "smb://srv/share/b/y.txt"], { record_count: 2 }));
+    const out = await loadChildren({ q: "" }, scope, { browse: true });
+    expect(api.get).toHaveBeenCalledTimes(1);
+    expect(out.fold.children.map(c => [c.prefix, c.count])).toEqual([["smb://srv/share/a/", null], ["smb://srv/share/b/", null]]);
+    expect(out.fold.exact).toBe(true);
+  });
+
+  it("keeps asking for the first url after the last folder found until none is left", async () => {
+    api.get
+      .mockResolvedValueOnce(answer(["smb://srv/share/1/a.txt", "smb://srv/share/1/b.txt"], { record_count: 90000 }))
+      .mockResolvedValueOnce(answer(["smb://srv/share/3/z.txt"]))
+      .mockResolvedValueOnce(answer(["smb://srv/share/5/z.txt"]))
+      .mockResolvedValueOnce(answer([]));
+    const out = await loadChildren({ q: "" }, scope, { browse: true });
+    expect(out.fold.children.map(c => c.prefix)).toEqual(["smb://srv/share/1/", "smb://srv/share/3/", "smb://srv/share/5/"]);
+    expect(out.fold.exact).toBe(true);
+    const lastClause = api.get.mock.calls.map(c => c[1].ex_q.at(-1));
+    expect(lastClause).toEqual([
+      scopeClause(scope),
+      'url:["smb://srv/share/10" TO *]', 'url:["smb://srv/share/30" TO *]', 'url:["smb://srv/share/50" TO *]',
+    ]);
+  });
+
+  it("steps over a file that sits directly in the folder", async () => {
+    api.get
+      .mockResolvedValueOnce(answer(["smb://srv/share/a/x.txt"], { record_count: 5000 }))
+      .mockResolvedValueOnce(answer(["smb://srv/share/readme.txt"]))
+      .mockResolvedValueOnce(answer(["smb://srv/share/z/y.txt"]))
+      .mockResolvedValueOnce(answer([]));
+    const out = await loadChildren({ q: "" }, scope, { browse: true });
+    expect(out.fold.children.map(c => c.prefix)).toEqual(["smb://srv/share/a/", "smb://srv/share/z/"]);
+    expect(api.get.mock.calls[2][1].ex_q.at(-1)).toBe('url:{"smb://srv/share/readme.txt" TO *]');
+  });
+
+  it("gives up after MAX_PROBES requests and says the list may be incomplete", async () => {
+    let n = 0;
+    api.get.mockImplementation(async () => answer([`smb://srv/share/f${String(++n).padStart(6, "0")}/x.txt`], { record_count: 1e6 }));
+    const out = await loadChildren({ q: "" }, scope, { browse: true });
+    expect(api.get).toHaveBeenCalledTimes(MAX_PROBES + 1);
+    expect(out.fold.exact).toBe(false);
+  });
+
+  it("stops, incomplete, when the range clause would be too long for ex_q", async () => {
+    const deep = "smb://srv/share/" + "d".repeat(1100) + "/";
+    api.get.mockResolvedValueOnce(answer([deep + "x.txt"], { record_count: 5000 }));
+    const out = await loadChildren({ q: "" }, scope, { browse: true });
+    expect(api.get).toHaveBeenCalledTimes(1);
+    expect(out.fold.exact).toBe(false);
+  });
+
+  it("reports an answer without the url facet as unavailable", async () => {
+    api.get.mockResolvedValue({ record_count: 3 });
+    expect((await loadChildren({ q: "" }, scope, { browse: true })).available).toBe(false);
   });
 });
