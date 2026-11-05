@@ -24,6 +24,7 @@ import { getRecent, pushRecent, clearRecent } from "./recent.js";
 import { globalKey, isEditable } from "./keynav.js";
 import { createListView, buildRow, plainTitle } from "./listview.js";
 import { createTreeView } from "./treeview.js";
+import { configuredRoots } from "./roots.js";
 import { createPreview } from "./preview.js";
 import { renderFilterPanel, renderChips, typeName } from "./filterpanel.js";
 
@@ -593,6 +594,9 @@ const $ = id => document.getElementById(id);
 /** Narrow screens show the folder tree as a drawer and the preview as a sheet (900px, as styles.css). */
 const isNarrow = () => !!(window.matchMedia && window.matchMedia("(max-width: 899.98px)").matches);
 
+/** The folders the tree starts at, from the theme settings of the current /ui/config (none on Fess 15.9 and earlier). */
+const getRoots = () => configuredRoots(api.getConfig());
+
 function ensureUi() {
   if (ui.ready) return;
   const resultsEl = $("results");
@@ -611,6 +615,7 @@ function ensureUi() {
     ui.tree = createTreeView({
       root: $("fs-tree"), status: $("fs-tree-status"), warning: $("fs-tree-warning"),
       getBase: () => conditionParams({ withScope: false }),
+      getRoots,
       onSelect: scope => { if (isNarrow()) closeTreeDrawer(false); setScope(scope); },
       onFocusList: () => { if (ui.list) ui.list.focusActive(); },
     });
@@ -911,6 +916,7 @@ export function renderHomeBrowse() {
       ui.homeTree = createTreeView({
         root, status: $("home-tree-status"), warning: $("home-tree-warning"),
         getBase: () => ({ q: "" }),
+        getRoots,
         browse: true,
         onSelect: scope => navigate("search?ex_q=" + encodeURIComponent(scopeClause(scope))),
       });
