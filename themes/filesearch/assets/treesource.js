@@ -3,6 +3,7 @@
 // answers are assembled from facets (see tree.js):
 //
 //   loadRoots(base, ...)           facet.field=host      -> the sources
+//   loadRoots(..., {roots})        facet.query per root  -> how many documents each configured root holds
 //   loadChildren(base, scope, ...) ex_q=<scope> + facet.field=url, folded into folders
 //   loadChildren(..., {browse})    the same folders found one at a time (see discoverChildren)
 //
@@ -15,6 +16,7 @@ import * as api from "./api.js";
 import { scopeClause, withBrowseAll } from "./scope.js";
 import { foldUrls } from "./tree.js";
 import { MAX_CLAUSE_LENGTH } from "./paths.js";
+import { queryBytes, QUERY_BUDGET } from "./roots.js";
 
 /** The most sources one request lists (the server clamps it to query.facet.fields.size.max). */
 export const FACET_SIZE = 1000;
@@ -32,13 +34,30 @@ function facetResult(env, name) {
   return entry ? (entry.result || []) : null;
 }
 
-/** Request for the sources, plus exact counts for the ancestors of the selected folder. */
-export function rootsParams(base, ancestors) {
-  const params = {
-    ...base, start: 0, num: 1,
-    "facet.field": ["host"], "facet.size": FACET_SIZE,
-  };
+/**
+ * Request for the sources, plus exact counts for the ancestors of the selected folder. With
+ * `roots` (roots.js) the tree starts at those folders, not at the sources: there is no host
+ * facet, and each root is counted by its own clause together with the ancestors.
+ */
+export function rootsParams(base, ancestors, roots) {
+  const params = { ...base, start: 0, num: 1 };
   delete params.sort;
+  if (roots && roots.length > 0) {
+    // Every ancestor of a deep folder repeats the root's prefix: count them from the top while
+    // the request stays within QUERY_BUDGET; the deeper ones are shown without a count.
+    const clauses = [...new Set(roots.map(scopeClause))];
+    let bytes = clauses.reduce((sum, c) => sum + queryBytes(c), 0);
+    for (const clause of (ancestors || []).map(scopeClause)) {
+      if (clauses.includes(clause)) continue;
+      bytes += queryBytes(clause);
+      if (bytes > QUERY_BUDGET) break;
+      clauses.push(clause);
+    }
+    params["facet.query"] = clauses;
+    return withBrowseAll(params);
+  }
+  params["facet.field"] = ["host"];
+  params["facet.size"] = FACET_SIZE;
   if (ancestors && ancestors.length > 0) params["facet.query"] = ancestors.map(scopeClause);
   return withBrowseAll(params);
 }
@@ -119,8 +138,12 @@ async function discoverChildren(base, scope, signal) {
  *   when the answer has no host facet at all (as under some rank-fusion searches): that is
  *   "unknown", not "no sources".
  */
-export async function loadRoots(base, { signal, ancestors } = {}) {
-  const env = await api.get("/search", rootsParams(base, ancestors), { signal });
+export async function loadRoots(base, { signal, ancestors, roots } = {}) {
+  const env = await api.get("/search", rootsParams(base, ancestors, roots), { signal });
+  if (roots && roots.length > 0) {
+    // The roots are known without the server; the answer only says which of them are empty.
+    return { available: true, buckets: [], facetQuery: env.facet_query, permissionState: env.permission_state };
+  }
   const buckets = facetResult(env, "host");
   return {
     available: buckets !== null,

@@ -16,7 +16,7 @@ help) the results screen has three regions:
 
 | Region | What it does |
 |---|---|
-| **Folder tree** (left) | Sources (hosts), then folders, with the number of matching documents beside each. Click a name to look only inside that folder and everything below it; click the arrow to open or close it. The tree is rebuilt for every keyword and filter, so a count is a count of what the list would show. |
+| **Folder tree** (left) | Sources (hosts), or the folders an administrator chose (see [Theme settings](#theme-settings-start-the-folder-tree-at-chosen-folders)), then folders, with the number of matching documents beside each. Click a name to look only inside that folder and everything below it; click the arrow to open or close it. The tree is rebuilt for every keyword and filter, so a count is a count of what the list would show. |
 | **Location bar + toolbar + list** (middle) | The breadcrumb of the current folder (click any part to go up to it; a Windows-style `\\server\share\dir` path for smb, `/home/user/dir` for local paths; a copy-path button), the result count, **Filters** (file type, modified date, size, label), the sort control, and a view switch: **Details** (name, location, modified, size, type), **List** and **Tiles**. In Details view the column headings sort. |
 | **Preview pane** (right) | The selected file's path, dates, size and type, the actions (open the original, copy path, show in folder, cached copy) and a content preview where one is possible. It collapses; below 900px it becomes a sheet over the list, and the folder tree becomes a drawer. |
 
@@ -49,7 +49,7 @@ backslash-escaped (`smb://srv/share/` is `url:smb\:\/\/srv\/share\/*`).
 ## Install and activate
 
 ```bash
-./scripts/package.sh filesearch          # → dist/filesearch-15.10.5.zip
+./scripts/package.sh filesearch          # → dist/filesearch-15.10.6.zip
 ```
 
 Upload the ZIP at **Admin → Theme** (`/admin/theme/`) and set it as the default theme, or
@@ -78,6 +78,74 @@ None is required to start; these make it better. Mind the channel each one lives
 
 No facet field has to be added: the theme uses `host`, `url`, `filetype` and `label`,
 which Fess allows by default.
+
+## Theme settings: start the folder tree at chosen folders
+
+By default the folder tree starts at the sources (hosts). On a file server that is rarely where
+people want to start: they want `Main Repository/Documents`, not `\\server`. An administrator
+can name the folders the tree starts at.
+
+**Requires Fess 15.10 or later** (the `theme_settings` field of `GET /api/v2/ui/config`,
+codelibs/fess#3730). Fess 15.9 and earlier send no such field and the theme behaves exactly as
+without the setting.
+
+Set it in **Admin → System → General → Theme Settings**, one `key=value` per line:
+
+```
+filesearch.roots=smb://server/share/Main Repository/Documents/|file:/data/docs/
+```
+
+| Key | Value |
+|---|---|
+| `filesearch.roots` | One or more URL prefixes separated by `\|`. Spaces around an item are ignored, and a space inside one is part of the URL (so `smb:` paths with spaces work). Empty items are ignored. |
+
+How a root is read:
+
+- **Write it as the `url` field stores it.** `smb:` URLs are stored decoded
+  (`smb://server/share/Main Repository/`), `file:` URLs percent-encoded
+  (`file:/data/My%20Docs/`). The theme does not re-encode anything; it uses the prefix the way it
+  uses the folder you click: documents whose `url` starts with it. The stored form is the `url`
+  field of a hit in the search API's answer.
+- A trailing `/` is added when it is missing, because a root is a folder. A prefix with no
+  folder in it (`smb://server/`) is the whole source.
+- An item is ignored when it is not a URL (`scheme:...`), is longer than 500 characters, contains a
+  control character, or would make a folder scope longer than the 1000-character `ex_q` limit.
+  A root inside another root, or naming the same source in another spelling (`smb://srv/` and
+  `file:////srv/`), is ignored (the outer one already contains it). Fess itself accepts at most
+  1000 characters in a setting value.
+- **At most 20 roots, and a size budget.** The tree counts every root with its own `facet.query` in
+  one GET request, and the server refuses a request line above its header limit (8 KB by default),
+  after which the tree would only show its retry button. Percent-encoding makes a Japanese
+  letter about 9 bytes, so the roots are also limited to 2048 encoded bytes in total, measured as
+  the theme builds the query string (`URLSearchParams`, one `facet.query` per root). Roots are
+  taken in the order written until the next one does not fit; the rest are ignored, so put the
+  important ones first. That is about 19 ordinary paths such as
+  `smb://fileserver01/share/Department1/Documents/`, but only about 7 Japanese ones like
+  `smb://fileserver/共有フォルダ/営業本部/第1課/令和六年度の資料/`. For a selected folder deep
+  under a root the tree also counts its ancestors, while the whole `facet.query` part stays under
+  3072 bytes; deeper ancestors then show no count.
+
+What the tree does with them:
+
+- The top level of the tree (the home page tree and the tree beside the results) is exactly the
+  configured roots, in alphabetical order, each labelled with its last folder name (or the full
+  prefix when it has none). Hovering a root shows the full prefix. Two roots with the same last
+  folder name are labelled with their full path.
+- A root opens like any folder, and choosing it searches inside that prefix exactly as choosing a
+  folder does. Folders above a root are never added to the tree, not even for a deep link or
+  because a result lives there.
+- A root that holds no document (under the current keyword and filters) is left out of the tree,
+  like a source with no hit. A mistyped prefix therefore shows as a missing root: check it
+  against the stored `url` (see above). When the server returns no counts at all (some
+  hybrid-search setups) every root is shown.
+- Roots only shape the tree. They are **not an access control**: the keyword search still
+  covers every document the visitor may see, the location bar's breadcrumb and **Up** button are
+  unchanged, and a link to a folder outside the roots still searches that folder. Use
+  Fess roles and permissions to restrict who can see what.
+
+**Security note.** `theme_settings` is served to every visitor of the search UI (when Fess
+requires login, to logged-in users only), so a value must not hold a secret. The theme uses the
+prefixes only as text and as a search filter: never as HTML and never as a link.
 
 ## Known limits
 
@@ -141,6 +209,7 @@ filesearch/
 │   ├── search.js          # search state, the URL round trip, the request pipeline, wiring
 │   ├── scope.js           # folder scope <-> ex_q, query escaping, "browse without a keyword"
 │   ├── paths.js           # url shapes -> folders, display paths, breadcrumb, parent scope
+│   ├── roots.js           # theme_settings -> the configured tree roots (filesearch.roots)
 │   ├── tree.js            # folding the url facet into folders, counts, the tree model
 │   ├── treesource.js      # the one place that asks Fess for tree data
 │   ├── treeview.js        # the tree on screen (WAI-ARIA tree)

@@ -11,11 +11,11 @@ import { t } from "./i18n.js";
 import { el, clear, reveal } from "./dom.js";
 import { uiIcon } from "./icons.js";
 import { scopeKey, sameScope } from "./scope.js";
-import { ancestorScopes } from "./paths.js";
+import { rootsSignature } from "./roots.js";
 import { treeKey } from "./keynav.js";
 import {
-  createTree, setRoots, applyFold, ensurePath, mergeSeen, visibleNodes, countLabel, findNode,
-  setExpanded, applyClauseCounts,
+  createTree, setRoots, setRootScopes, setConfiguredRoots, chainOf, applyFold, ensurePath, mergeSeen, visibleNodes,
+  countLabel, findNode, setExpanded, applyClauseCounts,
 } from "./tree.js";
 import * as defaultSource from "./treesource.js";
 
@@ -28,12 +28,13 @@ let seq = 0;
  *   getBase: () => object,                 the current search's parameters, without folder or paging
  *   onSelect: (scope:object) => void,
  *   onFocusList?: () => void,
+ *   getRoots?: () => object[],             the folders the tree starts at (roots.js); none: it starts at the sources
  *   browse?: boolean,                      pick-a-folder mode (the home view): no counts, and a folder's
  *                                          sub-folders are found without counting its documents, so a
  *                                          folder of any size lists completely
  * }} opts
  */
-export function createTreeView({ root, status, warning, source = defaultSource, getBase, onSelect, onFocusList, browse = false }) {
+export function createTreeView({ root, status, warning, source = defaultSource, getBase, onSelect, onFocusList, getRoots = () => [], browse = false }) {
   const tree = createTree();
   const idPrefix = "fs-tn" + (++seq) + "-";
   let selected = null;           // the scope of the result list
@@ -43,6 +44,18 @@ export function createTreeView({ root, status, warning, source = defaultSource, 
   let failed = null;             // { retry } while the roots could not be loaded
   let rootsLoaded = false;
   let unavailable = false;
+  let rootsSig = "";             // the configured roots the tree was built for
+
+  /** Follow the configuration: other roots (or none) are a different tree, not new numbers for this one. */
+  function followRoots() {
+    const roots = getRoots();
+    const sig = rootsSignature(roots);
+    if (sig !== rootsSig) {
+      rootsSig = sig;
+      setRootScopes(tree, roots);
+    }
+    return sig;
+  }
 
   // The status line shows the most important thing there is to say: a failure, a missing
   // facet, loading, and last that some open folder's list may be incomplete.
@@ -97,6 +110,8 @@ export function createTreeView({ root, status, warning, source = defaultSource, 
       const iconName = node.kind === "host" ? "server" : (node.expanded && node.children.length ? "folder-open" : "folder");
       item.appendChild(el("span", { className: "fs-node-icon" })).appendChild(uiIcon(iconName));
       const label = el("span", { className: "fs-node-label", text: node.label });
+      // A configured root stands for a prefix the label only abbreviates.
+      if (tree.rootScopes && !node.parent) item.title = node.scope.type === "host" ? node.scope.host : node.scope.prefix;
       item.appendChild(label);
       if (node.showScheme && node.scheme) item.appendChild(el("span", { className: "fs-node-scheme", text: node.scheme }));
       const count = browse ? "" : countLabel(node);
@@ -207,12 +222,13 @@ export function createTreeView({ root, status, warning, source = defaultSource, 
     setStatus(t("fs.tree_loading"));
     root.setAttribute("aria-busy", "true");
     try {
-      const out = await source.loadRoots(getBase(), { signal, ancestors });
+      const out = await source.loadRoots(getBase(), { signal, ancestors, roots: tree.rootScopes || undefined });
       if (signal.aborted) return;
       failed = null;
       setWarning(out.permissionState);
       unavailable = !out.available;
-      if (out.available) setRoots(tree, out.buckets);
+      if (tree.rootScopes) setConfiguredRoots(tree, out.facetQuery);
+      else if (out.available) setRoots(tree, out.buckets);
       applyClauseCounts(tree, out.facetQuery);
       rootsLoaded = true;
       setStatus(unavailable ? t("fs.tree_unavailable") : (tree.roots.length === 0 ? t("fs.tree_empty") : ""));
@@ -254,17 +270,18 @@ export function createTreeView({ root, status, warning, source = defaultSource, 
     async sync({ key, scope, docs, count, relation }) {
       const previous = selected ? scopeKey(selected) : "";
       selected = scope || null;
+      const sig = followRoots();
       if (selected) {
         const node = ensurePath(tree, selected);
         // The search itself counted this folder exactly.
-        if (typeof count === "number" && relation === "EQUAL_TO") { node.count = count; node.approx = false; }
+        if (node && typeof count === "number" && relation === "EQUAL_TO") { node.count = count; node.approx = false; }
       }
       mergeSeen(tree, docs);
-      if (key !== baseKey) {
-        baseKey = key;
+      if (key + "\n" + sig !== baseKey) {
+        baseKey = key + "\n" + sig;
         // Counts under a different keyword or filter are stale: keep the shape, refresh the numbers.
         tree.index.forEach(n => { n.loaded = false; });
-        await loadRootsNow(selected ? ancestorScopes(selected) : undefined);
+        await loadRootsNow(selected ? chainOf(tree, selected) : undefined);
         if (abort && !abort.signal.aborted && [...tree.index.values()].some(n => n.expanded)) await reloadOpen(abort.signal);
       } else {
         render();
@@ -279,8 +296,9 @@ export function createTreeView({ root, status, warning, source = defaultSource, 
     /** First load on the home view (no search ran). */
     async loadHome() {
       selected = null;
-      if (rootsLoaded && baseKey === "home") { render(); return; }
-      baseKey = "home";
+      const homeKey = "home\n" + followRoots();
+      if (rootsLoaded && baseKey === homeKey) { render(); return; }
+      baseKey = homeKey;
       await loadRootsNow();
     },
     setSelected(scope) { selected = scope || null; render(); },

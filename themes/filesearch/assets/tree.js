@@ -2,7 +2,8 @@
 // The folder tree as data. Fess has no folder hierarchy to ask for, so the tree is
 // assembled from what facets give back:
 //
-//   roots      the `host` facet: one source per host
+//   roots      the `host` facet: one source per host (or, when an administrator configured
+//              them in roots.js, those folders: nothing above them is ever added)
 //   children   a `url` facet narrowed to a node's subtree, folded into the next level
 //              of folders by foldUrls()
 //   seen       folders the current result page's documents sit in, merged in as they
@@ -15,7 +16,7 @@
 // Pure module: no DOM, no network.
 
 import { scopeClause, scopeKey } from "./scope.js";
-import { parseUrl, folderPrefix, decodeSegment, ancestorScopes, scopeOfDocParent } from "./paths.js";
+import { parseUrl, folderPrefix, decodeSegment, ancestorScopes, scopeOfDocParent, scopeDisplayPath } from "./paths.js";
 
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: "base" });
 const byLabel = (a, b) => collator.compare(a.label, b.label) || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
@@ -69,8 +70,20 @@ export function countLabel(node, locale) {
 
 // ─── model ───────────────────────────────────────────────────────────────────────
 
+/**
+ * `rootScopes` is null when the tree starts at the sources. When an administrator configured
+ * roots (roots.js) it holds their scopes: the top level is exactly those folders, and nothing
+ * above them is ever added.
+ */
 export function createTree() {
-  return { roots: [], index: new Map() };
+  return { roots: [], index: new Map(), rootScopes: null };
+}
+
+/** Start the tree at `scopes` (none: at the sources). Changing them empties the tree. */
+export function setRootScopes(tree, scopes) {
+  tree.rootScopes = scopes && scopes.length > 0 ? scopes : null;
+  tree.roots = [];
+  tree.index.clear();
 }
 
 function labelOf(scope) {
@@ -78,6 +91,18 @@ function labelOf(scope) {
   const p = parseUrl(scope.prefix);
   const last = p && p.dirSegments[p.dirSegments.length - 1];
   return last == null ? scope.prefix : decodeSegment(last);
+}
+
+/**
+ * The scopes from the top of the tree down to `scope`: from the source, or from the
+ * configured root that holds it. Empty when roots are configured and none holds `scope`.
+ */
+export function chainOf(tree, scope) {
+  const chain = ancestorScopes(scope);
+  if (!tree.rootScopes) return chain;
+  const keys = new Set(tree.rootScopes.map(scopeKey));
+  const at = chain.findIndex(s => keys.has(scopeKey(s)));
+  return at < 0 ? [] : chain.slice(at);
 }
 
 function makeNode(scope, parent) {
@@ -130,6 +155,35 @@ export function setRoots(tree, buckets) {
 }
 
 /**
+ * Replace the top level with the configured roots. `facetQuery` holds the exact count of each
+ * root's `ex_q` clause: a root counted 0 holds no document (under the current filters) and is
+ * left out, like a source with no hit. A root whose count did not come back (the answer has no
+ * facet_query under some rank-fusion searches) is kept: "not counted" is not "empty".
+ * Roots with the same label are told apart by their full path.
+ */
+export function setConfiguredRoots(tree, facetQuery) {
+  const counted = new Map((Array.isArray(facetQuery) ? facetQuery : []).map(f => [f.value, Number(f.count)]));
+  const keep = new Set();
+  const roots = [];
+  for (const scope of tree.rootScopes || []) {
+    if (counted.get(scopeClause(scope)) === 0) continue;
+    let node = tree.index.get(scopeKey(scope));
+    if (!node) {
+      node = makeNode(scope, null);
+      tree.index.set(node.id, node);
+    }
+    node.label = labelOf(scope);
+    keep.add(node.id);
+    roots.push(node);
+  }
+  const seen = new Map();
+  for (const n of roots) seen.set(n.label, (seen.get(n.label) || 0) + 1);
+  for (const n of roots) if (seen.get(n.label) > 1) n.label = scopeDisplayPath(n.scope);
+  for (const old of tree.roots) if (!keep.has(old.id)) forget(tree, old);
+  tree.roots = roots.sort(byLabel);
+}
+
+/**
  * Give `node` the children a url-facet fold found. Folders already known keep their state;
  * a folder the fold no longer lists is dropped when the fold was exact (it is empty under
  * the current filters) but kept when it was only a sample and the result page showed it.
@@ -176,7 +230,8 @@ function insertSorted(list, node) {
  */
 export function ensurePath(tree, scope, { expand = true, seen = false } = {}) {
   if (!scope) return null;
-  const chain = ancestorScopes(scope);
+  const chain = chainOf(tree, scope);
+  if (chain.length === 0) return null;
   let parent = null;
   let node = null;
   chain.forEach((s, i) => {

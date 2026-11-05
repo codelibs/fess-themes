@@ -96,6 +96,19 @@ describe("folder scope in the address bar", () => {
     expect(document.getElementById("fs-copy-path").disabled).toBe(false);
   });
 
+  it("the tree beside the results starts at the configured roots, and a click scopes to one", async () => {
+    const cfg = { ...CFG, theme_settings: { "filesearch.roots": "smb://srv/share/dir/" } };
+    const { mod, get } = await boot({ url: "/search?q=foo", cfg });
+    const roots = searchCalls(get).find(p => p.num === 1 && p["facet.query"]);
+    expect(roots["facet.query"]).toEqual([scopeClause({ type: "url", prefix: "smb://srv/share/dir/" })]);
+    const ids = [...document.querySelectorAll("#fs-tree [role=treeitem]")].map(n => n.dataset.id);
+    expect(ids).toEqual(["url:smb://srv/share/dir/"]);
+    document.querySelector('#fs-tree [data-id="url:smb://srv/share/dir/"]').click();
+    await settle();
+    expect(mod._state.scope).toEqual({ type: "url", prefix: "smb://srv/share/dir/" });
+    expect(lastMain(get).ex_q).toEqual([scopeClause({ type: "url", prefix: "smb://srv/share/dir/" })]);
+  });
+
   it("browses without a keyword: name order, and the first page is a real search", async () => {
     const { get, navigate } = await boot({ url: "/search?ex_q=" + encodeURIComponent(SHARE_CLAUSE) });
     expect(navigate).not.toHaveBeenCalled();
@@ -876,6 +889,43 @@ describe("home", () => {
     expect(roots).toMatchObject({ q: "", ex_q: ["url:*"], num: 1 });
     const items = document.querySelectorAll("#home-tree [role=treeitem]");
     expect([...items].map(i => i.dataset.id)).toEqual(["host:srv"]);
+  });
+
+  it("starts at the configured roots instead of the sources (theme_settings)", async () => {
+    const cfg = { ...CFG, theme_settings: { "filesearch.roots": "smb://srv/share/Main Repository/|file:/data/docs/" } };
+    const flow = await loadSearchFlow(THEME, cfg);
+    flow.get.mockImplementation(async (path, params) => (path === "/search" && params["facet.query"]
+      ? { facet_query: params["facet.query"].map(value => ({ value, count: 4 })), record_count: 8, record_count_relation: "EQUAL_TO" }
+      : {}));
+    setLocation("/");
+    mountIndexBody(THEME);
+    flow.mod.attach();
+    flow.mod.renderHomeBrowse();
+    await settle();
+    const request = searchCalls(flow.get)[0];
+    expect(request).toMatchObject({ q: "", ex_q: ["url:*"], num: 1 });
+    expect(request["facet.field"]).toBeUndefined();
+    expect(request["facet.query"]).toEqual([
+      scopeClause({ type: "url", prefix: "smb://srv/share/Main Repository/" }),
+      scopeClause({ type: "url", prefix: "file:/data/docs/" }),
+    ]);
+    const items = [...document.querySelectorAll("#home-tree [role=treeitem]")];
+    expect(items.map(i => i.querySelector(".fs-node-label").textContent)).toEqual(["docs", "Main Repository"]);
+    items[1].querySelector(".fs-node-label").click();
+    expect(flow.navigate).toHaveBeenCalledWith("search?ex_q=" + encodeURIComponent(scopeClause({ type: "url", prefix: "smb://srv/share/Main Repository/" })));
+  });
+
+  it("an older Fess sends no theme_settings: the sources, as before", async () => {
+    const flow = await loadSearchFlow(THEME, CFG);
+    expect(CFG.theme_settings).toBeUndefined();
+    install(flow.get);
+    setLocation("/");
+    mountIndexBody(THEME);
+    flow.mod.attach();
+    flow.mod.renderHomeBrowse();
+    await settle();
+    expect(searchCalls(flow.get)[0]["facet.field"]).toEqual(["host"]);
+    expect([...document.querySelectorAll("#home-tree [role=treeitem]")].map(i => i.dataset.id)).toEqual(["host:srv"]);
   });
 
   it("goes to the results with the source as the scope when one is chosen", async () => {
