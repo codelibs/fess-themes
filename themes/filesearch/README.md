@@ -143,8 +143,8 @@ What the tree does with them:
   unchanged, and a link to a folder outside the roots still searches that folder. Use
   Fess roles and permissions to restrict who can see what.
 
-**Security note.** `theme_settings` is served to every visitor of the search UI (when Fess
-requires login, to logged-in users only), so a value must not hold a secret. The theme uses the
+**Security note.** `theme_settings` is served to every visitor of the search UI, including users who are not
+logged in (even when Fess requires login), so a value must not hold a secret. The theme uses the
 prefixes only as text and as a search filter: never as HTML and never as a link.
 
 ## Known limits
