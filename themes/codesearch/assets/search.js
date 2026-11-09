@@ -55,6 +55,7 @@ const SORT_OPTIONS = [
 const state = {
   q: "",
   start: 0,
+  offset: 0,            // rank-fusion offset the server returned for this query; echoed with start > 0
   num: 20,
   sort: "",
   requestedTime: 0,
@@ -576,6 +577,7 @@ function renderSummary(env) {
     const params = new URLSearchParams(location.search);
     if (sortSel.value) params.set("sort", sortSel.value); else params.delete("sort");
     params.delete("start"); // new sort → back to first page
+    params.delete("offset");
     navigate("search?" + params.toString());
   });
   sortWrap.appendChild(sortSel);
@@ -628,6 +630,7 @@ function renderPagination(env) {
   const pageParams = (start) => {
     const params = new URLSearchParams(location.search);
     params.set("start", String(Math.max(0, start)));
+    if (start > 0 && state.offset > 0) params.set("offset", String(state.offset)); else params.delete("offset");
     if (params.has("num")) params.set("num", String(state.num));
     return params;
   };
@@ -785,6 +788,7 @@ function renderFacets(env) {
         // The box may still hold shorthand ("repo:", "path:src/main"): send what a submit sends.
         params.set("q", toFessQuery(parseQuery(newQuery)));
         params.delete("start");
+        params.delete("offset");
         navigate("search?" + params.toString());
       });
 
@@ -888,6 +892,7 @@ function renderActiveChips() {
       const params = new URLSearchParams(location.search);
       params.set("q", toFessQuery(parseQuery(newQuery)));
       params.delete("start");
+      params.delete("offset");
       navigate("search?" + params.toString());
     });
 
@@ -923,6 +928,30 @@ function clearResultsView() {
 }
 
 /**
+ * A non-negative integer, else 0: the paging offset a response or a URL carries.
+ * @param {*} v
+ * @returns {number}
+ */
+function nonNegativeInt(v) {
+  const n = Number(v);
+  return Number.isSafeInteger(n) && n > 0 ? n : 0;
+}
+
+/**
+ * Keep offset= in the address bar exactly when state.start > 0 && state.offset > 0, so reload,
+ * back/forward and a shared link land on the same page. The URL drives the search, so this
+ * corrects the current entry in place (no navigation, no second search).
+ */
+function syncOffsetParam() {
+  const params = new URLSearchParams(location.search);
+  const want = state.start > 0 && state.offset > 0 ? String(state.offset) : null;
+  if (params.get("offset") === want) return;
+  if (want === null) params.delete("offset"); else params.set("offset", want);
+  const qs = params.toString();
+  history.replaceState(null, "", location.pathname + (qs ? "?" + qs : ""));
+}
+
+/**
  * Issue GET /api/v2/search from the current `state`, cancelling any in-flight
  * request first. Requests the facets Task 5 will render
  * (repository, filetype, organization, filename).
@@ -942,11 +971,17 @@ async function runSearch() {
 
   try {
     const params = { q: state.q, start: state.start, num: state.num };
+    // The deep pages of a fused query are exact only with the offset the previous response returned.
+    if (state.start > 0 && state.offset > 0) params.offset = state.offset;
     if (state.sort) params.sort = state.sort;
     // Facets for Task 5 — api.js serialises arrays as repeated keys.
     params["facet.field"] = ["repository", "filetype", "organization", "filename"];
 
     const env = await api.get("/search", params, { signal });
+    // The offset belongs to the query: the latest response is authoritative, and the address
+    // bar and the page links below follow it.
+    state.offset = nonNegativeInt(env.offset);
+    syncOffsetParam();
     // The server caps num at page_size_max and says what it served in page_size. The page links
     // step by that size, not by the one asked for: with num=500 capped to 100, page 2 starts at 100.
     const served = Number(env.page_size);
@@ -1011,6 +1046,7 @@ export function runFromUrl() {
   const params = new URLSearchParams(location.search);
   state.q = params.get("q") || "";
   state.start = Number(params.get("start")) || 0;
+  state.offset = nonNegativeInt(params.get("offset"));
   const numVal = Number(params.get("num"));
   if (numVal > 0) state.num = numVal;
   state.sort = params.get("sort") || "";
@@ -1049,6 +1085,7 @@ function buildSearchQuery(rawInput, base) {
   const params = base ? new URLSearchParams(base) : new URLSearchParams(location.search);
   if (fessQuery) params.set("q", fessQuery); else params.delete("q");
   params.delete("start"); // new query → first page
+  params.delete("offset");
   return "?" + params.toString();
 }
 
@@ -1119,6 +1156,7 @@ export function refresh() {
 export function clearSearchState() {
   state.q = "";
   state.start = 0;
+  state.offset = 0;
   state.sort = "";
   state.requestedTime = 0;
   syncSearchInputs("");

@@ -49,6 +49,10 @@ The suites:
   the keys of an IME conversion (keydown with `isComposing`, or `keyCode` 229 as Safari reports
   the confirming Enter) neither move the highlight nor take the highlighted suggestion; plain keys
   still do.
+- `search-offset.test.js` — the rank-fusion `offset` through paging, in every theme's own
+  `search.js`: taken from the response (missing or invalid is 0), sent to `/search` only with
+  `start > 0`, kept in the address bar and read back, carried on the prev/next/numbered page
+  links, and forgotten wherever the search returns to the first page.
 - `helpdesk.plaintitle.test.js` — characterization test for helpdesk's own
   DOM-free `plainTitle()` entity decode (it does not route through
   `format.js` like the other themes' `search.js`).
@@ -333,7 +337,7 @@ test/
 ├── notification-banners.test.js  parity.test.js
 ├── wire-error-codes.test.js  wire-error-codes.contract.test.js
 ├── relative-urls.test.js  compat-modal.test.js  i18n-keys.test.js
-├── search-parity.test.js  search-defaults.test.js  search-conditions.test.js
+├── search-parity.test.js  search-defaults.test.js  search-conditions.test.js  search-offset.test.js
 ├── app-boot.test.js  app-auth.test.js
 └── router.test.js  locale.test.js  auth.test.js  profile.test.js  login-modal.test.js
 ```

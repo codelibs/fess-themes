@@ -40,6 +40,7 @@ let currentRelatedAbort = null;
 const state = {
   q: "",
   start: 0,
+  offset: 0,            // rank-fusion offset the server returned for this query; echoed with start > 0
   num: 10,
   sort: "",
   sortDirty: false,     // the user chose a sort: syncUrlParams writes it to the address bar
@@ -267,6 +268,7 @@ function renderSimilarDocBanner() {
   closeBtn.addEventListener("click", () => {
     state.sdh = "";
     state.start = 0;
+    state.offset = 0;
     runSearch();
   });
   banner.appendChild(closeBtn);
@@ -424,7 +426,17 @@ function typeFacetParams() {
 }
 
 /**
- * Keep the address bar's start=, ex_q= (folder scope and filters) and sort= in step with the
+ * A non-negative integer, else 0: the paging offset a response or a URL carries.
+ * @param {*} v
+ * @returns {number}
+ */
+function nonNegativeInt(v) {
+  const n = Number(v);
+  return Number.isSafeInteger(n) && n > 0 ? n : 0;
+}
+
+/**
+ * Keep the address bar's start=, offset=, ex_q= (folder scope and filters) and sort= in step with the
  * state, so reload, back/forward and a shared link land on the same page with the same
  * folder and filters (runFromUrl reads them back).
  *
@@ -436,11 +448,15 @@ function syncUrlParams(push) {
   const clauses = exQClauses();
   const current = params.getAll("ex_q");
   const sameExQ = current.length === clauses.length && current.every((v, i) => v === clauses[i]);
-  const sameStart = (Number(params.get("start")) || 0) === state.start;
+  // offset= rides along with a deep start only: it is what makes that page exact.
+  const urlOffset = state.start > 0 ? state.offset : 0;
+  const sameStart = (Number(params.get("start")) || 0) === state.start
+    && nonNegativeInt(params.get("offset")) === urlOffset;
   // The sort is written only after the user chose one: a server default stays out of the URL.
   const sameSort = !state.sortDirty || (params.get("sort") || "") === state.sort;
   if (sameStart && sameExQ && sameSort) return;
   if (state.start > 0) params.set("start", String(state.start)); else params.delete("start");
+  if (urlOffset > 0) params.set("offset", String(urlOffset)); else params.delete("offset");
   if (!sameExQ) {
     params.delete("ex_q");
     clauses.forEach(v => params.append("ex_q", v));
@@ -457,6 +473,7 @@ function syncUrlParams(push) {
 /** A change the user made to the folder, filters or sort: back to the first page, a history entry, a new search. */
 function commit() {
   state.start = 0;
+  state.offset = 0;
   syncUrlParams(true);
   return runSearch();
 }
@@ -483,6 +500,8 @@ async function runSearch(opts = {}) {
   showSearchLoading(true);
   try {
     const params = { ...conditionParams(), start: state.start, num: state.num };
+    // The deep pages of a fused query are exact only with the offset the previous response returned.
+    if (state.start > 0 && state.offset > 0) params.offset = state.offset;
     // Relevance for a keyword, name order when browsing; an explicit choice always wins.
     const sort = effectiveSort(state.sort, hasKeyword());
     if (sort) params.sort = sort;
@@ -497,6 +516,11 @@ async function runSearch(opts = {}) {
       ? api.get("/search", typeFacetParams(), { signal }).catch(e => { if (e && e.name === "AbortError") throw e; return null; })
       : Promise.resolve(null);
     const [env, typeFacet] = await Promise.all([mainRequest, typesToo]);
+    // The offset belongs to the query: the latest response is authoritative, and the address
+    // bar and the page links below follow it.
+    const prevOffset = state.offset;
+    state.offset = nonNegativeInt(env.offset);
+    if (state.offset !== prevOffset) syncUrlParams(false);
     ui.typeFacet = typeFacet;
     // The server caps num at page_size_max and says what it served. The page links step by that
     // size, not by the one asked for: with num=500 capped to 100, page 2 starts at 100, not 500.
@@ -1335,6 +1359,7 @@ export function runFromUrl() {
   const q = params.get("q");
   state.q = q || "";
   state.start = Number(params.get("start")) || 0;
+  state.offset = nonNegativeInt(params.get("offset"));
   // JSP parity (SearchAction, session attribute resultsPerPage): an explicit num is
   // remembered for this tab; a URL without one uses the remembered or default size.
   const numVal = Number(params.get("num"));
@@ -1452,6 +1477,7 @@ export function resetSearchState() {
   const defaultLabels = cfg && Array.isArray(cfg.default_label_values) ? cfg.default_label_values : [];
   state.q = "";
   state.start = 0;
+  state.offset = 0;
   state.num = initialNum();
   state.sort = (cfg && cfg.default_sort) || "";
   state.lang = [];
@@ -1575,6 +1601,7 @@ export function attach() {
       const params = new URLSearchParams(location.search);
       if (q) params.set("q", q); else params.delete("q");
       params.delete("start");
+      params.delete("offset");
       for (const key of [...params.keys()]) {
         // JSP parity (header.jsp): the header form holds neither the similar-docs hash nor
         // advanced-search conditions, so a new query drops them.
@@ -1852,6 +1879,7 @@ function renderRelatedQueries(queries) {
       if (input) input.value = q;
       state.q = q;
       state.start = 0;
+      state.offset = 0;
       runSearch();
     });
     container.appendChild(btn);
@@ -1954,6 +1982,7 @@ function renderPagination(env) {
   const pageHref = (start) => {
     const params = new URLSearchParams(location.search);
     if (start > 0) params.set("start", String(start)); else params.delete("start");
+    if (start > 0 && state.offset > 0) params.set("offset", String(state.offset)); else params.delete("offset");
     const qs = params.toString();
     return location.pathname + (qs ? "?" + qs : "");
   };
