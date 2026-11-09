@@ -257,3 +257,34 @@ describe.each(THEMES)("every return to the first page forgets the offset [%s]", 
     for (const [, i] of sites) expect(lines[i + 1].trim(), `line ${i + 1}`).toBe('params.delete("offset");');
   });
 });
+
+// The response of a search can land after the user has moved to another view (chat, advanced
+// search, ...): the router only pushes history, and nothing cancels the search. The address bar
+// then belongs to that view, so the late offset must not write start=/offset= onto it, nor drop
+// its history state. The state still takes the offset.
+describe.each(THEMES)("a response that lands after leaving the search view [%s]", (theme) => {
+  it("keeps the other view's address bar and history state", async () => {
+    setLocation("/search?q=foo&start=10");
+    const flow = await loadSearchFlow(theme, cfgOf(theme));
+    installDispatch(flow.get, { search: deepPage({ offset: 37 }) });
+    let release;
+    const gate = new Promise((resolve) => { release = resolve; });
+    const answer = flow.get.getMockImplementation();
+    flow.get.mockImplementation(async (path, ...rest) => {
+      if (path === "/search") await gate;
+      return answer(path, ...rest);
+    });
+    mountBody(SEARCH_FIXTURE);
+    flow.mod.runFromUrl();
+    await settle();
+
+    history.pushState({ view: "chat" }, "", "/chat");
+    release();
+    await settle();
+
+    expect(flow.mod._state.offset).toBe(37);
+    expect(location.pathname).toBe("/chat");
+    expect(location.search).toBe("");
+    expect(history.state).toEqual({ view: "chat" });
+  });
+});

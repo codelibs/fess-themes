@@ -511,6 +511,7 @@ async function runSearch(opts = {}) {
     params["facet.query"] = facetQueryClauses();
     // With a file type chosen, the types are counted again without that choice, so the others
     // stay on offer (a failure of that side request costs only that).
+    const searchPath = location.pathname;
     const mainRequest = api.get("/search", params, { signal });
     const typesToo = (state.facets.filetype || []).length > 0
       ? api.get("/search", typeFacetParams(), { signal }).catch(e => { if (e && e.name === "AbortError") throw e; return null; })
@@ -520,7 +521,9 @@ async function runSearch(opts = {}) {
     // bar and the page links below follow it.
     const prevOffset = state.offset;
     state.offset = nonNegativeInt(env.offset);
-    if (state.offset !== prevOffset) syncUrlParams(false);
+    // A response can land after the user has moved to another view (chat, advanced search, ...):
+    // the address bar then belongs to that view, so only the search view's own URL is corrected.
+    if (state.offset !== prevOffset && location.pathname === searchPath) syncUrlParams(false);
     ui.typeFacet = typeFacet;
     // The server caps num at page_size_max and says what it served. The page links step by that
     // size, not by the one asked for: with num=500 capped to 100, page 2 starts at 100, not 500.

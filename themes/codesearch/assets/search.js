@@ -977,11 +977,14 @@ async function runSearch() {
     // Facets for Task 5 — api.js serialises arrays as repeated keys.
     params["facet.field"] = ["repository", "filetype", "organization", "filename"];
 
+    const searchPath = location.pathname;
     const env = await api.get("/search", params, { signal });
     // The offset belongs to the query: the latest response is authoritative, and the address
     // bar and the page links below follow it.
     state.offset = nonNegativeInt(env.offset);
-    syncOffsetParam();
+    // A response can land after the user has moved to another view (chat, advanced search, ...):
+    // the address bar then belongs to that view, so only the search view's own URL is corrected.
+    if (location.pathname === searchPath) syncOffsetParam();
     // The server caps num at page_size_max and says what it served in page_size. The page links
     // step by that size, not by the one asked for: with num=500 capped to 100, page 2 starts at 100.
     const served = Number(env.page_size);

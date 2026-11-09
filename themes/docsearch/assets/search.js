@@ -830,12 +830,15 @@ async function runSearch() {
     (cfgFacet.facet_views || []).forEach(v =>
       (v.queries || []).forEach(qy => { if (qy && qy.value) facetQueryValues.push(qy.value); }));
     if (facetQueryValues.length > 0) params["facet.query"] = facetQueryValues;
+    const searchPath = location.pathname;
     const env = await api.get("/search", params, { signal });
     // The offset belongs to the query: the latest response is authoritative, and the address
     // bar and the page links below follow it.
     const prevOffset = state.offset;
     state.offset = nonNegativeInt(env.offset);
-    if (state.offset !== prevOffset) syncUrlParams(false);
+    // A response can land after the user has moved to another view (chat, advanced search, ...):
+    // the address bar then belongs to that view, so only the search view's own URL is corrected.
+    if (state.offset !== prevOffset && location.pathname === searchPath) syncUrlParams(false);
     // Prefer the server-supplied requested_time when available (more accurate).
     if (env.requested_time) state.requestedTime = env.requested_time;
     // A.5: store server-supplied highlight params for cache link construction.
