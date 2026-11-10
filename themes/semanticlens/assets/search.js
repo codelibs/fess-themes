@@ -16,6 +16,7 @@ let currentRelatedAbort = null;
 const state = {
   q: "",
   start: 0,
+  offset: 0,            // rank-fusion offset the server returned for this query; echoed with start > 0
   num: 10,
   sort: "",
   lang: [],             // string[] — zero or more language codes; serialised as repeated lang= params
@@ -496,6 +497,7 @@ function buildResultCard(d, queryId, order) {
       ev.preventDefault();
       state.sdh = d.similar_docs_hash || d.doc_id || "";
       state.start = 0;
+      state.offset = 0;
       runSearch();
     });
     info.appendChild(simLink);
@@ -610,6 +612,7 @@ function renderSimilarDocBanner() {
   closeBtn.addEventListener("click", () => {
     state.sdh = "";
     state.start = 0;
+    state.offset = 0;
     runSearch();
   });
   banner.appendChild(closeBtn);
@@ -855,7 +858,17 @@ function exQClauses() {
 }
 
 /**
- * Keep the address bar's start= and ex_q= in step with state.start and the facet
+ * A non-negative integer, else 0: the paging offset a response or a URL carries.
+ * @param {*} v
+ * @returns {number}
+ */
+function nonNegativeInt(v) {
+  const n = Number(v);
+  return Number.isSafeInteger(n) && n > 0 ? n : 0;
+}
+
+/**
+ * Keep the address bar's start=, offset= and ex_q= in step with state.start and the facet
  * selections, as the JSP paging and facet links did, so reload, back/forward and a
  * shared link land on the same page with the same filters (runFromUrl reads them
  * back).
@@ -868,8 +881,11 @@ function syncUrlParams(push) {
   const clauses = exQClauses();
   const current = params.getAll("ex_q");
   const sameExQ = current.length === clauses.length && current.every((v, i) => v === clauses[i]);
-  if ((Number(params.get("start")) || 0) === state.start && sameExQ) return;
+  // offset= rides along with a deep start only: it is what makes that page exact.
+  const urlOffset = state.start > 0 ? state.offset : 0;
+  if ((Number(params.get("start")) || 0) === state.start && nonNegativeInt(params.get("offset")) === urlOffset && sameExQ) return;
   if (state.start > 0) params.set("start", String(state.start)); else params.delete("start");
+  if (urlOffset > 0) params.set("offset", String(urlOffset)); else params.delete("offset");
   if (!sameExQ) {
     params.delete("ex_q");
     clauses.forEach(v => params.append("ex_q", v));
@@ -905,6 +921,8 @@ async function runSearch() {
     // the added quotes would be actively harmful: a quote makes the query count as search
     // syntax, and Fess skips the semantic branch entirely for any query containing it.)
     const params = { q: state.q, start: state.start, num: state.num };
+    // The deep pages of a fused query are exact only with the offset the previous response returned.
+    if (state.start > 0 && state.offset > 0) params.offset = state.offset;
     if (state.sort) params.sort = state.sort;
     // state.lang is string[] — send as repeated lang= params (empty array → omit).
     if (Array.isArray(state.lang) && state.lang.length > 0) {
@@ -958,7 +976,15 @@ async function runSearch() {
     // the keyword searcher alone, so a semantic-only result has none and the label group
     // is not rendered.
     params["facet.field"] = ["label"];
+    const searchPath = location.pathname;
     const env = await api.get("/search", params, { signal });
+    // The offset belongs to the query: the latest response is authoritative, and the address
+    // bar and the page links below follow it.
+    const prevOffset = state.offset;
+    state.offset = nonNegativeInt(env.offset);
+    // A response can land after the user has moved to another view (chat, advanced search, ...):
+    // the address bar then belongs to that view, so only the search view's own URL is corrected.
+    if (state.offset !== prevOffset && location.pathname === searchPath) syncUrlParams(false);
     // Prefer the server-supplied requested_time when available (more accurate).
     if (env.requested_time) state.requestedTime = env.requested_time;
     // A.5: store server-supplied highlight params for cache link construction.
@@ -1386,6 +1412,7 @@ export function runFromUrl() {
   const q = params.get("q");
   state.q = q || "";
   state.start = Number(params.get("start")) || 0;
+  state.offset = nonNegativeInt(params.get("offset"));
   // JSP parity (SearchAction, session attribute resultsPerPage): an explicit num is
   // remembered for this tab; a URL without one uses the remembered or default size.
   const numVal = Number(params.get("num"));
@@ -1514,6 +1541,7 @@ export function resetSearchState() {
   const defaultLabels = cfg && Array.isArray(cfg.default_label_values) ? cfg.default_label_values : [];
   state.q = "";
   state.start = 0;
+  state.offset = 0;
   state.num = initialNum();
   state.sort = (cfg && cfg.default_sort) || "";
   state.lang = [];
@@ -1630,6 +1658,7 @@ export function attach() {
       const params = new URLSearchParams(location.search);
       if (q) params.set("q", q); else params.delete("q");
       params.delete("start");
+      params.delete("offset");
       for (const key of [...params.keys()]) {
         // JSP parity (header.jsp): the header form holds neither the similar-docs hash nor
         // advanced-search conditions, so a new query drops them.
@@ -1846,6 +1875,7 @@ function buildFacetGroup(title, entries, fieldKey) {
       const idx = arr.indexOf(entry.value);
       if (idx >= 0) arr.splice(idx, 1); else arr.push(entry.value);
       state.start = 0;
+      state.offset = 0;
       runSearch();
     });
     li.appendChild(a);
@@ -1911,6 +1941,7 @@ function renderFilterGroups(body) {
         if (i >= 0) arr.splice(i, 1); else arr.push(opt.value);
         state.facetQueries = arr;
         state.start = 0;
+        state.offset = 0;
         runSearch();
       };
       li.addEventListener("click", ev => { ev.preventDefault(); toggle(); });
@@ -2061,6 +2092,7 @@ function renderFacets(env, labels) {
         state.fields = {};
         state.facetQueries = [];
         state.start = 0;
+        state.offset = 0;
         runSearch();
       });
       wrap.appendChild(link);
@@ -2113,6 +2145,7 @@ function renderActiveChips() {
           if (idx >= 0) arr.splice(idx, 1);
         }
         state.start = 0;
+        state.offset = 0;
         runSearch();
       }
     }));
@@ -2127,6 +2160,7 @@ function renderActiveChips() {
       if (idx >= 0) arr.splice(idx, 1);
       state.fields.filetype = arr;
       state.start = 0;
+      state.offset = 0;
       runSearch();
     }
   }));
@@ -2163,6 +2197,7 @@ function renderActiveChips() {
         if (idx >= 0) arr.splice(idx, 1);
         state.facetQueries = arr;
         state.start = 0;
+        state.offset = 0;
         runSearch();
       }
     }));
@@ -2292,6 +2327,7 @@ function renderRelatedQueries(queries) {
       if (input) input.value = q;
       state.q = q;
       state.start = 0;
+      state.offset = 0;
       runSearch();
     });
     container.appendChild(btn);
@@ -2394,6 +2430,7 @@ function renderPagination(env) {
   const pageHref = (start) => {
     const params = new URLSearchParams(location.search);
     if (start > 0) params.set("start", String(start)); else params.delete("start");
+    if (start > 0 && state.offset > 0) params.set("offset", String(state.offset)); else params.delete("offset");
     const qs = params.toString();
     return location.pathname + (qs ? "?" + qs : "");
   };
