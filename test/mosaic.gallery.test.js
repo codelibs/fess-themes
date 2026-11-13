@@ -124,6 +124,57 @@ describe("mosaic lightbox without a thumbnail", () => {
   });
 });
 
+describe("mosaic lightbox Tab trap", () => {
+  // A browser gives no offsetParent to a position:fixed element, and the close and prev/next
+  // buttons are fixed. jsdom has no layout, so give every element a box and the fixed
+  // buttons a null offsetParent, as a browser does.
+  let rects;
+  let offsetParent;
+  beforeEach(() => {
+    rects = vi.spyOn(Element.prototype, "getClientRects").mockReturnValue([{}]);
+    offsetParent = vi.spyOn(HTMLElement.prototype, "offsetParent", "get").mockImplementation(function () {
+      return this.matches(".lightbox__close, .lightbox__nav") ? null : document.body;
+    });
+  });
+  afterEach(() => {
+    rects.mockRestore();
+    offsetParent.mockRestore();
+  });
+
+  const tab = (shiftKey) => {
+    const ev = new KeyboardEvent("keydown", { key: "Tab", shiftKey, bubbles: true, cancelable: true });
+    document.dispatchEvent(ev);
+    return ev;
+  };
+
+  async function openFirst() {
+    await searchFrom("/search?q=top", { search: makeSearchEnv([HTML_DOC, THUMB_DOC]) });
+    document.querySelector("#results .tile").click();
+    return document.getElementById("lightbox");
+  }
+
+  it("keeps Tab from the last control inside the lightbox, including the fixed buttons", async () => {
+    const lb = await openFirst();
+    const next = lb.querySelector(".lightbox__next");
+    next.focus();
+    expect(tab(false).defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(lb.querySelector(".lightbox__close"));
+  });
+
+  it("keeps Shift+Tab from the first control inside the lightbox", async () => {
+    const lb = await openFirst();
+    lb.querySelector(".lightbox__close").focus();
+    expect(tab(true).defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(lb.querySelector(".lightbox__next"));
+  });
+
+  it("lets Tab move between the lightbox controls in between", async () => {
+    const lb = await openFirst();
+    lb.querySelector(".lightbox__close").focus();
+    expect(tab(false).defaultPrevented).toBe(false);
+  });
+});
+
 describe("mosaic popular words", () => {
   const calls = (get) => get.mock.calls.filter((c) => c[0] === "/popular-words").length;
 
