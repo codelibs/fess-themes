@@ -245,6 +245,14 @@ The suites:
   no removal and sends nothing on a click, and the stylesheet contract (read back from the parsed
   `styles.css`): cache metadata values that wrap, and a tertiary text colour with 4.5:1 on every
   surface in both palettes.
+- `docsearch.linkschemes.test.js` — docsearch's result links following `result_link_schemes` of
+  `/api/v2/ui/config` (a listed scheme linked, an unlisted one not, an empty list allowing none, the
+  default list when the field is absent), and `javascript:` / `data:` / `vbscript:` never linked.
+- `docsearch.searchstate.test.js` — docsearch's search the server rejects with HTTP 400 replacing the
+  previous results (cards, status line, facets, chips, pager, related content) with the error banner,
+  while a network error keeps them.
+- `docsearch.viewcount.test.js` — docsearch's view count on a result card: "1 view" against "2 views"
+  and the singular of the other locales, picked with `Intl.PluralRules`.
 - `docsearch.titles.test.js` — docsearch's tab title on every route (home, search, Help, Advanced
   Search, password, cache, chat, errors), including a client-side move from a search to Help (the
   theme's real `index.html`, `app.js`, `router.js`, `search.js` and English bundle).
