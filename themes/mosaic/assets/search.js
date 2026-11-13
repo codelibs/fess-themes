@@ -726,10 +726,12 @@ function buildGalleryTile(doc, queryId, rank) {
  * Focusable elements within the lightbox, recomputed on every Tab keydown
  * (rather than cached) because the meta panel — and therefore its cache/
  * original-URL links — is rebuilt by buildLightboxMeta() on every open.
+ * Visibility is "has a box", not offsetParent: the close and prev/next buttons
+ * are position:fixed, and a fixed element's offsetParent is null.
  */
 function lightboxFocusables(lb) {
   return Array.from(lb.querySelectorAll('button, a[href], [tabindex]:not([tabindex="-1"])'))
-    .filter(node => !node.disabled && node.offsetParent !== null);
+    .filter(node => !node.disabled && node.getClientRects().length > 0);
 }
 
 /**
