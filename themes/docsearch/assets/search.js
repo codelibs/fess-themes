@@ -47,21 +47,43 @@ const FILETYPE_VALUES = [
 // document.createElement + textContent. No untrusted string is ever
 // passed to innerHTML.
 
+/** The schemes search.result.link.schemes allows by default; used while the server does not send the list (Fess before 15.10). */
+const DEFAULT_LINK_SCHEMES = ["http", "https", "ftp", "ftps", "file", "smb", "smb1", "storage", "s3", "gcs"];
+
+/** Schemes that run or render code in the page: never linked, whatever the administrator lists. */
+const SCRIPT_SCHEMES = ["javascript", "data", "vbscript"];
+
 /**
- * Return `url` only when its scheme is in the allowlist of schemes Fess serves (web plus file/smb/smb1/storage/s3/gcs).
- * Any other scheme (e.g. javascript:, data:, vbscript:) returns "#" so that
- * setAttribute("href", safeHref(u)) can never inject executable content.
+ * The schemes a result link may use: result_link_schemes of /api/v2/ui/config, which the server
+ * takes from search.result.link.schemes (lower-cased, without the colon) and enforces itself
+ * (/go/, the admin lists). A blank setting arrives as an empty list and allows no scheme. A
+ * server that does not send the field (before 15.10) gets the default list.
+ *
+ * @returns {string[]}
+ */
+function allowedLinkSchemes() {
+  const list = (api.getConfig() || {}).result_link_schemes;
+  if (!Array.isArray(list)) return DEFAULT_LINK_SCHEMES;
+  return list
+    .map(s => String(s).trim().toLowerCase().replace(/:$/, ""))
+    .filter(s => s && !SCRIPT_SCHEMES.includes(s));
+}
+
+/** True when the scheme of the parsed URL `u` (u.protocol, e.g. "https:") may be linked. */
+function isLinkSchemeAllowed(u) {
+  return allowedLinkSchemes().includes(u.protocol.slice(0, -1).toLowerCase());
+}
+
+/**
+ * Return `url` only when its scheme is one of the allowed result link schemes (see
+ * allowedLinkSchemes). Any other scheme (e.g. javascript:, data:, vbscript:, or one that is not
+ * listed) returns "#" so that setAttribute("href", safeHref(u)) can never inject executable content.
  */
 function safeHref(url) {
   if (!url || typeof url !== "string") return "#";
   try {
     const u = new URL(url, location.href);
-    if (u.protocol === "https:" || u.protocol === "http:" ||
-        u.protocol === "ftp:" || u.protocol === "ftps:" ||
-        u.protocol === "file:" || u.protocol === "smb:" || u.protocol === "smb1:" ||
-        u.protocol === "storage:" || u.protocol === "s3:" || u.protocol === "gcs:") {
-      return url;
-    }
+    if (isLinkSchemeAllowed(u)) return url;
   } catch (e) {
     // URL constructor failed — treat as unsafe.
     return "#";
@@ -112,7 +134,7 @@ function copyToClipboard(text) {
  * Build the /go/ click-tracking URL for a result link.
  *
  * Mirrors the JSP mousedown handler in src/main/webapp/js/search.js:111-127.
- * Returns "#" when the original URL is not in the allowlist of schemes Fess serves (web plus file/smb/smb1/storage/s3/gcs)
+ * Returns "#" when the scheme of the original URL is not one of the allowed result link schemes
  * so that safeHref semantics are preserved — the /go/ redirect would fail anyway
  * for unsafe schemes.
  *
@@ -130,13 +152,7 @@ function buildGoUrl(originalUrl, docId, queryId, order, rt) {
   // Validate scheme — same rules as safeHref; only build /go/ for safe schemes.
   if (!originalUrl || typeof originalUrl !== "string") return "#";
   try {
-    const u = new URL(originalUrl, location.href);
-    if (u.protocol !== "https:" && u.protocol !== "http:" &&
-        u.protocol !== "ftp:" && u.protocol !== "ftps:" &&
-        u.protocol !== "file:" && u.protocol !== "smb:" && u.protocol !== "smb1:" &&
-        u.protocol !== "storage:" && u.protocol !== "s3:" && u.protocol !== "gcs:") {
-      return "#";
-    }
+    if (!isLinkSchemeAllowed(new URL(originalUrl, location.href))) return "#";
   } catch (e) {
     return "#";
   }
