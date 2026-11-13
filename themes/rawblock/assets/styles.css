@@ -126,7 +126,7 @@ h1 { font-size: 4rem; line-height: 1.0; }
 h2 { font-size: 3rem; line-height: 1.05; }
 h3 { font-size: 2rem; line-height: 1.1; }
 h4, .h4 { font-size: 1.375rem; font-family: var(--df-font-body); font-weight: 600; line-height: 1.2; }
-h5 { font-size: 1.125rem; }
+h5, .h5 { font-size: 1.125rem; }
 h6 { font-size: 1rem; }
 
 p { margin: 0 0 1rem; }

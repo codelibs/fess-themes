@@ -38,6 +38,18 @@ describe.each(themes)("%s: new-password step markup", (theme) => {
     expect(tpl.content.querySelector("#login-password")).not.toBeNull();
     expect(doc.querySelector('input[type="password"]')).toBeNull();
   });
+
+  it("carries the passkey button hidden in the login step, not as a submit button", () => {
+    const doc = parseIndexHtml(theme);
+    const button = doc.getElementById("passkey-login-btn");
+    expect(button).not.toBeNull();
+    expect(button.closest("#login-step")).not.toBeNull();
+    // A submit button would send the password form instead of starting the passkey login.
+    expect(button.getAttribute("type")).toBe("button");
+    // auth.js shows it only when ui-config says passkey_enabled and the browser has WebAuthn.
+    expect(button.classList.contains("d-none")).toBe(true);
+    expect(button.querySelector('[data-i18n="auth.passkey_login"]')).not.toBeNull();
+  });
 });
 
 describe("docuforge: login modal lock (compat.js + auth.js)", () => {

@@ -753,6 +753,20 @@ mark, .match {
 .alert-danger { border-color: var(--danger); color: var(--danger); }
 .alert-warning { border-color: var(--match); color: var(--match); }
 .alert-info { border-color: var(--accent); }
+.alert-success { border-color: var(--ok); color: var(--ok); }
+
+/* Passkey list on the profile page (profile.js), one row per passkey. */
+.list-group { list-style: none; margin: 0 0 16px; padding: 0; }
+.list-group-item {
+  border: 1px solid var(--border);
+  border-top-width: 0;
+  background: var(--surface);
+  padding: 10px 14px;
+  gap: 12px;
+}
+.list-group-item:first-child { border-top-width: 1px; border-radius: var(--r-sm) var(--r-sm) 0 0; }
+.list-group-item:last-child { border-radius: 0 0 var(--r-sm) var(--r-sm); }
+.list-group-item:only-child { border-radius: var(--r-sm); }
 
 .btn {
   display: inline-flex; align-items: center; gap: 6px;
@@ -990,6 +1004,8 @@ body.modal-open { overflow: hidden; }
 .d-block        { display: block !important; }
 .d-flex         { display: flex !important; }
 .d-inline-flex  { display: inline-flex !important; }
+.justify-content-between { justify-content: space-between !important; }
+.align-items-center      { align-items: center !important; }
 @media (min-width: 576px) {
   .d-sm-inline-block { display: inline-block !important; }
 }
