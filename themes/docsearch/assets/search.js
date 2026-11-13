@@ -715,6 +715,32 @@ function renderResults(env) {
 }
 
 /**
+ * Take the previous search's output off the page, leaving what a fresh load of the same URL
+ * shows when the server rejects the request: no result cards, status line, facet sidebar, filter
+ * chips, pager or related content. The error banner is the caller's.
+ */
+function clearResultsView() {
+  ["results", "results-status", "results-popular-words", "pagination", "facet-body",
+    "facet-body-mobile", "active-chips", "current-filters", "options-bar"].forEach(id => {
+    const node = document.getElementById(id);
+    if (node) while (node.firstChild) node.removeChild(node.firstChild);
+  });
+  ["results-popular-words", "subfooter", "empty-state", "results-warning",
+    "facet-toggle-wrap", "active-chips"].forEach(id => {
+    const node = document.getElementById(id);
+    if (node) node.classList.add("d-none");
+  });
+  const facetBody = document.getElementById("facet-body");
+  if (facetBody) facetBody.classList.remove("d-md-block");
+  const queryIdEl = document.getElementById("queryId");
+  if (queryIdEl) queryIdEl.value = "";
+  const rtEl = document.getElementById("rt");
+  if (rtEl) rtEl.value = "";
+  renderRelatedQueries([]);
+  renderRelatedContent("");
+}
+
+/**
  * Toggle the in-flight search loading indicator (#search-loading).
  * Gives sighted users visible feedback during a /search request; cache and chat
  * already have loading states, search did not.
@@ -900,6 +926,9 @@ async function runSearch() {
     if (emptyPanel) emptyPanel.classList.add("d-none");
     const errBox = document.getElementById("search-error");
     if (e && (e.code === "invalid_request" || e.code === "INVALID_REQUEST" || e.httpStatus === 400)) {
+      // The rejected search has no results of its own; the previous search's would sit under the
+      // banner as if they answered it. (A failure that is not the query's, below, keeps them.)
+      clearResultsView();
       if (errBox) { errBox.textContent = e.message || t("error.invalid_request"); errBox.classList.remove("d-none"); }
       else { document.getElementById("results-meta").textContent = e.message || t("error.invalid_request"); }
       return;
