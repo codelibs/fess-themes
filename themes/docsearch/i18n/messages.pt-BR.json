@@ -24,6 +24,7 @@
   "result.favorite_remove": "Remover dos favoritos",
   "result.cache": "Cache",
   "result.click_count": "{n} visualizações",
+  "result.click_count_one": "{n} visualização",
   "auth.login": "Login",
   "auth.logout": "Logout",
   "auth.username": "Nome de usuário",

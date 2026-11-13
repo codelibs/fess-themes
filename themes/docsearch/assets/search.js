@@ -91,6 +91,23 @@ function safeHref(url) {
   return "#";
 }
 
+/**
+ * The message key for a view count. t() has no plural syntax, so the singular is its own message,
+ * result.click_count_one, taken when the "one" plural category of the UI locale covers the count
+ * (1 in English; also 21, 31, ... in Russian). The locales that do not distinguish the number
+ * (ja, ko, zh, ...) never select it.
+ *
+ * @param {number} n
+ * @returns {string}
+ */
+function viewCountKey(n) {
+  let category = "other";
+  try {
+    category = new Intl.PluralRules(getLocale()).select(n);
+  } catch { /* no Intl.PluralRules for the locale: the plain message */ }
+  return category === "one" ? "result.click_count_one" : "result.click_count";
+}
+
 function el(tag, opts) {
   const node = document.createElement(tag);
   if (!opts) return node;
@@ -363,7 +380,7 @@ function buildResultCard(d, queryId, order) {
   const clickCount = Number(d.click_count);
   if (features.search_log_enabled && clickCount > 0) {
     appendNbspSpacer();
-    info.appendChild(document.createTextNode(t("result.click_count", { n: clickCount }) + " "));
+    info.appendChild(document.createTextNode(t(viewCountKey(clickCount), { n: clickCount }) + " "));
   }
 
   // cache link

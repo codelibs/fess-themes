@@ -24,6 +24,7 @@
   "result.favorite_remove": "Hapus dari favorit",
   "result.cache": "Tembolok",
   "result.click_count": "{n} tayangan",
+  "result.click_count_one": "{n} tayangan",
   "auth.login": "Masuk",
   "auth.logout": "Keluar",
   "auth.username": "Nama pengguna",

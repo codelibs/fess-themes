@@ -24,6 +24,7 @@
   "result.favorite_remove": "お気に入りを解除",
   "result.cache": "キャッシュ",
   "result.click_count": "{n}回閲覧",
+  "result.click_count_one": "{n}回閲覧",
   "auth.login": "ログイン",
   "auth.logout": "ログアウト",
   "auth.username": "ユーザー名",
