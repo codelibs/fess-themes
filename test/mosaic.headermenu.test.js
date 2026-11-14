@@ -6,6 +6,7 @@
 
 import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from "vitest";
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { modulePath } from "./helpers/themes.js";
 import { resetDom, setLocation } from "./helpers/dom.js";
 import { bootApp } from "./helpers/loadShell.js";
@@ -93,5 +94,15 @@ describe("mosaic: header menu on a narrow screen", () => {
     other.focus();
     document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
     expect(document.activeElement).toBe(other);
+  });
+
+  it("gives the search box the room of the wordmark below 576px, keeping the brand's accessible name", () => {
+    const css = readFileSync(resolve(__dirname, "../themes/mosaic/assets/styles.css"), "utf8");
+    const rule = css.match(/@media \(max-width: 575\.98px\) \{\s*#brand-link img \{([^}]*)\}/);
+    expect(rule).not.toBeNull();
+    // visually hidden, not display:none (that would take the link's name away)
+    expect(rule[1]).toMatch(/clip-path: inset\(50%\)/);
+    expect(rule[1]).not.toMatch(/display:\s*none/);
+    expect(document.querySelector("#brand-link img").getAttribute("data-i18n-alt")).toBe("labels.header_brand_name");
   });
 });
