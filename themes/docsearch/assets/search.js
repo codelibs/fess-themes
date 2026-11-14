@@ -47,26 +47,65 @@ const FILETYPE_VALUES = [
 // document.createElement + textContent. No untrusted string is ever
 // passed to innerHTML.
 
+/** The schemes search.result.link.schemes allows by default; used while the server does not send the list (Fess before 15.10). */
+const DEFAULT_LINK_SCHEMES = ["http", "https", "ftp", "ftps", "file", "smb", "smb1", "storage", "s3", "gcs"];
+
+/** Schemes that run or render code in the page: never linked, whatever the administrator lists. */
+const SCRIPT_SCHEMES = ["javascript", "data", "vbscript"];
+
 /**
- * Return `url` only when its scheme is in the allowlist of schemes Fess serves (web plus file/smb/smb1/storage/s3/gcs).
- * Any other scheme (e.g. javascript:, data:, vbscript:) returns "#" so that
- * setAttribute("href", safeHref(u)) can never inject executable content.
+ * The schemes a result link may use: result_link_schemes of /api/v2/ui/config, which the server
+ * takes from search.result.link.schemes (lower-cased, without the colon) and enforces itself
+ * (/go/, the admin lists). A blank setting arrives as an empty list and allows no scheme. A
+ * server that does not send the field (before 15.10) gets the default list.
+ *
+ * @returns {string[]}
+ */
+function allowedLinkSchemes() {
+  const list = (api.getConfig() || {}).result_link_schemes;
+  if (!Array.isArray(list)) return DEFAULT_LINK_SCHEMES;
+  return list
+    .map(s => String(s).trim().toLowerCase().replace(/:$/, ""))
+    .filter(s => s && !SCRIPT_SCHEMES.includes(s));
+}
+
+/** True when the scheme of the parsed URL `u` (u.protocol, e.g. "https:") may be linked. */
+function isLinkSchemeAllowed(u) {
+  return allowedLinkSchemes().includes(u.protocol.slice(0, -1).toLowerCase());
+}
+
+/**
+ * Return `url` only when its scheme is one of the allowed result link schemes (see
+ * allowedLinkSchemes). Any other scheme (e.g. javascript:, data:, vbscript:, or one that is not
+ * listed) returns "#" so that setAttribute("href", safeHref(u)) can never inject executable content.
  */
 function safeHref(url) {
   if (!url || typeof url !== "string") return "#";
   try {
     const u = new URL(url, location.href);
-    if (u.protocol === "https:" || u.protocol === "http:" ||
-        u.protocol === "ftp:" || u.protocol === "ftps:" ||
-        u.protocol === "file:" || u.protocol === "smb:" || u.protocol === "smb1:" ||
-        u.protocol === "storage:" || u.protocol === "s3:" || u.protocol === "gcs:") {
-      return url;
-    }
+    if (isLinkSchemeAllowed(u)) return url;
   } catch (e) {
     // URL constructor failed — treat as unsafe.
     return "#";
   }
   return "#";
+}
+
+/**
+ * The message key for a view count. t() has no plural syntax, so the singular is its own message,
+ * result.click_count_one, taken when the "one" plural category of the UI locale covers the count
+ * (1 in English; also 21, 31, ... in Russian). The locales that do not distinguish the number
+ * (ja, ko, zh, ...) never select it.
+ *
+ * @param {number} n
+ * @returns {string}
+ */
+function viewCountKey(n) {
+  let category = "other";
+  try {
+    category = new Intl.PluralRules(getLocale()).select(n);
+  } catch { /* no Intl.PluralRules for the locale: the plain message */ }
+  return category === "one" ? "result.click_count_one" : "result.click_count";
 }
 
 function el(tag, opts) {
@@ -112,7 +151,7 @@ function copyToClipboard(text) {
  * Build the /go/ click-tracking URL for a result link.
  *
  * Mirrors the JSP mousedown handler in src/main/webapp/js/search.js:111-127.
- * Returns "#" when the original URL is not in the allowlist of schemes Fess serves (web plus file/smb/smb1/storage/s3/gcs)
+ * Returns "#" when the scheme of the original URL is not one of the allowed result link schemes
  * so that safeHref semantics are preserved — the /go/ redirect would fail anyway
  * for unsafe schemes.
  *
@@ -130,13 +169,7 @@ function buildGoUrl(originalUrl, docId, queryId, order, rt) {
   // Validate scheme — same rules as safeHref; only build /go/ for safe schemes.
   if (!originalUrl || typeof originalUrl !== "string") return "#";
   try {
-    const u = new URL(originalUrl, location.href);
-    if (u.protocol !== "https:" && u.protocol !== "http:" &&
-        u.protocol !== "ftp:" && u.protocol !== "ftps:" &&
-        u.protocol !== "file:" && u.protocol !== "smb:" && u.protocol !== "smb1:" &&
-        u.protocol !== "storage:" && u.protocol !== "s3:" && u.protocol !== "gcs:") {
-      return "#";
-    }
+    if (!isLinkSchemeAllowed(new URL(originalUrl, location.href))) return "#";
   } catch (e) {
     return "#";
   }
@@ -347,7 +380,7 @@ function buildResultCard(d, queryId, order) {
   const clickCount = Number(d.click_count);
   if (features.search_log_enabled && clickCount > 0) {
     appendNbspSpacer();
-    info.appendChild(document.createTextNode(t("result.click_count", { n: clickCount }) + " "));
+    info.appendChild(document.createTextNode(t(viewCountKey(clickCount), { n: clickCount }) + " "));
   }
 
   // cache link
@@ -699,6 +732,32 @@ function renderResults(env) {
 }
 
 /**
+ * Take the previous search's output off the page, leaving what a fresh load of the same URL
+ * shows when the server rejects the request: no result cards, status line, facet sidebar, filter
+ * chips, pager or related content. The error banner is the caller's.
+ */
+function clearResultsView() {
+  ["results", "results-status", "results-popular-words", "pagination", "facet-body",
+    "facet-body-mobile", "active-chips", "current-filters", "options-bar"].forEach(id => {
+    const node = document.getElementById(id);
+    if (node) while (node.firstChild) node.removeChild(node.firstChild);
+  });
+  ["results-popular-words", "subfooter", "empty-state", "results-warning",
+    "facet-toggle-wrap", "active-chips"].forEach(id => {
+    const node = document.getElementById(id);
+    if (node) node.classList.add("d-none");
+  });
+  const facetBody = document.getElementById("facet-body");
+  if (facetBody) facetBody.classList.remove("d-md-block");
+  const queryIdEl = document.getElementById("queryId");
+  if (queryIdEl) queryIdEl.value = "";
+  const rtEl = document.getElementById("rt");
+  if (rtEl) rtEl.value = "";
+  renderRelatedQueries([]);
+  renderRelatedContent("");
+}
+
+/**
  * Toggle the in-flight search loading indicator (#search-loading).
  * Gives sighted users visible feedback during a /search request; cache and chat
  * already have loading states, search did not.
@@ -884,6 +943,9 @@ async function runSearch() {
     if (emptyPanel) emptyPanel.classList.add("d-none");
     const errBox = document.getElementById("search-error");
     if (e && (e.code === "invalid_request" || e.code === "INVALID_REQUEST" || e.httpStatus === 400)) {
+      // The rejected search has no results of its own; the previous search's would sit under the
+      // banner as if they answered it. (A failure that is not the query's, below, keeps them.)
+      clearResultsView();
       if (errBox) { errBox.textContent = e.message || t("error.invalid_request"); errBox.classList.remove("d-none"); }
       else { document.getElementById("results-meta").textContent = e.message || t("error.invalid_request"); }
       return;

@@ -24,6 +24,7 @@
   "result.favorite_remove": "取消收藏",
   "result.cache": "快取",
   "result.click_count": "{n}次瀏覽",
+  "result.click_count_one": "{n}次瀏覽",
   "auth.login": "登入",
   "auth.logout": "登出",
   "auth.username": "使用者名稱",

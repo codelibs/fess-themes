@@ -24,6 +24,7 @@
   "result.favorite_remove": "Verwijderen uit favorieten",
   "result.cache": "Cache",
   "result.click_count": "{n} weergaven",
+  "result.click_count_one": "{n} weergave",
   "auth.login": "Inloggen",
   "auth.logout": "Uitloggen",
   "auth.username": "Gebruikersnaam",

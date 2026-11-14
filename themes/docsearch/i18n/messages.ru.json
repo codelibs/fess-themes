@@ -24,6 +24,7 @@
   "result.favorite_remove": "Удалить из избранного",
   "result.cache": "Кэш",
   "result.click_count": "{n} просмотров",
+  "result.click_count_one": "{n} просмотр",
   "auth.login": "Войти",
   "auth.logout": "Выйти",
   "auth.username": "Имя пользователя",

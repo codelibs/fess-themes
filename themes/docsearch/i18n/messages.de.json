@@ -24,6 +24,7 @@
   "result.favorite_remove": "Aus Favoriten entfernen",
   "result.cache": "Gecacht",
   "result.click_count": "{n} Aufrufe",
+  "result.click_count_one": "{n} Aufruf",
   "auth.login": "Anmelden",
   "auth.logout": "Abmelden",
   "auth.username": "Benutzername",

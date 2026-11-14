@@ -25,9 +25,14 @@ describe("theme file: link fix", () => {
 
   describe.each(themes)("scheme gate: %s/assets/search.js", (theme) => {
     const src = readModuleSource(theme, "search.js");
+    // A theme that follows result_link_schemes of /ui/config keeps the default list as bare names
+    // ("file"), for a server that does not send it; the others spell the scheme with its colon.
+    // Behavioural coverage of that theme: docsearch.linkschemes.test.js.
+    const followsServer = src.includes("result_link_schemes");
     it.each(FS_SCHEMES)("admits the %s scheme", (scheme) => {
+      const spelled = followsServer ? scheme.slice(0, -1) : scheme;
       expect(src, `${theme}/assets/search.js scheme gate is missing ${scheme}`)
-        .toContain(`"${scheme}"`);
+        .toContain(`"${spelled}"`);
     });
 
     // Widening the scheme gate is necessary but NOT sufficient: a browser

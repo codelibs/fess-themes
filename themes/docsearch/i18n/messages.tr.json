@@ -24,6 +24,7 @@
   "result.favorite_remove": "Favorilerden kaldır",
   "result.cache": "Önbellek",
   "result.click_count": "{n} görüntüleme",
+  "result.click_count_one": "{n} görüntüleme",
   "auth.login": "Giriş yap",
   "auth.logout": "Çıkış yap",
   "auth.username": "Kullanıcı adı",

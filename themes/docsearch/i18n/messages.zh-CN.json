@@ -24,6 +24,7 @@
   "result.favorite_remove": "取消收藏",
   "result.cache": "缓存",
   "result.click_count": "{n}次浏览",
+  "result.click_count_one": "{n}次浏览",
   "auth.login": "登录",
   "auth.logout": "注销",
   "auth.username": "用户名",

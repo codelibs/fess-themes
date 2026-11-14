@@ -24,6 +24,7 @@
   "result.favorite_remove": "즐겨찾기 해제",
   "result.cache": "캐시",
   "result.click_count": "{n}회 조회",
+  "result.click_count_one": "{n}회 조회",
   "auth.login": "로그인",
   "auth.logout": "로그아웃",
   "auth.username": "사용자명",
