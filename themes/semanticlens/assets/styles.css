@@ -127,7 +127,7 @@ h1 { font-size: 2rem; letter-spacing: .02em; }
 h2 { font-size: 1.5rem; }
 h3 { font-size: 1.25rem; }
 h4, .h4 { font-size: 1.125rem; font-family: var(--df-font-head); font-weight: 600; }
-h5 { font-size: 1rem; }
+h5, .h5 { font-size: 1rem; }
 h6 { font-size: .875rem; }
 
 p { margin: 0 0 1rem; }

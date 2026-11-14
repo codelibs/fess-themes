@@ -180,7 +180,7 @@ h1 { font-size: 1.75rem; }
 h2 { font-size: 1.25rem; }
 h3 { font-size: 1.05rem; }
 h4, .h4 { font-size: 1rem; font-weight: 600; }
-h5 { font-size: .95rem; }
+h5, .h5 { font-size: .95rem; }
 h6 { font-size: .85rem; }
 
 p { margin: 0 0 1rem; }
