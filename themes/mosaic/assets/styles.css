@@ -627,6 +627,14 @@ textarea.form-control { min-height: 2.5rem; }
   #header-nav.show .nav-item { display: block; }
   #header-nav.show .nav-link { padding: .6rem .75rem; }
 }
+/* Below 576px the brand keeps its glyph and gives the wordmark's room to the search box (the box was 30px wide next to
+   the menu button). The wordmark stays in the accessibility tree: it is the link's name. */
+@media (max-width: 575.98px) {
+  #brand-link img {
+    position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden;
+    clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+  }
+}
 
 /* ---- Dropdown (user menu) ---- */
 .dropdown { position: relative; }
