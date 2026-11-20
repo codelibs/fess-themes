@@ -261,6 +261,7 @@
   "labels.chat_copied": "Kopyalandı",
   "labels.chat_copy_failed": "Kopyalama başarısız",
   "labels.chat_hit_count": "{count} belge bulundu",
+  "labels.chat_hit_count_one": "{count} belge bulundu",
   "labels.chat_auth_required": "Sohbeti kullanmak için giriş yapın.",
   "error.detail_docid_not_found": "İstenen belge bulunamadı.",
   "error.detail_document_not_found": "İstenen belge kimliğinin URL'si bulunamadı.",

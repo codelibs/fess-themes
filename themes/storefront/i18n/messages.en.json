@@ -262,6 +262,7 @@
   "labels.chat_copied": "Copied",
   "labels.chat_copy_failed": "Copy failed",
   "labels.chat_hit_count": "{count} documents found",
+  "labels.chat_hit_count_one": "{count} document found",
   "labels.chat_auth_required": "Please log in to use chat.",
   "error.detail_docid_not_found": "The requested document was not found.",
   "error.detail_document_not_found": "The URL for the requested document ID was not found.",

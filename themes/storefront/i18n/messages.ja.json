@@ -262,6 +262,7 @@
   "labels.chat_copied": "コピーしました",
   "labels.chat_copy_failed": "コピーに失敗しました",
   "labels.chat_hit_count": "{count} 件のドキュメント",
+  "labels.chat_hit_count_one": "{count} 件のドキュメント",
   "labels.chat_auth_required": "チャットを使うにはログインしてください。",
   "error.detail_docid_not_found": "リクエストされたドキュメントが見つかりませんでした。",
   "error.detail_document_not_found": "リクエストされたドキュメント ID の URL が見つかりませんでした。",

@@ -265,6 +265,7 @@
   "labels.chat_copied": "已复制！",
   "labels.chat_copy_failed": "复制失败",
   "labels.chat_hit_count": "找到 {count} 个文档",
+  "labels.chat_hit_count_one": "找到 {count} 个文档",
   "labels.chat_auth_required": "请登录后使用聊天。",
   "error.detail_docid_not_found": "未找到请求的文档。",
   "error.detail_document_not_found": "未找到请求的文档ID的URL。",

@@ -263,6 +263,7 @@
   "labels.chat_copied": "복사됨!",
   "labels.chat_copy_failed": "복사 실패",
   "labels.chat_hit_count": "{count}개의 문서를 찾았습니다",
+  "labels.chat_hit_count_one": "{count}개의 문서를 찾았습니다",
   "labels.chat_auth_required": "채팅을 사용하려면 로그인하세요.",
   "error.detail_docid_not_found": "요청한 문서를 찾을 수 없습니다.",
   "error.detail_document_not_found": "요청한 문서 ID의 URL을 찾을 수 없습니다.",

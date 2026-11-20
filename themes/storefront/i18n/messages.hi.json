@@ -262,6 +262,7 @@
   "labels.chat_copied": "कॉपी किया गया",
   "labels.chat_copy_failed": "कॉपी विफल",
   "labels.chat_hit_count": "{count} दस्तावेज़ मिले",
+  "labels.chat_hit_count_one": "{count} दस्तावेज़ मिले",
   "labels.chat_auth_required": "चैट का उपयोग करने के लिए लॉग इन करें।",
   "error.detail_docid_not_found": "अनुरोधित दस्तावेज़ नहीं मिला।",
   "error.detail_document_not_found": "अनुरोधित दस्तावेज़ ID के लिए URL नहीं मिला।",

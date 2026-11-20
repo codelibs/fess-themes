@@ -261,6 +261,7 @@
   "labels.chat_copied": "Disalin",
   "labels.chat_copy_failed": "Gagal menyalin",
   "labels.chat_hit_count": "{count} dokumen ditemukan",
+  "labels.chat_hit_count_one": "{count} dokumen ditemukan",
   "labels.chat_auth_required": "Masuk untuk menggunakan obrolan.",
   "error.detail_docid_not_found": "Dokumen yang diminta tidak ditemukan.",
   "error.detail_document_not_found": "URL untuk ID dokumen yang diminta tidak ditemukan.",

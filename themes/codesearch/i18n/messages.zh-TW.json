@@ -261,6 +261,7 @@
   "labels.chat_copied": "已複製",
   "labels.chat_copy_failed": "複製失敗",
   "labels.chat_hit_count": "找到 {count} 份文件",
+  "labels.chat_hit_count_one": "找到 {count} 份文件",
   "labels.chat_auth_required": "請登入以使用聊天功能。",
   "error.detail_docid_not_found": "找不到請求的文件。",
   "error.detail_document_not_found": "找不到請求文件 ID 的 URL。",

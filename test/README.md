@@ -262,6 +262,14 @@ The suites:
   while a network error keeps them.
 - `docsearch.viewcount.test.js` — docsearch's view count on a result card: "1 view" against "2 views"
   and the singular of the other locales, picked with `Intl.PluralRules`.
+- `viewcount.test.js` — the view count on a result card of docuforge, helpdesk, mosaic, nomadkit,
+  rawblock, semanticlens and voicebox: "1 view" against "2 views" and the singular of the other
+  locales, as in docsearch.
+- `chat-hitcount.test.js` — the hit count of the chat's search phase in every theme: "1 document
+  found" against "2 documents found" and the singular of the other locales.
+- `plural-messages.test.js` — the singular messages of every theme in all 16 locales through the real
+  `t()`, for the counts 0, 1, 2, 5, 21 and 1000: each reads as a sentence that names the count, with
+  no fixed "1", unreplaced brace, `NaN` or `undefined`.
 - `docsearch.titles.test.js` — docsearch's tab title on every route (home, search, Help, Advanced
   Search, password, cache, chat, errors), including a client-side move from a search to Help (the
   theme's real `index.html`, `app.js`, `router.js`, `search.js` and English bundle).

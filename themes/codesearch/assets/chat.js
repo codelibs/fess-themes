@@ -4,7 +4,7 @@
 // attachStandalone() for the full-width /chat route.
 
 import * as api from "./api.js";
-import { t } from "./i18n.js";
+import { t, getLocale } from "./i18n.js";
 import { sanitizeHtml } from "./format.js";
 import { parseMarkdown } from "./markdown.js";
 
@@ -47,6 +47,23 @@ function safeHref(u) {
     /* fall through */
   }
   return "#";
+}
+
+/**
+ * The message key for the hit count of the chat's search phase. t() has no plural syntax, so the
+ * singular is its own message, labels.chat_hit_count_one, taken when the "one" plural category of
+ * the UI locale covers the count (1 in English; also 21, 31, ... in Russian). The locales that do
+ * not distinguish the number never select it.
+ *
+ * @param {number} n
+ * @returns {string}
+ */
+function hitCountKey(n) {
+  let category = "other";
+  try {
+    category = new Intl.PluralRules(getLocale()).select(Number(n));
+  } catch { /* no Intl.PluralRules for the locale: the plain message */ }
+  return category === "one" ? "labels.chat_hit_count_one" : "labels.chat_hit_count";
 }
 
 /**
@@ -144,7 +161,7 @@ function buildPhaseStrip() {
     b.classList.add("bg-success");
     // Show hit_count on search phase complete
     if (phase === "search" && hitCount != null) {
-      const countText = t("labels.chat_hit_count", { count: hitCount });
+      const countText = t(hitCountKey(hitCount), { count: hitCount });
       const old = b.querySelector(".chat-hit-count");
       if (old) old.remove();
       const countSpan = el("span", { className: "chat-hit-count ms-1 small", text: " (" + countText + ")" });
