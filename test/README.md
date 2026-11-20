@@ -285,6 +285,8 @@ The suites:
 - `docsearch.titles.test.js` — docsearch's tab title on every route (home, search, Help, Advanced
   Search, password, cache, chat, errors), including a client-side move from a search to Help (the
   theme's real `index.html`, `app.js`, `router.js`, `search.js` and English bundle).
+- `form-control-names.test.js` — every input, select and textarea in each theme's `index.html` has an
+  accessible name (an `aria-label`, `aria-labelledby`, `<label>` or `title`).
 - `codesearch.query.test.js` — codesearch's query box -> Fess query translation (`query.js`):
   qualifier values escaped for the Lucene parser, `path:` as a prefix or an exact path, ranges,
   phrases (`"foo bar"~3`) kept as one term, a leading `--` read as text, the facet and chip
