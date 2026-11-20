@@ -30,7 +30,8 @@ VoiceBox is a high-contrast editorial design system for opinion blogs and cultur
 |----------------|-----------|---------------------------------------|
 | Text Primary   | `#0A0A0A` | Headlines, body copy                  |
 | Text Secondary | `#525252` | Bylines, datelines, secondary prose   |
-| Text Tertiary  | `#A3A3A3` | Placeholders, disabled text           |
+| Text Tertiary  | `#6B6B6B` | Placeholders, tertiary text           |
+| Text Tertiary on dark | `#A3A3A3` | Tertiary text on the black options drawer |
 
 ### Border Palette
 
@@ -194,7 +195,7 @@ Sharp, square edges are mandatory across every component. The magazine aesthetic
 - Padding: 8px 14px
 - Font: Work Sans, 14px, weight 400
 - Text color: `#0A0A0A`
-- Placeholder color: `#A3A3A3`
+- Placeholder color: `#6B6B6B`
 - Focus: Border `#0A0A0A`, ring `0 0 0 2px #FAFAFA, 0 0 0 4px #0A0A0A`
 - Error: Border `#EF4444`
 - Disabled: Background `#F5F5F5`, opacity 0.5
@@ -231,7 +232,7 @@ Sharp, square edges are mandatory across every component. The magazine aesthetic
 - Border bottom: `1px solid #E5E5E5`
 - Font: Work Sans, 16px, weight 400
 - Text: `#0A0A0A`
-- Secondary text: `#A3A3A3`, 12px
+- Secondary text: `#6B6B6B`, 12px
 - Hover: Background `#F5F5F5`
 - Active: Background `#E5E5E5`
 - Leading element: 20px icon, color `#0A0A0A`

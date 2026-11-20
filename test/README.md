@@ -233,6 +233,9 @@ The suites:
 - `docsearch.layout.test.js` — docsearch's small-screen and long-query polish: the
   stylesheet declarations that carry it (read back from the parsed `styles.css`; jsdom
   has no layout), and a failed search hiding the previous search's "did not match" panel.
+- `voicebox.styles.test.js` — voicebox's tertiary text colour (the footer, the info line of a result,
+  the facet headings) reaches 4.5:1 on the page and on a card, computed from the tokens in
+  `styles.css`.
 - `docsearch.styles.test.js` — docsearch's contrast, overflow, card layout and print, read back from the
   parsed `styles.css` (jsdom has no layout): alert and accent-fill text colours with 4.5:1 in both
   palettes, `color-scheme`, long unbroken text that wraps, the type icon sharing the title's row, a
