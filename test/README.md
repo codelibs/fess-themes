@@ -95,6 +95,11 @@ The suites:
   needs a window of its own): the closed options drawer out of the tab order, Escape returning the
   focus to the opener, the `/` shortcut, the tab title of every route, the name of the header
   search button.
+- `docuforge.headermenu.test.js`, `helpdesk.headermenu.test.js`, `nomadkit.headermenu.test.js`,
+  `rawblock.headermenu.test.js`, `semanticlens.headermenu.test.js`, `storefront.headermenu.test.js`,
+  `voicebox.headermenu.test.js` — the header nav of those themes below 768px (cases in
+  `helpers/headerMenu.js`): closed behind a labelled toggle, opened and closed by it, closed again by
+  a choice, a route change and Escape.
 - `docuforge-family.results.test.js` — the same four themes' results page: a rejected (400) search
   clears the previous output, the string `exec_time`, `$&` in the title, the pager as real links,
   the add-only favorite star, and the stylesheet contract of the layout fixes.
