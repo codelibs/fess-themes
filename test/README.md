@@ -257,6 +257,10 @@ The suites:
 - `docsearch.linkschemes.test.js` — docsearch's result links following `result_link_schemes` of
   `/api/v2/ui/config` (a listed scheme linked, an unlisted one not, an empty list allowing none, the
   default list when the field is absent), and `javascript:` / `data:` / `vbscript:` never linked.
+- `linkschemes.test.js` — the result link schemes of every theme but docsearch follow
+  `result_link_schemes` of `/api/v2/ui/config`, as in docsearch: a scheme the administrator added is
+  linked, a removed one is not, an empty list links nothing, a response without the field gets the
+  default list, and `javascript:`, `data:` and `vbscript:` are never linked.
 - `docsearch.searchstate.test.js` — docsearch's search the server rejects with HTTP 400 replacing the
   previous results (cards, status line, facets, chips, pager, related content) with the error banner,
   while a network error keeps them.
