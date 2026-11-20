@@ -480,7 +480,30 @@ function commit() {
   return runSearch();
 }
 
+/**
+ * Rendering a search replaces the pager, the facet entries and the results. A keyboard user who
+ * pressed one of them (Enter on Next or on a facet entry) is left with the focus on <body>: the next
+ * Tab starts at the top of the page and a screen reader says nothing. The focus goes to the count
+ * line, which tells what the new page holds, or to the view when there is no count line (no hits).
+ * Only a focus that sat on an element the render has removed is restored: a page opened by its
+ * address has the focus on <body> from the start, and moving it would make the first Tab skip the
+ * skip link and the header.
+ *
+ * @param {Element|null} before the element that had the focus when the search started
+ */
+function restoreLostFocus(before) {
+  if (!before || before.isConnected) return;
+  const active = document.activeElement;
+  if (active && active !== document.body && active !== document.documentElement) return;
+  const status = document.getElementById("results-status");
+  const target = status && status.textContent ? status : document.getElementById("results-view");
+  if (!target) return;
+  if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+  target.focus({ preventScroll: true });
+}
+
 async function runSearch(opts = {}) {
+  const focusBefore = document.activeElement;
   ensureUi();
   syncUrlParams(false);
   // Cancel any in-flight request before issuing a new one.
@@ -563,6 +586,7 @@ async function runSearch(opts = {}) {
     renderLocation();
     syncToolbar();
     syncTree(env);
+    restoreLostFocus(focusBefore);
     if (hasKeyword()) { pushRecent(state.q); renderRecent(); }
     // Hide inline validation error box on successful results.
     const eb = document.getElementById("search-error");

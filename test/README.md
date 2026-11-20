@@ -232,6 +232,10 @@ The suites:
   parsed `styles.css` (jsdom has no layout): alert and accent-fill text colours with 4.5:1 in both
   palettes, `color-scheme`, long unbroken text that wraps, the type icon sharing the title's row, a
   24px copy-URL target, and the print palette with what it hides.
+- `focus.test.js` — the keyboard focus after a search renders in all eleven themes: a pager link or
+  facet entry that was replaced hands the focus to the count line (or to the view with no hits), a
+  focus in the search box is left alone, a page opened by its address keeps the focus on `<body>`,
+  and `showView()` does not focus a result title of the results view.
 - `docsearch.a11y.test.js` — docsearch's keyboard and screen-reader behaviour, on the theme's real
   `index.html`, `search.js` and `app.js`: a search without hits announced in the live region, focus on
   the results heading after paging, `prefers-reduced-motion` honoured by the pager and back-to-top,
