@@ -202,8 +202,8 @@ Following the same pattern documented in this repository's `mosaic` theme
 This theme (like every theme in this repository derived from `docuforge`) ships
 **no Bootstrap**: `assets/compat.js` is a ~13 KB shim that implements only the
 subset of the `window.bootstrap` API (`Modal`, `Collapse`, `Dropdown`, `Offcanvas`,
-`Tooltip`) the shared SPA modules call, in place of the real `/js/bootstrap.min.js`
-+ `/js/popper.min.js` Fess core's bundled `bootstrap` reference theme loads.
+`Tooltip`) the shared SPA modules call, in place of the real Bootstrap and Popper
+scripts the bundled `bootstrap` reference theme loads from its own `assets/vendor/`.
 
 `compat.js`'s `Modal` now fires the same `hide.bs.modal` (cancelable) and
 `hidden.bs.modal` events real Bootstrap does, so `auth.js`'s login-modal lock and
