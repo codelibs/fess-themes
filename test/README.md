@@ -197,6 +197,9 @@ The suites:
   `/search` URLs, a facet click narrowing the search with an `ex_q` clause,
   and the header search form dropping both while carrying the labels picked
   in the drawer — for the same nine themes.
+- `partial-empty.test.js` — a partial result with no hit in all eleven themes: the incomplete-search
+  warning stands alone and the empty state is not shown, while a complete result with no hit still
+  shows it.
 - `label-names.test.js` — a label from `ui/config`'s `label_options`
   (`{ value, name }`) is shown by its name, falling back to its value: in the
   search-options label select, the current-filters badge and the options bar

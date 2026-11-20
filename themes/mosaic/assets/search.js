@@ -1206,7 +1206,9 @@ function renderResults(env) {
     if (dnm) {
       dnm.textContent = t("search.did_not_match", [state.q || ""]);
     }
-    empty.classList.remove("d-none");
+    // A partial result with no hit (e.g. the search engine could not be reached) says nothing about
+    // whether a document matches: the warning above the results is shown alone, not "did not match".
+    empty.classList.toggle("d-none", !!env.partial);
     // The empty state's popular words (searchNoResult.jsp parity). Loaded here, when
     // the slot becomes visible; the home view renders its own list (app.js).
     loadPopularWords();

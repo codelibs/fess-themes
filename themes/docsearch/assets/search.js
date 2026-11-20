@@ -686,10 +686,13 @@ function renderResults(env) {
     if (dnm) {
       dnm.textContent = t("search.did_not_match", [state.q || ""]);
     }
-    empty.classList.remove("d-none");
+    // A partial result with no hit (e.g. the search engine could not be reached) says nothing about
+    // whether a document matches: the warning above the results is shown alone, not "did not match".
+    empty.classList.toggle("d-none", !!env.partial);
     // #empty-state is revealed rather than added to the page, which a screen reader does not announce;
-    // #results-meta is the visually hidden live region, so the same sentence goes there.
-    meta.textContent = t("search.did_not_match", [state.q || ""]);
+    // #results-meta is the visually hidden live region, so the same sentence goes there (not for a
+    // partial result, which does not say it).
+    meta.textContent = env.partial ? "" : t("search.did_not_match", [state.q || ""]);
     const statusEl = document.getElementById("results-status");
     if (statusEl) statusEl.textContent = "";
     // ZERO-RESULT: do NOT clear related queries/content here — loadRelated() (called

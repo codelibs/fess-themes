@@ -291,7 +291,9 @@ function renderResults(env) {
     if (ui.preview) ui.preview.clear();
     const dnm = document.getElementById("empty-did-not-match");
     if (dnm) dnm.textContent = hasKeyword() ? t("search.did_not_match", [state.q]) : t("fs.empty_scope");
-    if (empty) empty.classList.remove("d-none");
+    // A partial result with no hit (e.g. the search engine could not be reached) says nothing about
+    // whether a document matches: the warning above the results is shown alone, not "did not match".
+    if (empty) empty.classList.toggle("d-none", !!env.partial);
     // The empty state's popular words (searchNoResult.jsp parity). Loaded when the state is
     // shown, so a search opened from its address gets them too; the home view lists its own (app.js).
     loadPopularWords();

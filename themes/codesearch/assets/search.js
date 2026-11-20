@@ -501,7 +501,9 @@ function renderResults(env) {
 
   if (data.length === 0) {
     if (empty) {
-      empty.hidden = false;
+      // A partial result with no hit (e.g. the search engine could not be reached) says nothing about
+      // whether a document matches: the warning above the results is shown alone, not "did not match".
+      empty.hidden = !!env.partial;
       // Refresh the "did not match" message with the current query when a slot exists.
       const dnm = empty.querySelector("[data-did-not-match]");
       if (dnm) dnm.textContent = t("search.did_not_match", [state.q || ""]);
@@ -993,12 +995,19 @@ async function runSearch() {
 
     // JSP parity (FessSearchAction.hookBefore): say so when the user's group and role
     // permissions are still loading or failed to load, since the results may be incomplete.
+    // A partial result says so too: a timeout and a failed shard are different causes, and a
+    // partial result that names neither is not called a timeout.
     const warningEl = document.getElementById("results-warning");
     if (warningEl) {
-      const notice = env.permission_state === "PENDING" ? t("errors.user_permissions_loading")
-        : env.permission_state === "FAILED" ? t("errors.user_permissions_unavailable") : "";
-      warningEl.textContent = notice;
-      warningEl.hidden = notice === "";
+      const warnings = [];
+      if (env.permission_state === "PENDING") warnings.push(t("errors.user_permissions_loading"));
+      else if (env.permission_state === "FAILED") warnings.push(t("errors.user_permissions_unavailable"));
+      if (env.partial) {
+        if (env.timed_out) warnings.push(t("labels.process_time_is_exceeded"));
+        if (env.shard_failed || !env.timed_out) warnings.push(t("labels.search_partially_failed"));
+      }
+      warningEl.textContent = warnings.join(" ");
+      warningEl.hidden = warnings.length === 0;
     }
 
     renderResults(env);
