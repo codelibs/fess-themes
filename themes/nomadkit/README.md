@@ -14,15 +14,15 @@ Activate it by setting `theme.default=nomadkit` in the admin UI
 
 ## What makes it "self-contained"
 
-The reference `bootstrap` theme loads `/css/bootstrap.min.css`,
-`/js/popper.min.js`, and `/js/bootstrap.min.js` from Fess core. NomadKit
+The reference `bootstrap` theme loads Bootstrap and Popper (`assets/vendor/bootstrap/`,
+`assets/vendor/popper/`) of its own. NomadKit
 loads **none** of those:
 
 | Concern | bootstrap theme | NomadKit |
 |---|---|---|
-| CSS framework | `/css/bootstrap.min.css` | `assets/styles.css` only — every utility/component class is re-implemented from scratch on top of the NomadKit tokens |
-| JS framework | `/js/popper.min.js` + `/js/bootstrap.min.js` | `assets/compat.js` — a ~9 KB shim exposing the exact `window.bootstrap` API (Modal/Collapse/Dropdown/Offcanvas/Tooltip) the modules call |
-| Icons | `/css/font-awesome.min.css` | unchanged — Font Awesome is independent of Bootstrap and still used for the `fa fa-*` glyphs |
+| CSS framework | `assets/vendor/bootstrap/bootstrap.min.css` | `assets/styles.css` only — every utility/component class is re-implemented from scratch on top of the NomadKit tokens |
+| JS framework | `assets/vendor/popper/popper.min.js` + `assets/vendor/bootstrap/bootstrap.min.js` | `assets/compat.js` — a ~9 KB shim exposing the exact `window.bootstrap` API (Modal/Collapse/Dropdown/Offcanvas/Tooltip) the modules call |
+| Icons | `assets/vendor/fontawesome/` | its own copy of Font Awesome Free 7 (solid and regular styles, v4 icon names included); the `fa fa-*` glyphs are unchanged |
 | Fonts | system | No web font is loaded: the font stacks in `styles.css` name Plus Jakarta Sans / Inter / Fira Code first (used when the viewer has them installed) and fall back to system fonts |
 
 The SPA JavaScript modules (`app.js`, `search.js`, `chat.js`, `auth.js`, …)

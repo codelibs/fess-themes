@@ -147,9 +147,9 @@ theme does not use one. No theme in this repository ships a literal `style=` att
 per-element styling goes through `.style.*` or a custom property. Bar widths follow that
 convention.
 
-Font Awesome is served by Fess from `/css/font-awesome.min.css` (same-origin, allowed). Only
-icons that Fess's copy actually defines are usable — `fa-sliders` and `fa-sort-amount-asc`,
-for instance, are not there.
+Font Awesome Free 7 ships inside the theme (`assets/vendor/fontawesome/`, same-origin, allowed). It
+covers the solid and regular styles and the v4 icon names (`fa-star-o`, ...); the brands style is not
+included.
 
 ## Out of scope
 

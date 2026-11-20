@@ -185,8 +185,8 @@ frame-ancestors 'none'; base-uri 'self'
 ```
 
 So: no external fonts (there is no `font-src`, and `default-src 'self'` catches it), no CDN,
-no inline `<script>`, no `on*=` handlers. Font Awesome is served by Fess itself from
-`/css/font-awesome.min.css`, which is same-origin and therefore allowed.
+no inline `<script>`, no `on*=` handlers. Font Awesome ships inside the theme
+(`assets/vendor/fontawesome/`), which is same-origin and therefore allowed.
 
 Per-element styling goes through `.style.*` or a CSS custom property: the theme ships no
 literal `style="` attribute, and the bar widths are set with `setProperty("--bar-w", …)`.
