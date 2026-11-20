@@ -296,7 +296,7 @@ function renderResults(env) {
     if (empty) empty.classList.toggle("d-none", !!env.partial);
     // The empty state's popular words (searchNoResult.jsp parity). Loaded when the state is
     // shown, so a search opened from its address gets them too; the home view lists its own (app.js).
-    loadPopularWords();
+    if (!env.partial) loadPopularWords();
     if (meta) meta.textContent = "";
     const statusEl = document.getElementById("results-status");
     if (statusEl) statusEl.textContent = "";

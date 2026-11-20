@@ -779,6 +779,10 @@ function renderResults(env) {
     // against the async loadRelated and wipe its output (parity-r3 A2).
     const rpw = document.getElementById("results-popular-words");
     if (rpw) rpw.classList.add("d-none");
+    // The popular words of the empty state are fetched here, when it is shown: the home view has
+    // its own request, and the pages that never show this state need none. A partial result with no
+    // hit does not show the state.
+    if (!env.partial) loadPopularWords();
     return;
   }
   empty.classList.add("d-none");
@@ -1834,7 +1838,6 @@ export function attach() {
   // listeners and populates the input once — it no longer triggers a search itself.
   const urlQ = new URLSearchParams(location.search).get("q");
   if (urlQ && input) { input.value = urlQ; state.q = urlQ; }
-  if (!urlQ) loadPopularWords();
 }
 
 /**

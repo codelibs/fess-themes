@@ -205,6 +205,8 @@ The suites:
   search-options label select, the current-filters badge and the options bar
   (the nine themes above), and in the advanced-search checkboxes and the chat
   filter panel (all 10 themes).
+- `empty-state.test.js` — the popular words of the empty state in ten themes: requested once when a search has no hit, not
+  by `search.attach()` on the home page, and not for a partial result with no hit.
 - `results-status.test.js` — the results-status banner for a blank query (a
   category tile's `/search?q=&fields.label=x`): it names the active labels in
   place of `{bq}`, or uses the `_noquery` wording when there is no label either,

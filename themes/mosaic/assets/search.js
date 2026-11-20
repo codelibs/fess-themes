@@ -1211,7 +1211,7 @@ function renderResults(env) {
     empty.classList.toggle("d-none", !!env.partial);
     // The empty state's popular words (searchNoResult.jsp parity). Loaded here, when
     // the slot becomes visible; the home view renders its own list (app.js).
-    loadPopularWords();
+    if (!env.partial) loadPopularWords();
     meta.textContent = "";
     const statusEl = document.getElementById("results-status");
     if (statusEl) statusEl.textContent = "";
