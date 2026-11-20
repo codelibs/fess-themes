@@ -638,6 +638,20 @@ textarea.form-control { min-height: 2.5rem; }
 .df-header #searchButton { border-radius: 0; }
 #searchOptionsButton { border-top-right-radius: var(--df-radius); border-bottom-right-radius: var(--df-radius); }
 
+/* Below 768px the nav (sign-in, AI search, help) is a menu: #headerNavToggle opens it as a panel
+   under the header. The search box moves to a row of its own below the brand and the button, so
+   that the extra button does not squeeze it. */
+@media (max-width: 767.98px) {
+  .df-header > .container { gap: .5rem; flex-wrap: wrap; }
+  #search-form-wrap { order: 3; flex: 1 0 100%; width: auto; }
+  #header-nav.show {
+    position: absolute; top: 100%; right: .75rem; z-index: 1040; flex-direction: column; align-items: stretch; gap: 0;
+    min-width: 12rem; padding: .35rem; background: #000000; border: var(--df-border-heavy) solid #FFFFFF;
+    border-radius: var(--df-radius); box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+  }
+  #header-nav.show .nav-link { padding: .6rem .75rem; }
+}
+
 /* ---- Dropdown (user menu) ---- */
 .dropdown { position: relative; }
 .dropdown-toggle::after {

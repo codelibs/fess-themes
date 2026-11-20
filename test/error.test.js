@@ -47,19 +47,20 @@ describe.each(themes)("%s: error page", (theme) => {
   });
 });
 
-// Bundle check: the three keys error.js's new behaviour depends on
+// Bundle check: the four keys error.js's new behaviour depends on
 // (error.title_403 / error.body_403 for the 403 render; error.detail_not_load_from_server
-// for the /go errors.not_load_from_server detail, which otherwise renders nothing —
+// for the /go errors.not_load_from_server detail and error.detail_search_engine_unavailable
+// for the 503 of a search engine that cannot be reached, which otherwise render nothing —
 // t() skips a key whose lookup falls back to the key itself) must exist in every
 // locale bundle of every theme. verify-bundles.mjs enforces key-set parity WITHIN a
-// theme's own bundles; it does not know these three keys must exist at all.
-const NEW_ERROR_KEYS = ["error.title_403", "error.body_403", "error.detail_not_load_from_server"];
+// theme's own bundles; it does not know these four keys must exist at all.
+const NEW_ERROR_KEYS = ["error.title_403", "error.body_403", "error.detail_not_load_from_server", "error.detail_search_engine_unavailable"];
 
 describe.each(themes)("%s: error i18n bundles", (theme) => {
   const i18nDir = join(dirname(dirname(modulePath(theme, "app.js"))), "i18n");
   const bundles = readdirSync(i18nDir).filter((f) => /^messages\..+\.json$/.test(f));
 
-  it("every one of the 16 bundles carries the three error keys", () => {
+  it("every one of the 16 bundles carries the four error keys", () => {
     expect(bundles.length).toBe(16);
     for (const file of bundles) {
       const messages = JSON.parse(readFileSync(join(i18nDir, file), "utf8"));

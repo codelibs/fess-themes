@@ -41,26 +41,66 @@ const FILETYPE_VALUES = [
 // document.createElement + textContent. No untrusted string is ever
 // passed to innerHTML.
 
+/** The schemes search.result.link.schemes allows by default; used while the server does not send the list (Fess before 15.10). */
+const DEFAULT_LINK_SCHEMES = ["http", "https", "ftp", "ftps", "file", "smb", "smb1", "storage", "s3", "gcs"];
+
+/** Schemes that run or render code in the page: never linked, whatever the administrator lists. */
+const SCRIPT_SCHEMES = ["javascript", "data", "vbscript"];
+
 /**
- * Return `url` only when its scheme is in the allowlist of schemes Fess serves (web plus file/smb/smb1/storage/s3/gcs).
- * Any other scheme (e.g. javascript:, data:, vbscript:) returns "#" so that
+ * The schemes a result link may use: result_link_schemes of /api/v2/ui/config, which the server
+ * takes from search.result.link.schemes (lower-cased, without the colon) and enforces itself
+ * (/go/, the admin lists). A blank setting arrives as an empty list and allows no scheme. A
+ * server that does not send the field (before 15.10) gets the default list.
+ *
+ * @returns {string[]}
+ */
+function allowedLinkSchemes() {
+  const list = (api.getConfig() || {}).result_link_schemes;
+  if (!Array.isArray(list)) return DEFAULT_LINK_SCHEMES;
+  return list
+    .map(s => String(s).trim().toLowerCase().replace(/:$/, ""))
+    .filter(s => s && !SCRIPT_SCHEMES.includes(s));
+}
+
+/** True when the scheme of the parsed URL `u` (u.protocol, e.g. "https:") may be linked. */
+function isLinkSchemeAllowed(u) {
+  return allowedLinkSchemes().includes(u.protocol.slice(0, -1).toLowerCase());
+}
+
+/**
+ * Return `url` only when its scheme is one of the allowed result link schemes (see
+ * allowedLinkSchemes). Any other scheme (e.g. javascript:, data:, vbscript:, or one that is not
+ * listed) returns "#" so that
  * setAttribute("href", safeHref(u)) can never inject executable content.
  */
 function safeHref(url) {
   if (!url || typeof url !== "string") return "#";
   try {
     const u = new URL(url, location.href);
-    if (u.protocol === "https:" || u.protocol === "http:" ||
-        u.protocol === "ftp:" || u.protocol === "ftps:" ||
-        u.protocol === "file:" || u.protocol === "smb:" || u.protocol === "smb1:" ||
-        u.protocol === "storage:" || u.protocol === "s3:" || u.protocol === "gcs:") {
-      return url;
-    }
+    if (isLinkSchemeAllowed(u)) return url;
   } catch (e) {
     // URL constructor failed — treat as unsafe.
     return "#";
   }
   return "#";
+}
+
+/**
+ * The message key for a view count. t() has no plural syntax, so the singular is its own message,
+ * result.click_count_one, taken when the "one" plural category of the UI locale covers the count
+ * (1 in English; also 21, 31, ... in Russian). The locales that do not distinguish the number
+ * (ja, ko, zh, ...) never select it.
+ *
+ * @param {number} n
+ * @returns {string}
+ */
+function viewCountKey(n) {
+  let category = "other";
+  try {
+    category = new Intl.PluralRules(getLocale()).select(n);
+  } catch { /* no Intl.PluralRules for the locale: the plain message */ }
+  return category === "one" ? "result.click_count_one" : "result.click_count";
 }
 
 function el(tag, opts) {
@@ -106,7 +146,7 @@ function copyToClipboard(text) {
  * Build the /go/ click-tracking URL for a result link.
  *
  * Mirrors the JSP mousedown handler in src/main/webapp/js/search.js:111-127.
- * Returns "#" when the original URL is not in the allowlist of schemes Fess serves (web plus file/smb/smb1/storage/s3/gcs)
+ * Returns "#" when the scheme of the original URL is not one of the allowed result link schemes
  * so that safeHref semantics are preserved — the /go/ redirect would fail anyway
  * for unsafe schemes.
  *
@@ -124,13 +164,7 @@ function buildGoUrl(originalUrl, docId, queryId, order, rt) {
   // Validate scheme — same rules as safeHref; only build /go/ for safe schemes.
   if (!originalUrl || typeof originalUrl !== "string") return "#";
   try {
-    const u = new URL(originalUrl, location.href);
-    if (u.protocol !== "https:" && u.protocol !== "http:" &&
-        u.protocol !== "ftp:" && u.protocol !== "ftps:" &&
-        u.protocol !== "file:" && u.protocol !== "smb:" && u.protocol !== "smb1:" &&
-        u.protocol !== "storage:" && u.protocol !== "s3:" && u.protocol !== "gcs:") {
-      return "#";
-    }
+    if (!isLinkSchemeAllowed(new URL(originalUrl, location.href))) return "#";
   } catch (e) {
     return "#";
   }
@@ -317,7 +351,7 @@ function buildResultCard(d, queryId, order) {
   const clickCount = Number(d.click_count);
   if (features.search_log_enabled && clickCount > 0) {
     appendNbspSpacer();
-    info.appendChild(document.createTextNode(t("result.click_count", { n: clickCount }) + " "));
+    info.appendChild(document.createTextNode(t(viewCountKey(clickCount), { n: clickCount }) + " "));
   }
 
   // cache link
@@ -614,7 +648,9 @@ function renderResults(env) {
     if (dnm) {
       dnm.textContent = t("search.did_not_match", [state.q || ""]);
     }
-    empty.classList.remove("d-none");
+    // A partial result with no hit (e.g. the search engine could not be reached) says nothing about
+    // whether a document matches: the warning above the results is shown alone, not "did not match".
+    empty.classList.toggle("d-none", !!env.partial);
     meta.textContent = "";
     const statusEl = document.getElementById("results-status");
     if (statusEl) statusEl.textContent = "";
@@ -623,6 +659,10 @@ function renderResults(env) {
     // against the async loadRelated and wipe its output (parity-r3 A2).
     const rpw = document.getElementById("results-popular-words");
     if (rpw) rpw.classList.add("d-none");
+    // The popular words of the empty state are fetched here, when it is shown: the home view has
+    // its own request, and the pages that never show this state need none. A partial result with no
+    // hit does not show the state.
+    if (!env.partial) loadPopularWords();
     return;
   }
   empty.classList.add("d-none");
@@ -739,7 +779,30 @@ function syncUrlParams(push) {
   if (push) history.pushState(null, "", url); else history.replaceState(null, "", url);
 }
 
+/**
+ * Rendering a search replaces the pager, the facet entries and the results. A keyboard user who
+ * pressed one of them (Enter on Next or on a facet entry) is left with the focus on <body>: the next
+ * Tab starts at the top of the page and a screen reader says nothing. The focus goes to the count
+ * line, which tells what the new page holds, or to the view when there is no count line (no hits).
+ * Only a focus that sat on an element the render has removed is restored: a page opened by its
+ * address has the focus on <body> from the start, and moving it would make the first Tab skip the
+ * skip link and the header.
+ *
+ * @param {Element|null} before the element that had the focus when the search started
+ */
+function restoreLostFocus(before) {
+  if (!before || before.isConnected) return;
+  const active = document.activeElement;
+  if (active && active !== document.body && active !== document.documentElement) return;
+  const status = document.getElementById("results-status");
+  const target = status && status.textContent ? status : document.getElementById("results-view");
+  if (!target) return;
+  if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+  target.focus({ preventScroll: true });
+}
+
 async function runSearch() {
+  const focusBefore = document.activeElement;
   syncUrlParams(false);
   // Cancel any in-flight request before issuing a new one.
   if (currentSearchAbort) currentSearchAbort.abort();
@@ -843,6 +906,7 @@ async function runSearch() {
     renderActiveChips();
     renderCurrentFilters();
     renderOptionsBar();
+    restoreLostFocus(focusBefore);
     // Hide inline validation error box on successful results.
     const eb = document.getElementById("search-error");
     if (eb) eb.classList.add("d-none");
@@ -1654,7 +1718,6 @@ export function attach() {
   // listeners and populates the input once — it no longer triggers a search itself.
   const urlQ = new URLSearchParams(location.search).get("q");
   if (urlQ && input) { input.value = urlQ; state.q = urlQ; }
-  if (!urlQ) loadPopularWords();
 }
 
 /**

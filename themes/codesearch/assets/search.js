@@ -79,21 +79,43 @@ function el(tag, opts) {
   return node;
 }
 
+/** The schemes search.result.link.schemes allows by default; used while the server does not send the list (Fess before 15.10). */
+const DEFAULT_LINK_SCHEMES = ["http", "https", "ftp", "ftps", "file", "smb", "smb1", "storage", "s3", "gcs"];
+
+/** Schemes that run or render code in the page: never linked, whatever the administrator lists. */
+const SCRIPT_SCHEMES = ["javascript", "data", "vbscript"];
+
 /**
- * Return `url` only when its scheme is in the allowlist of schemes Fess serves
- * (web plus file/smb/smb1/storage/s3/gcs); otherwise "#". Prevents
- * javascript:/data:/vbscript: injection through any field used as href.
+ * The schemes a result link may use: result_link_schemes of /api/v2/ui/config, which the server
+ * takes from search.result.link.schemes (lower-cased, without the colon) and enforces itself
+ * (/go/, the admin lists). A blank setting arrives as an empty list and allows no scheme. A
+ * server that does not send the field (before 15.10) gets the default list.
+ *
+ * @returns {string[]}
+ */
+function allowedLinkSchemes() {
+  const list = (api.getConfig() || {}).result_link_schemes;
+  if (!Array.isArray(list)) return DEFAULT_LINK_SCHEMES;
+  return list
+    .map(s => String(s).trim().toLowerCase().replace(/:$/, ""))
+    .filter(s => s && !SCRIPT_SCHEMES.includes(s));
+}
+
+/** True when the scheme of the parsed URL `u` (u.protocol, e.g. "https:") may be linked. */
+function isLinkSchemeAllowed(u) {
+  return allowedLinkSchemes().includes(u.protocol.slice(0, -1).toLowerCase());
+}
+
+/**
+ * Return `url` only when its scheme is one of the allowed result link schemes (see
+ * allowedLinkSchemes); otherwise "#". Prevents javascript:/data:/vbscript: injection through
+ * any field used as href.
  */
 function safeHref(url) {
   if (!url || typeof url !== "string") return "#";
   try {
     const u = new URL(url, location.href);
-    if (u.protocol === "https:" || u.protocol === "http:" ||
-        u.protocol === "ftp:" || u.protocol === "ftps:" ||
-        u.protocol === "file:" || u.protocol === "smb:" || u.protocol === "smb1:" ||
-        u.protocol === "storage:" || u.protocol === "s3:" || u.protocol === "gcs:") {
-      return url;
-    }
+    if (isLinkSchemeAllowed(u)) return url;
   } catch {
     return "#";
   }
@@ -104,7 +126,7 @@ function safeHref(url) {
  * Build the /go/ click-tracking URL for a result link.
  *
  * Mirrors the JSP mousedown handler in src/main/webapp/js/search.js:111-127.
- * Returns "#" when the original URL is not in the allowlist of schemes Fess serves (web plus file/smb/smb1/storage/s3/gcs)
+ * Returns "#" when the scheme of the original URL is not one of the allowed result link schemes
  * so that safeHref semantics are preserved — the /go/ redirect would fail anyway
  * for unsafe schemes.
  *
@@ -122,13 +144,7 @@ function buildGoUrl(originalUrl, docId, queryId, order, rt) {
   // Validate scheme — same rules as safeHref; only build /go/ for safe schemes.
   if (!originalUrl || typeof originalUrl !== "string") return "#";
   try {
-    const u = new URL(originalUrl, location.href);
-    if (u.protocol !== "https:" && u.protocol !== "http:" &&
-        u.protocol !== "ftp:" && u.protocol !== "ftps:" &&
-        u.protocol !== "file:" && u.protocol !== "smb:" && u.protocol !== "smb1:" &&
-        u.protocol !== "storage:" && u.protocol !== "s3:" && u.protocol !== "gcs:") {
-      return "#";
-    }
+    if (!isLinkSchemeAllowed(new URL(originalUrl, location.href))) return "#";
   } catch (e) {
     return "#";
   }
@@ -501,7 +517,9 @@ function renderResults(env) {
 
   if (data.length === 0) {
     if (empty) {
-      empty.hidden = false;
+      // A partial result with no hit (e.g. the search engine could not be reached) says nothing about
+      // whether a document matches: the warning above the results is shown alone, not "did not match".
+      empty.hidden = !!env.partial;
       // Refresh the "did not match" message with the current query when a slot exists.
       const dnm = empty.querySelector("[data-did-not-match]");
       if (dnm) dnm.textContent = t("search.did_not_match", [state.q || ""]);
@@ -952,11 +970,34 @@ function syncOffsetParam() {
 }
 
 /**
+ * Rendering a search replaces the pager, the facet entries and the results. A keyboard user who
+ * pressed one of them (Enter on Next or on a facet entry) is left with the focus on <body>: the next
+ * Tab starts at the top of the page and a screen reader says nothing. The focus goes to the summary
+ * line, which tells what the new page holds, or to the view when there is no summary (no hits).
+ * Only a focus that sat on an element the render has removed is restored: a page opened by its
+ * address has the focus on <body> from the start, and moving it would make the first Tab skip the
+ * skip link and the header.
+ *
+ * @param {Element|null} before the element that had the focus when the search started
+ */
+function restoreLostFocus(before) {
+  if (!before || before.isConnected) return;
+  const active = document.activeElement;
+  if (active && active !== document.body && active !== document.documentElement) return;
+  const summary = document.getElementById("result-summary");
+  const target = summary && summary.textContent ? summary : document.getElementById("results-view");
+  if (!target) return;
+  if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+  target.focus({ preventScroll: true });
+}
+
+/**
  * Issue GET /api/v2/search from the current `state`, cancelling any in-flight
  * request first. Requests the facets Task 5 will render
  * (repository, filetype, organization, filename).
  */
 async function runSearch() {
+  const focusBefore = document.activeElement;
   if (currentSearchAbort) currentSearchAbort.abort();
   currentSearchAbort = new AbortController();
   const signal = currentSearchAbort.signal;
@@ -993,12 +1034,19 @@ async function runSearch() {
 
     // JSP parity (FessSearchAction.hookBefore): say so when the user's group and role
     // permissions are still loading or failed to load, since the results may be incomplete.
+    // A partial result says so too: a timeout and a failed shard are different causes, and a
+    // partial result that names neither is not called a timeout.
     const warningEl = document.getElementById("results-warning");
     if (warningEl) {
-      const notice = env.permission_state === "PENDING" ? t("errors.user_permissions_loading")
-        : env.permission_state === "FAILED" ? t("errors.user_permissions_unavailable") : "";
-      warningEl.textContent = notice;
-      warningEl.hidden = notice === "";
+      const warnings = [];
+      if (env.permission_state === "PENDING") warnings.push(t("errors.user_permissions_loading"));
+      else if (env.permission_state === "FAILED") warnings.push(t("errors.user_permissions_unavailable"));
+      if (env.partial) {
+        if (env.timed_out) warnings.push(t("labels.process_time_is_exceeded"));
+        if (env.shard_failed || !env.timed_out) warnings.push(t("labels.search_partially_failed"));
+      }
+      warningEl.textContent = warnings.join(" ");
+      warningEl.hidden = warnings.length === 0;
     }
 
     renderResults(env);
@@ -1006,6 +1054,7 @@ async function runSearch() {
     renderPagination(env);
     renderFacets(env);
     renderActiveChips();
+    restoreLostFocus(focusBefore);
 
     if (errBox) errBox.hidden = true;
     // Expose the envelope so Task 5 (facets) can render from the same response.

@@ -35,7 +35,8 @@
   /* Content / text palette */
   --vb-text-primary:   #0A0A0A;   /* Headlines, body copy */
   --vb-text-secondary: #525252;   /* Bylines, datelines, secondary prose */
-  --vb-text-tertiary:  #A3A3A3;   /* Placeholders, disabled text */
+  --vb-text-tertiary:  #6B6B6B;   /* Tertiary text, placeholders: 5.1:1 on the page, 4.9:1 on a card (was #A3A3A3, 2.4:1) */
+  --vb-text-tertiary-on-dark: #A3A3A3;   /* Tertiary text on the black drawer and masthead: 7.8:1 on --vb-primary */
 
   /* Border palette */
   --vb-border-subtle:  #E5E5E5;
@@ -681,6 +682,20 @@ textarea.form-control { min-height: 2.5rem; height: auto; }
 .vb-header #searchButton { border-radius: 0; }
 #searchOptionsButton { border-top-right-radius: var(--vb-radius); border-bottom-right-radius: var(--vb-radius); }
 
+/* Below 768px the nav (sign-in, AI search, help) is a menu: #headerNavToggle opens it as a panel
+   under the header. The search box moves to a row of its own below the brand and the button, so
+   that the extra button does not squeeze it. */
+@media (max-width: 767.98px) {
+  .vb-header > .container { gap: .5rem; flex-wrap: wrap; }
+  #search-form-wrap { order: 3; flex: 1 0 100%; width: auto; }
+  #header-nav.show {
+    position: absolute; top: 100%; right: .75rem; z-index: 1040; flex-direction: column; align-items: stretch; gap: 0;
+    min-width: 12rem; padding: .35rem; background: var(--vb-primary); border: 2px solid var(--vb-accent);
+    border-radius: var(--vb-radius); box-shadow: 0 8px 24px rgba(0, 0, 0, .35);
+  }
+  #header-nav.show .nav-link { padding: .6rem .75rem; }
+}
+
 /* ---- Dropdown (user menu) ---- */
 .dropdown { position: relative; }
 .dropdown-toggle::after {
@@ -960,7 +975,7 @@ body.modal-open { overflow: hidden; }
 #searchOptions .container:focus { outline: none; }
 #searchOptions.show .container { right: 0; visibility: visible; transition-delay: 0s; }
 #searchOptions h3 { color: var(--vb-white); font-family: var(--vb-font-head); }
-#searchOptions label, #searchOptions legend { color: var(--vb-text-tertiary); font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+#searchOptions label, #searchOptions legend { color: var(--vb-text-tertiary-on-dark); font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
 #searchOptions .form-control { background: #1a1a1a; border-color: #333; color: var(--vb-white); }
 #searchOptions .form-control::placeholder { color: var(--vb-text-secondary); }
 #searchOptions fieldset { border: 0; padding: 0; margin: 0 0 1rem; }

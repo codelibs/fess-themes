@@ -686,10 +686,13 @@ function renderResults(env) {
     if (dnm) {
       dnm.textContent = t("search.did_not_match", [state.q || ""]);
     }
-    empty.classList.remove("d-none");
+    // A partial result with no hit (e.g. the search engine could not be reached) says nothing about
+    // whether a document matches: the warning above the results is shown alone, not "did not match".
+    empty.classList.toggle("d-none", !!env.partial);
     // #empty-state is revealed rather than added to the page, which a screen reader does not announce;
-    // #results-meta is the visually hidden live region, so the same sentence goes there.
-    meta.textContent = t("search.did_not_match", [state.q || ""]);
+    // #results-meta is the visually hidden live region, so the same sentence goes there (not for a
+    // partial result, which does not say it).
+    meta.textContent = env.partial ? "" : t("search.did_not_match", [state.q || ""]);
     const statusEl = document.getElementById("results-status");
     if (statusEl) statusEl.textContent = "";
     // ZERO-RESULT: do NOT clear related queries/content here — loadRelated() (called
@@ -697,6 +700,10 @@ function renderResults(env) {
     // against the async loadRelated and wipe its output (parity-r3 A2).
     const rpw = document.getElementById("results-popular-words");
     if (rpw) rpw.classList.add("d-none");
+    // The popular words of the empty state are fetched here, when it is shown: the home view has
+    // its own request, and the pages that never show this state need none. A partial result with no
+    // hit does not show the state.
+    if (!env.partial) loadPopularWords();
     return;
   }
   empty.classList.add("d-none");
@@ -826,7 +833,30 @@ function syncUrlParams(push) {
   if (push) history.pushState(null, "", url); else history.replaceState(null, "", url);
 }
 
+/**
+ * Rendering a search replaces the pager, the facet entries and the results. A keyboard user who
+ * pressed one of them (Enter on Next or on a facet entry) is left with the focus on <body>: the next
+ * Tab starts at the top of the page and a screen reader says nothing. The focus goes to the count
+ * line, which tells what the new page holds, or to the view when there is no count line (no hits).
+ * Only a focus that sat on an element the render has removed is restored: a page opened by its
+ * address has the focus on <body> from the start, and moving it would make the first Tab skip the
+ * skip link and the header.
+ *
+ * @param {Element|null} before the element that had the focus when the search started
+ */
+function restoreLostFocus(before) {
+  if (!before || before.isConnected) return;
+  const active = document.activeElement;
+  if (active && active !== document.body && active !== document.documentElement) return;
+  const status = document.getElementById("results-status");
+  const target = status && status.textContent ? status : document.getElementById("results-view");
+  if (!target) return;
+  if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+  target.focus({ preventScroll: true });
+}
+
 async function runSearch() {
+  const focusBefore = document.activeElement;
   syncUrlParams(false);
   // Cancel any in-flight request before issuing a new one.
   if (currentSearchAbort) currentSearchAbort.abort();
@@ -930,6 +960,7 @@ async function runSearch() {
     renderActiveChips();
     renderCurrentFilters();
     renderOptionsBar();
+    restoreLostFocus(focusBefore);
     // Hide inline validation error box on successful results.
     const eb = document.getElementById("search-error");
     if (eb) eb.classList.add("d-none");
@@ -1741,7 +1772,6 @@ export function attach() {
   // listeners and populates the input once — it no longer triggers a search itself.
   const urlQ = new URLSearchParams(location.search).get("q");
   if (urlQ && input) { input.value = urlQ; state.q = urlQ; }
-  if (!urlQ) loadPopularWords();
 }
 
 /**

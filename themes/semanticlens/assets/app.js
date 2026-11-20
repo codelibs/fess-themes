@@ -39,7 +39,9 @@ function showView(id) {
       el.removeAttribute("hidden");
       // H.2: move keyboard focus to the first heading or the section root so
       // screen readers announce the new view after a client-side navigation.
-      const heading = el.querySelector("h1, h2, h3");
+      // The headings of the results view are the result titles, which the search about to run
+      // replaces; a focus on one of them would fall back to <body>. The view is the target there.
+      const heading = vid === "results-view" ? null : el.querySelector("h1, h2, h3");
       const target = heading || el;
       if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
       // Defer focus so the element is visible before receiving focus.
@@ -398,6 +400,27 @@ function syncHeaderOffset() {
   // navbar height instead of butting content right against the bar.
   const gap = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
   document.body.style.paddingTop = (header.offsetHeight + gap) + "px";
+}
+
+/**
+ * Below 768px the header nav (sign-in, AI search, help) is a menu behind #headerNavToggle.
+ * It closes when a choice is made, on a route change and on Escape (focus goes back to the button;
+ * an Escape that cancels an IME composition is not a request to close it).
+ */
+function attachHeaderMenu() {
+  const nav = document.getElementById("header-nav");
+  const toggle = document.getElementById("headerNavToggle");
+  if (!nav || !toggle || !window.bootstrap || !window.bootstrap.Collapse) return;
+  const close = () => window.bootstrap.Collapse.getOrCreateInstance(nav, { toggle: false }).hide();
+  nav.addEventListener("click", ev => {
+    if (ev.target.closest("a.nav-link:not(.dropdown-toggle), .dropdown-item")) close();
+  });
+  document.addEventListener("fess:route:change", close);
+  document.addEventListener("keydown", ev => {
+    if (ev.key !== "Escape" || ev.defaultPrevented || ev.isComposing || !nav.classList.contains("show")) return;
+    close();
+    toggle.focus();
+  });
 }
 
 /** Attach back-to-top button behaviour. */
@@ -765,6 +788,7 @@ async function main() {
   });
 
   attachOptionsDrawer();
+  attachHeaderMenu();
   attachSearchShortcut();
 
   // Wire back-to-top button.

@@ -95,6 +95,11 @@ The suites:
   needs a window of its own): the closed options drawer out of the tab order, Escape returning the
   focus to the opener, the `/` shortcut, the tab title of every route, the name of the header
   search button.
+- `docuforge.headermenu.test.js`, `helpdesk.headermenu.test.js`, `nomadkit.headermenu.test.js`,
+  `rawblock.headermenu.test.js`, `semanticlens.headermenu.test.js`, `storefront.headermenu.test.js`,
+  `voicebox.headermenu.test.js` — the header nav of those themes below 768px (cases in
+  `helpers/headerMenu.js`): closed behind a labelled toggle, opened and closed by it, closed again by
+  a choice, a route change and Escape.
 - `docuforge-family.results.test.js` — the same four themes' results page: a rejected (400) search
   clears the previous output, the string `exec_time`, `$&` in the title, the pager as real links,
   the add-only favorite star, and the stylesheet contract of the layout fixes.
@@ -197,11 +202,16 @@ The suites:
   `/search` URLs, a facet click narrowing the search with an `ex_q` clause,
   and the header search form dropping both while carrying the labels picked
   in the drawer — for the same nine themes.
+- `partial-empty.test.js` — a partial result with no hit in all eleven themes: the incomplete-search
+  warning stands alone and the empty state is not shown, while a complete result with no hit still
+  shows it.
 - `label-names.test.js` — a label from `ui/config`'s `label_options`
   (`{ value, name }`) is shown by its name, falling back to its value: in the
   search-options label select, the current-filters badge and the options bar
   (the nine themes above), and in the advanced-search checkboxes and the chat
   filter panel (all 10 themes).
+- `empty-state.test.js` — the popular words of the empty state in ten themes: requested once when a search has no hit, not
+  by `search.attach()` on the home page, and not for a partial result with no hit.
 - `results-status.test.js` — the results-status banner for a blank query (a
   category tile's `/search?q=&fields.label=x`): it names the active labels in
   place of `{bq}`, or uses the `_noquery` wording when there is no label either,
@@ -223,10 +233,17 @@ The suites:
 - `docsearch.layout.test.js` — docsearch's small-screen and long-query polish: the
   stylesheet declarations that carry it (read back from the parsed `styles.css`; jsdom
   has no layout), and a failed search hiding the previous search's "did not match" panel.
+- `voicebox.styles.test.js` — voicebox's tertiary text colour (the footer, the info line of a result,
+  the facet headings) reaches 4.5:1 on the page and on a card, computed from the tokens in
+  `styles.css`.
 - `docsearch.styles.test.js` — docsearch's contrast, overflow, card layout and print, read back from the
   parsed `styles.css` (jsdom has no layout): alert and accent-fill text colours with 4.5:1 in both
   palettes, `color-scheme`, long unbroken text that wraps, the type icon sharing the title's row, a
   24px copy-URL target, and the print palette with what it hides.
+- `focus.test.js` — the keyboard focus after a search renders in all eleven themes: a pager link or
+  facet entry that was replaced hands the focus to the count line (or to the view with no hits), a
+  focus in the search box is left alone, a page opened by its address keeps the focus on `<body>`,
+  and `showView()` does not focus a result title of the results view.
 - `docsearch.a11y.test.js` — docsearch's keyboard and screen-reader behaviour, on the theme's real
   `index.html`, `search.js` and `app.js`: a search without hits announced in the live region, focus on
   the results heading after paging, `prefers-reduced-motion` honoured by the pager and back-to-top,
@@ -248,14 +265,28 @@ The suites:
 - `docsearch.linkschemes.test.js` — docsearch's result links following `result_link_schemes` of
   `/api/v2/ui/config` (a listed scheme linked, an unlisted one not, an empty list allowing none, the
   default list when the field is absent), and `javascript:` / `data:` / `vbscript:` never linked.
+- `linkschemes.test.js` — the result link schemes of every theme but docsearch follow
+  `result_link_schemes` of `/api/v2/ui/config`, as in docsearch: a scheme the administrator added is
+  linked, a removed one is not, an empty list links nothing, a response without the field gets the
+  default list, and `javascript:`, `data:` and `vbscript:` are never linked.
 - `docsearch.searchstate.test.js` — docsearch's search the server rejects with HTTP 400 replacing the
   previous results (cards, status line, facets, chips, pager, related content) with the error banner,
   while a network error keeps them.
 - `docsearch.viewcount.test.js` — docsearch's view count on a result card: "1 view" against "2 views"
   and the singular of the other locales, picked with `Intl.PluralRules`.
+- `viewcount.test.js` — the view count on a result card of docuforge, helpdesk, mosaic, nomadkit,
+  rawblock, semanticlens and voicebox: "1 view" against "2 views" and the singular of the other
+  locales, as in docsearch.
+- `chat-hitcount.test.js` — the hit count of the chat's search phase in every theme: "1 document
+  found" against "2 documents found" and the singular of the other locales.
+- `plural-messages.test.js` — the singular messages of every theme in all 16 locales through the real
+  `t()`, for the counts 0, 1, 2, 5, 21 and 1000: each reads as a sentence that names the count, with
+  no fixed "1", unreplaced brace, `NaN` or `undefined`.
 - `docsearch.titles.test.js` — docsearch's tab title on every route (home, search, Help, Advanced
   Search, password, cache, chat, errors), including a client-side move from a search to Help (the
   theme's real `index.html`, `app.js`, `router.js`, `search.js` and English bundle).
+- `form-control-names.test.js` — every input, select and textarea in each theme's `index.html` has an
+  accessible name (an `aria-label`, `aria-labelledby`, `<label>` or `title`).
 - `codesearch.query.test.js` — codesearch's query box -> Fess query translation (`query.js`):
   qualifier values escaped for the Lucene parser, `path:` as a prefix or an exact path, ranges,
   phrases (`"foo bar"~3`) kept as one term, a leading `--` read as text, the facet and chip
