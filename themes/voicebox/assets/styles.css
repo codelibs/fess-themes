@@ -1159,6 +1159,8 @@ footer[role="contentinfo"] {
 #result .title a { color: var(--vb-primary); }
 #result .title a:visited { color: var(--vb-text-secondary); }
 #result .body { display: flex; align-items: flex-start; gap: 1rem; }
+/* The snippet takes the rest of the row: shrink-wrapped, a right-to-left snippet (dir="auto") would sit at the left edge of it. */
+#result .body .description { flex: 1 1 auto; min-width: 0; }
 #result .site cite { color: #166534; font-style: normal; }
 #result .more { display: none; }
 #result .info { font-size: 80%; color: var(--bs-tertiary-color); }

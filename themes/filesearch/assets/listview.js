@@ -101,13 +101,13 @@ export function buildRow(d, idx0, ctx) {
   const block = el("div", { className: "fs-name-block" });
   const link = el("a", {
     className: "fs-name link",
-    attrs: { href: goHref, "data-uri": url, "data-id": d.doc_id || "", "data-order": String(idx0), title: displayPath(source) || title, tabindex: "-1" },
+    attrs: { dir: "auto", href: goHref, "data-uri": url, "data-id": d.doc_id || "", "data-order": String(idx0), title: displayPath(source) || title, tabindex: "-1" },
   });
   if (goHref !== "#") { link.setAttribute("target", "_blank"); link.setAttribute("rel", "noopener"); }
   if (d.content_title) link.innerHTML = renderHighlightedSnippet(d.content_title);
   else link.textContent = d.title || d.url || "";
   block.appendChild(link);
-  const description = el("div", { className: "fs-snippet description" });
+  const description = el("div", { className: "fs-snippet description", attrs: { dir: "auto" } });
   description.innerHTML = renderHighlightedSnippet(d.content_description || escapeHtml(d.digest || ""));
   block.appendChild(description);
   block.appendChild(el("div", { className: "fs-path site" })).appendChild(el("cite", { text: location }));

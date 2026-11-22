@@ -273,7 +273,7 @@ function buildGalleryTile(doc, queryId, rank) {
     li.classList.add("tile--noimg");
     link.appendChild(buildTileIcon(doc.filetype));
   }
-  link.appendChild(el("span", { className: "tile__title", text: titleText }));
+  link.appendChild(el("span", { className: "tile__title", attrs: { dir: "auto" }, text: titleText }));
   li.appendChild(link);
 
   // Product card body — XSS-safe throughout (textContent via el()).

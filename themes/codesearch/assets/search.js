@@ -376,7 +376,7 @@ function buildResultCard(d, queryId, order) {
 function buildGenericCard(li, d, queryId, order) {
   li.classList.add("result-generic");
   const head = el("div", { className: "result-head" });
-  const titleWrap = el("div", { className: "result-title" });
+  const titleWrap = el("div", { className: "result-title", attrs: { dir: "auto" } });
   // Web/repo results keep their direct link; file-system results
   // (file:/smb:/smb1:/storage:/s3:/gcs:) cannot be navigated to directly from an
   // http(s) page, so route those through Fess's same-origin /go/ File Proxy.

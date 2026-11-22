@@ -403,7 +403,7 @@ function buildResultCard(d, queryId, order) {
   const goHref = buildGoUrl(originalUrl, d.doc_id, queryId, idx0, state.requestedTime);
 
   // --- h3.title > a.link ---
-  const h3 = el("h3", { className: "title text-truncate" });
+  const h3 = el("h3", { className: "title text-truncate", attrs: { dir: "auto" } });
   const a = el("a", {
     className: "link",
     attrs: {
@@ -458,7 +458,7 @@ function buildResultCard(d, queryId, order) {
     thumbWrap.appendChild(thumbA);
     body.appendChild(thumbWrap);
   }
-  const description = el("div", { className: "description" });
+  const description = el("div", { className: "description", attrs: { dir: "auto" } });
   // content_description is server-escaped HTML; digest is the raw index field,
   // so escape it here to meet the contract renderHighlightedSnippet() expects.
   // Without that, a digest like "Michael Froh <msfroh@example.com>" would have
@@ -736,7 +736,7 @@ function buildGalleryTile(doc, queryId, rank) {
 
   // Caption (title) — always present, XSS-safe (textContent via el()).
   const cap = el("div", { className: "tile__cap" });
-  cap.appendChild(el("span", { className: "tile__title", text: titleText }));
+  cap.appendChild(el("span", { className: "tile__title", attrs: { dir: "auto" }, text: titleText }));
 
   if (kind) {
     const badge = buildGallerySearcherBadge(kind);
@@ -812,7 +812,7 @@ function trapLightboxTab(ev, lb) {
 function buildLightboxMeta(doc, queryId, order) {
   const meta = el("div", { className: "lightbox__meta-body" });
 
-  meta.appendChild(el("h2", { className: "lightbox__title", text: plainTitle(doc) }));
+  meta.appendChild(el("h2", { className: "lightbox__title", attrs: { dir: "auto" }, text: plainTitle(doc) }));
 
   const originalUrl = doc.url_link || doc.url || "";
   const href = buildGoUrl(originalUrl, doc.doc_id, queryId, order, state.requestedTime);

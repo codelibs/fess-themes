@@ -220,7 +220,7 @@ function buildResultCard(d, queryId, order) {
   const goHref = buildGoUrl(originalUrl, d.doc_id, queryId, idx0, state.requestedTime);
 
   // --- h3.title > a.link ---
-  const h3 = el("h3", { className: "title text-truncate" });
+  const h3 = el("h3", { className: "title text-truncate", attrs: { dir: "auto" } });
   const a = el("a", {
     className: "link",
     attrs: {
@@ -277,7 +277,7 @@ function buildResultCard(d, queryId, order) {
   let answer = null;
   let toggle = null;
   if (html !== "") {
-    answer = el("div", { className: "hd-answer", attrs: { id: answerId } });
+    answer = el("div", { className: "hd-answer", attrs: { id: answerId, dir: "auto" } });
     answer.innerHTML = html; // safe: escaped server-side, <strong> only
     wrap.appendChild(answer);
 
