@@ -379,6 +379,9 @@ button { font-family: inherit; }
   transition: background-color .12s ease, border-color .12s ease, color .12s ease;
   user-select: none;
 }
+/* A full-width button (the passkey button of the sign-in dialog) wraps its label: the label is in upper
+   case with letter spacing, and a long translation (ru) is wider than the dialog on a 375 px phone. */
+.btn.w-100 { white-space: normal; }
 .btn:hover { text-decoration: none; background: #000000; color: #FFFFFF; }
 .btn:disabled, .btn.disabled {
   background: #F0F0F0; color: var(--df-zinc-500);
