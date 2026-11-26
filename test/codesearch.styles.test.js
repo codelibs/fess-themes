@@ -57,3 +57,12 @@ describe("codesearch: search-match highlight contrast", () => {
     }
   });
 });
+
+describe("codesearch: the popular words of the home page wrap", () => {
+  it("draws each popular word as an inline block (renderPopularWords() puts no space between the links)", () => {
+    // as plain inline boxes with no white space between them, seven words were one 567 px line in a 390 px window
+    const rule = css.match(/\.home \.home-popular \.popular-word\s*\{([^}]*)\}/);
+    expect(rule).not.toBeNull();
+    expect(rule[1]).toMatch(/display:\s*inline-block/);
+  });
+});

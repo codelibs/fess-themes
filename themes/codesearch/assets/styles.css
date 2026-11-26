@@ -594,7 +594,9 @@ mark, .match {
 
 /* Home popular-words + suggest dropdown (rendered by search.js). */
 .home .home-popular .popular-label { color: var(--faint); margin-right: 4px; }
-.home .home-popular .popular-word { font-family: var(--mono); margin: 0 6px; }
+/* renderPopularWords() appends the words with no space between them, so as inline boxes they made one
+   unbreakable line: several popular words ran past a phone's width. Inline blocks wrap between words. */
+.home .home-popular .popular-word { font-family: var(--mono); margin: 0 6px; display: inline-block; }
 #home-suggest-dropdown:not(.visually-hidden),
 #header-suggest-dropdown:not(.visually-hidden),
 .suggest-list:not(.visually-hidden) {
