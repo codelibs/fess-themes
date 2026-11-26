@@ -13,7 +13,7 @@ describe.each(["rawblock", "voicebox"])("%s: a full-width button wraps its label
   it("keeps .btn on one line but lets .btn.w-100 wrap, after the .btn rule", () => {
     const s = css(t);
     const btn = s.search(/\n\.btn \{[^}]*white-space: nowrap;/);
-    const wrap = s.search(/\n\.btn\.w-100 \{ white-space: normal; \}/);
+    const wrap = s.search(/\n\.btn\.w-100 \{ white-space: normal; text-align: center; \}/);
     expect(btn).toBeGreaterThanOrEqual(0);
     expect(wrap).toBeGreaterThan(btn);
   });
