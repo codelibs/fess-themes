@@ -80,7 +80,8 @@ function tokenize(input) {
  * The literal token "or" (case-insensitive) is treated as an operator and put into terms.
  * A "quoted phrase" (with its quotes, and its ~N if any) is one free term, whatever it
  * holds. A token starting with two hyphens is text, not a negation: it is a free term
- * as typed. Everything else is a free term.
+ * as typed. An upper-case NOT before a token negates it as a leading `-` does, so the
+ * query toFessQuery emits parses back to the same parts. Everything else is a free term.
  */
 export function parseQuery(input) {
   if (!input || !input.trim()) {
@@ -91,16 +92,25 @@ export function parseQuery(input) {
   const terms = [];
   const qualifiers = [];
 
-  for (const raw of tokens) {
+  for (let i = 0; i < tokens.length; i++) {
+    const raw = tokens[i];
     // "--verbose" is what the user is looking for, not a negated "-verbose".
     if (raw.startsWith('--')) {
       terms.push(raw);
       continue;
     }
 
-    // Check for negation prefix
-    const negate = raw.startsWith('-');
-    const token = negate ? raw.slice(1) : raw;
+    // "NOT x" is how toFessQuery writes "-x", and what the box holds after a search: read it
+    // back as "-x". A NOT with nothing to negate, or before a "-" token, stays a word.
+    let negate;
+    let token;
+    if (raw === 'NOT' && i + 1 < tokens.length && !tokens[i + 1].startsWith('-')) {
+      negate = true;
+      token = tokens[++i];
+    } else {
+      negate = raw.startsWith('-');
+      token = negate ? raw.slice(1) : raw;
+    }
 
     // A phrase is one term even when it holds a colon ("case x: break").
     if (token.startsWith('"')) {
@@ -260,8 +270,8 @@ export function addQualifier(input, mappedField, value) {
 // ---------------------------------------------------------------------------
 
 /**
- * Remove an existing "field:value" (or negated "-field:value") token from
- * the raw input string.  Collapses extra whitespace in the result.
+ * Remove an existing "field:value" (or negated "-field:value" / "NOT field:value")
+ * token from the raw input string.  Collapses extra whitespace in the result.
  * A value without spaces is also removed when it was typed in quotes
  * (`path:"src/main"`), which is how an exact `path:` value is written.
  *
@@ -277,14 +287,15 @@ export function removeQualifier(input, mappedField, value) {
   const tokens = value.includes(' ') ? [quotedToken] : [`${mappedField}:${value}`, quotedToken];
   const escaped = `(?:${tokens.map(_reEscape).join('|')})`;
 
-  // Remove the positive token (optionally negated with a leading '-')
+  // Remove the NOT form first: "NOT field:value". Removing the token alone would leave
+  // a bare NOT, which negates whatever follows or makes the query invalid.
   let result = input.replace(
-    new RegExp(`(?:^|(?<=\\s))-?${escaped}(?=\\s|$)`, 'g'),
+    new RegExp(`(?:^|(?<=\\s))NOT\\s+${escaped}(?=\\s|$)`, 'g'),
     ''
   );
-  // Remove the NOT form: "NOT field:value"
+  // Remove the positive token (optionally negated with a leading '-')
   result = result.replace(
-    new RegExp(`(?:^|(?<=\\s))NOT\\s+${escaped}(?=\\s|$)`, 'g'),
+    new RegExp(`(?:^|(?<=\\s))-?${escaped}(?=\\s|$)`, 'g'),
     ''
   );
   return result.replace(/\s+/g, ' ').trim();
