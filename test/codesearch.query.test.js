@@ -104,10 +104,26 @@ describe("codesearch query.js: qualifiers", () => {
   it("turns what it emitted back into the same query when the box is submitted again", () => {
     // After a reload the box holds the Fess form, which is parsed and sent once more.
     for (const input of ["path:src/main", "path:src/*", 'path:"a b/c"', "file:a:b.txt", "repo:a/b",
-      "content_length:[1 TO 5]", "file:a&&b", "file:a\\"]) {
+      "content_length:[1 TO 5]", "file:a&&b", "file:a\\",
+      "repo:fess -lang:python parse", "-path:src/test", "-content_length:[1 TO 5]", "foo -bar", '-"a b"']) {
       const once = fess(input);
       expect(fess(once)).toBe(once);
     }
+  });
+
+  it("reads the NOT it emitted as the exclusion it was typed as", () => {
+    expect(q.parseQuery("repository:fessctl NOT filetype:python")).toEqual({
+      terms: [],
+      qualifiers: [
+        { key: "repository", value: "fessctl", negate: false, quoted: false, range: false },
+        { key: "filetype", value: "python", negate: true, quoted: false, range: false },
+      ],
+    });
+    expect(q.parseQuery('NOT bar NOT "a b"').terms).toEqual(["-bar", '-"a b"']);
+    // only the operator: a lower-case "not" is a word, and a NOT with nothing to negate stays
+    expect(q.parseQuery("not lang:java").qualifiers[0].negate).toBe(false);
+    expect(q.parseQuery("foo NOT").terms).toEqual(["foo", "NOT"]);
+    expect(q.parseQuery("NOT --verbose").terms).toEqual(["NOT", "--verbose"]);
   });
 
   it("reads a qualifier's value as it is typed", () => {
@@ -238,6 +254,9 @@ describe("codesearch query.js: the search box and its helpers", () => {
     expect(mod.getSearchContext().extra_queries).toEqual([
       "repository:fess", "path:src\\/main*", "filetype:java", 'filename:"my file.txt"',
     ]);
+    // after a search the box holds the Fess form, and an exclusion there is still no filter
+    document.getElementById("query-input").value = "repository:fessctl NOT filetype:python";
+    expect(mod.getSearchContext().extra_queries).toEqual(["repository:fessctl"]);
   });
 });
 
@@ -263,6 +282,8 @@ describe("codesearch query.js: facet qualifiers", () => {
     expect(q.addQualifier("-repository:fess x", "repository", "fess")).toBe("x repository:fess");
     expect(q.removeQualifier('foo filename:"my file.txt" bar', "filename", "my file.txt")).toBe("foo bar");
     expect(q.removeQualifier("-filetype:xml foo", "filetype", "xml")).toBe("foo");
+    expect(q.removeQualifier("NOT filetype:xml foo", "filetype", "xml")).toBe("foo");
+    expect(q.removeQualifier('foo NOT filename:"my file.txt"', "filename", "my file.txt")).toBe("foo");
   });
 
   it("sends a facet value with a reserved character escaped", () => {
@@ -345,5 +366,22 @@ describe("codesearch query.js: facet and chip clicks send what a submit sends", 
     const { navigate } = await boot('foo repo:fess path:"src/main/X.java"');
     document.querySelectorAll("#active-chips .chip-remove")[0].click();
     expect(sentQuery(navigate)).toBe('path:"src/main/X.java" foo');
+  });
+
+  it("shows no chip for an exclusion the box holds in the Fess form, and keeps it", async () => {
+    // "repo:fessctl -lang:python" comes back into the box as this after the search
+    const { navigate } = await boot("repository:fessctl NOT filetype:python");
+    const chips = [...document.querySelectorAll("#active-chips .active-chip")];
+    expect(chips.map((c) => c.textContent)).toEqual(["facet.repository: fessctl ×"]);
+    chips[0].querySelector(".chip-remove").click();
+    expect(sentQuery(navigate)).toBe("NOT filetype:python");
+  });
+
+  it("keeps an exclusion in the Fess form when a facet is ticked", async () => {
+    const { navigate } = await boot("repository:fessctl NOT filetype:python", facet("filetype", "yaml"));
+    const box = document.querySelector("#facet-rail .facet-check");
+    expect(box.checked).toBe(false);
+    box.click();
+    expect(sentQuery(navigate)).toBe("repository:fessctl NOT filetype:python filetype:yaml");
   });
 });
